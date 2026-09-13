@@ -1,17 +1,20 @@
-const express=require('express');
-const http=require('http');
-const {Server}=require('socket.io');
-const path=require('path');
-const app=express();
-const server=http.createServer(app);
-const io=new Server(server);
-app.use(express.static(path.join(__dirname,'public')));
-const rooms=new Map();
-const getRoom=id=>{if(!rooms.has(id))rooms.set(id,[]);return rooms.get(id)};
-app.get('/chat/:roomId',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.get('/admin/:roomId',(req,res)=>res.sendFile(path.join(__dirname,'public','admin.html')));
-io.on('connection',socket=>{
- socket.on('joinRoom',({roomId,role})=>{if(!roomId)return;socket.join(roomId);socket.data.roomId=roomId;socket.data.role=role==='admin'?'admin':'visitor';socket.emit('history',getRoom(roomId));});
- socket.on('sendMessage',text=>{const roomId=socket.data.roomId;if(!roomId||typeof text!=='string')return;const clean=text.trim().slice(0,2000);if(!clean)return;const m={id:Date.now()+'-'+Math.random().toString(36).slice(2),type:socket.data.role==='admin'?'admin':'visitor',text:clean,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})};const room=getRoom(roomId);room.push(m);if(room.length>100)room.shift();io.to(roomId).emit('message',m);});
-});
-const PORT=process.env.PORT||3000;server.listen(PORT,'0.0.0.0',()=>console.log('Realtime chat running on '+PORT));
+const express=require('express');const path=require('path');const fs=require('fs');const crypto=require('crypto');
+const app=express(),PORT=process.env.PORT||3000,ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||'Panshi@2026';
+const DIR=path.join(__dirname,'data'),FILE=path.join(DIR,'db.json');app.use(express.json({limit:'5mb'}));app.use(express.static(path.join(__dirname,'public')));
+const defaults=[['再接再厉','继续加油',5000,999999],['88元现金红包','现金奖励',1000,100],['188元现金红包','现金奖励',500,50],['288元现金红包','现金奖励',300,30],['588元现金红包','现金奖励',100,20],['888元现金红包','现金奖励',50,10],['10克黄金','实物奖品',10,5],['手机','实物奖品',5,3],['谢谢参与','感谢参与活动',3035,999999]].map((x,i)=>({id:'p'+(i+1),name:x[0],subtitle:x[1],image:'',weight:x[2],stock:x[3],enabled:true}));
+function load(){try{if(!fs.existsSync(DIR))fs.mkdirSync(DIR,{recursive:true});if(!fs.existsSync(FILE)){const d={prizes:defaults,users:{},records:[],assignments:{}};fs.writeFileSync(FILE,JSON.stringify(d));return d}const d=JSON.parse(fs.readFileSync(FILE));d.prizes||=defaults;d.users||={};d.records||=[];d.assignments||={};return d}catch(e){return{prizes:defaults,users:{},records:[],assignments:{}}}}let db=load();function save(){if(!fs.existsSync(DIR))fs.mkdirSync(DIR,{recursive:true});fs.writeFileSync(FILE,JSON.stringify(db))}function uid(p='id'){return p+'-'+Date.now().toString(36)+'-'+crypto.randomBytes(3).toString('hex')}function name(v){return String(v||'').trim().slice(0,40)}function user(n){n=name(n);if(!n)return null;if(!db.users[n])db.users[n]={username:n,draws:10,total:0};return db.users[n]}function admin(req){return req.headers['x-admin-password']===ADMIN_PASSWORD}function auth(req,res,next){if(!admin(req))return res.status(401).json({error:'管理员密码错误'});next()}
+function pick(){const a=db.prizes.filter(p=>p.enabled&&p.stock>0&&Number(p.weight)>0),t=a.reduce((s,p)=>s+Number(p.weight),0);if(!a.length)return null;let r=Math.random()*t;for(const p of a){r-=Number(p.weight);if(r<=0)return p}return a[a.length-1]}
+app.get('/api/config',(q,s)=>s.json({title:'磐石甄选中秋国庆七天乐',prizes:db.prizes.filter(p=>p.enabled)}));
+app.post('/api/login',(q,s)=>{const u=user(q.body.username);if(!u)return s.status(400).json({error:'请输入用户名'});save();s.json({user:u})});
+app.get('/api/user/:username',(q,s)=>{const u=user(q.params.username);if(!u)return s.status(404).json({error:'用户不存在'});s.json({user:u,records:db.records.filter(r=>r.username===u.username).slice(0,100)})});
+app.post('/api/redeem',(q,s)=>{const u=user(q.body.username),c=String(q.body.code||'').trim().toUpperCase();if(!u||!c)return s.status(400).json({error:'请输入用户名和抽奖码'});if(!['PS2026','ZQ2026','MID2026'].includes(c))return s.status(400).json({error:'抽奖码无效'});u.draws++;save();s.json({user:u,message:'兑换成功，抽奖次数+1'})});
+app.post('/api/draw',(q,s)=>{const u=user(q.body.username);if(!u)return s.status(400).json({error:'请输入用户名'});if(u.draws<=0)return s.status(400).json({error:'暂无可用抽奖次数'});let p=db.assignments[u.username]?db.prizes.find(x=>x.id===db.assignments[u.username]&&x.enabled&&x.stock>0):null;if(p)delete db.assignments[u.username];if(!p)p=pick();if(!p)return s.status(500).json({error:'当前没有可抽取的奖品'});u.draws--;u.total++;if(p.stock<999999)p.stock--;const r={id:uid('draw'),username:u.username,prizeId:p.id,prizeName:p.name,prizeImage:p.image,time:new Date().toLocaleString('zh-CN',{hour12:false}),code:crypto.randomBytes(6).toString('hex').toUpperCase()};db.records.unshift(r);db.records=db.records.slice(0,5000);save();s.json({user:u,prize:p,record:r})});
+app.post('/api/admin/login',(q,s)=>String(q.body.password||'')===ADMIN_PASSWORD?s.json({ok:true}):s.status(401).json({error:'管理员密码错误'}));
+app.get('/api/admin/data',auth,(q,s)=>s.json({prizes:db.prizes,records:db.records.slice(0,500),users:Object.values(db.users),assignments:db.assignments}));
+app.post('/api/admin/prizes',auth,(q,s)=>{const b=q.body||{};if(!String(b.name||'').trim())return s.status(400).json({error:'奖品名称不能为空'});const p={id:b.id||uid('prize'),name:String(b.name).trim().slice(0,80),subtitle:String(b.subtitle||'幸运奖励').slice(0,80),image:String(b.image||''),weight:Math.max(0,Number(b.weight)||0),stock:Math.max(0,Math.floor(Number(b.stock)||0)),enabled:b.enabled!==false};const i=db.prizes.findIndex(x=>x.id===p.id);i>=0?db.prizes[i]=p:db.prizes.push(p);save();s.json(p)});
+app.delete('/api/admin/prizes/:id',auth,(q,s)=>{db.prizes=db.prizes.filter(p=>p.id!==q.params.id);save();s.json({ok:true})});
+app.post('/api/admin/assign',auth,(q,s)=>{const u=name(q.body.username),p=String(q.body.prizeId||'');if(!u||!db.prizes.some(x=>x.id===p&&x.enabled))return s.status(400).json({error:'用户或奖品无效'});db.assignments[u]=p;save();s.json({ok:true,username:u,prizeId:p})});
+app.delete('/api/admin/assign/:username',auth,(q,s)=>{delete db.assignments[name(q.params.username)];save();s.json({ok:true})});
+app.post('/api/admin/grant',auth,(q,s)=>{const u=user(q.body.username),n=Math.max(0,Math.floor(Number(q.body.draws)||0));u.draws+=n;save();s.json({user:u})});
+app.get('/api/admin/export',auth,(q,s)=>{s.setHeader('Content-Disposition','attachment; filename="panshi-draw-records.json"');s.json({prizes:db.prizes,users:db.users,records:db.records})});
+app.get('/admin',(q,s)=>s.sendFile(path.join(__dirname,'public','admin.html')));app.get('*',(q,s)=>s.sendFile(path.join(__dirname,'public','index.html')));app.listen(PORT,'0.0.0.0',()=>console.log('Panshi lucky draw running on '+PORT));
