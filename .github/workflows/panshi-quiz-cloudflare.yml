@@ -1,6 +1,12 @@
 name: 部署磐石知识闯关系统
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - panshi-quiz-cloud
+    paths:
+      - 'panshi-quiz/**'
+      - '.github/workflows/panshi-quiz-cloudflare.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,8 +20,11 @@ jobs:
           node-version: '22'
       - name: 安装依赖
         run: npm install
-      - name: 运行核心测试
-        run: npm test
+      - name: JavaScript 语法与核心测试
+        run: |
+          node --check public/app.js
+          node --check src/worker.js
+          npm test
       - name: 写入 D1 数据库标识
         env:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
