@@ -41,3 +41,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: 线上接口烟雾测试（同时定位数据库问题）
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          echo "=== Database schema ==="
+          npx wrangler d1 execute panshi-quiz-db --remote --command "PRAGMA table_info(attempts)" || true
+          echo "=== Database challenges table ==="
+          npx wrangler d1 execute panshi-quiz-db --remote --command "SELECT count(*) FROM pk_challenges" || true
+          echo "=== Health check ==="
+          curl --max-time 15 -sSi https://panshi-knowledge-quiz.yanpaji.workers.dev/api/health | head -c 1400
+          echo
+          echo "=== Leaderboard ==="
+          curl --max-time 15 -sSi https://panshi-knowledge-quiz.yanpaji.workers.dev/api/leaderboard | head -c 1400
+          echo
+          echo "=== Start quiz HTTP status ==="
+          curl --max-time 15 -sSi -X POST https://panshi-knowledge-quiz.yanpaji.workers.dev/api/start -H 'Content-Type: application/json' -d '{"nickname":"部署接口检测"}' | head -c 500
+          echo
+          echo "=== SQL leaderboard direct ==="
+          npx wrangler d1 execute panshi-quiz-db --remote --command "WITH r AS(SELECT id,nickname,score,elapsed_seconds,finished_at,ROW_NUMBER() OVER(PARTITION BY nickname ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC) rn FROM attempts WHERE finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)) SELECT id,nickname,score,elapsed_seconds,finished_at,(SELECT COUNT(*) FROM pk_challenges pc WHERE pc.target_nickname=r.nickname) AS challenged_count FROM r WHERE rn=1 ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC LIMIT 50" || true
+
