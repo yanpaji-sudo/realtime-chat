@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import worker, {createPlan,gradePlan,TOTAL_PER_EXAM} from '../src/worker.js';
 import {questions} from '../data/questions.js';
+import {legacyQuestions} from '../data/legacy-grading.js';
 
 class MemoryD1 {
  constructor(){this.items=new Map();this.challenges=new Map();}
@@ -133,4 +134,26 @@ test('input validation and incomplete exam rejection',async()=>{
  const db=new MemoryD1();assert.equal((await endpoint(db,'/api/start','POST',{nickname:'a'})).status,400);
  const s=(await endpoint(db,'/api/start','POST',{nickname:'学员08'})).body;
  assert.equal((await endpoint(db,'/api/submit','POST',{id:s.id,token:s.token,answers:[0,1,2]})).status,400);
+});
+
+test('previously issued questions still grade, but retired topics never enter new quizzes', async()=>{
+ const legacy=legacyQuestions.find(q=>q.id==='q075');
+ const plan=[{id:legacy.id,order:[0,1,2,3]}];
+ assert.equal(gradePlan(plan,[legacy.answer]).score,100);
+ assert.equal(questions.length,108);
+ for(let i=0;i<20;i++)assert(!createPlan().some(q=>q.id==='q075'));
+ const db=new MemoryD1();
+ const start=(await endpoint(db,'/api/start','POST',{nickname:'旧卷成绩'})).body;
+ const row=db.items.get(start.id);
+ const oldPlan=JSON.parse(row.question_plan);
+ const original=questions.find(q=>q.id===oldPlan[0].id);
+ oldPlan[0]={id:legacy.id,order:[0,1,2,3]};
+ row.question_plan=JSON.stringify(oldPlan);
+ const ans=oldPlan.map((p,j)=>p.order.indexOf(j===0?legacy.answer:questions.find(q=>q.id===p.id).answer));
+ const result=await endpoint(db,'/api/submit','POST',{id:start.id,token:start.token,answers:ans});
+ assert.equal(result.status,200);
+ assert.equal(result.body.certificate.score,100);
+ const cannot=await endpoint(db,'/api/start','POST',{nickname:'新版挑战',targetId:start.id});
+ assert.equal(cannot.status,409);
+ assert.match(cannot.body.error,/旧版题库/);
 });
