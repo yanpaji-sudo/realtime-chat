@@ -57,8 +57,8 @@ jobs:
           echo "=== Leaderboard ==="
           curl --max-time 15 -sSi https://panshi-knowledge-quiz.yanpaji.workers.dev/api/leaderboard | head -c 1400
           echo
-          echo "=== Start quiz HTTP status ==="
-          curl --max-time 15 -sSi -X POST https://panshi-knowledge-quiz.yanpaji.workers.dev/api/start -H 'Content-Type: application/json' -d '{"nickname":"部署接口检测"}' | head -c 500
+          echo "=== Start quiz validation (no data created) ==="
+          curl --max-time 15 -sSi -X POST https://panshi-knowledge-quiz.yanpaji.workers.dev/api/start -H 'Content-Type: application/json' -d '{"nickname":"a"}' | head -c 500
           echo
           echo "=== SQL leaderboard direct ==="
           npx wrangler d1 execute panshi-quiz-db --remote --command "WITH r AS(SELECT id,nickname,score,elapsed_seconds,finished_at,ROW_NUMBER() OVER(PARTITION BY nickname ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC) rn FROM attempts WHERE finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)) SELECT id,nickname,score,elapsed_seconds,finished_at,(SELECT COUNT(*) FROM pk_challenges pc WHERE pc.target_nickname=r.nickname) AS challenged_count FROM r WHERE rn=1 ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC LIMIT 50" || true
