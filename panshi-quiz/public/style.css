@@ -46,3 +46,13 @@
  .cert-text{font-size:13px}
 }
 @media print{body *{visibility:hidden!important}.certificate,.certificate *{visibility:visible!important}.certificate{position:absolute;left:0;top:0;width:100%;margin:0!important;background:white!important;box-shadow:none!important}.result-panel{display:block!important}}
+/* PK leaderboard / winner certificate */
+.leader-row .leader-name{min-width:0;flex:1}
+.pk-btn{border:1px solid #f3d183;border-radius:10px;background:linear-gradient(125deg,#f9e0a0,#e4b454);color:#152039;font-weight:900;font-size:13px;min-width:43px;min-height:36px;padding:6px 9px}
+.pk-btn:hover{filter:brightness(1.07)}
+.leader-row .leader-score{white-space:nowrap}
+.certificate.pk-success{border-color:#d2a544;background:#fff4d7}
+.certificate.pk-success .certificate-border{border-color:#ae792b;background:linear-gradient(135deg,#fff8e8,#ffecc1)}
+.certificate.pk-success .cert-text{font-size:clamp(19px,3vw,27px);font-weight:900;color:#ad4e18;margin:12px 0}
+.certificate.pk-success h2{color:#a96312}
+@media(max-width:470px){.leader-row{gap:7px;padding:10px 3px}.rank-index{width:25px;min-width:25px}.leader-name small{font-size:11px}.leader-score{font-size:14px}.pk-btn{min-width:37px;padding:6px}}
