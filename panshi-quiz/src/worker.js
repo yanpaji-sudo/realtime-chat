@@ -73,8 +73,8 @@ export default {
     const now=Date.now();
     const [leaders,active,stats]=await Promise.all([
      env.DB.prepare(`WITH r AS(SELECT id,nickname,score,elapsed_seconds,finished_at,ROW_NUMBER() OVER(PARTITION BY nickname ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC) rn FROM attempts WHERE finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)) SELECT id,nickname,score,elapsed_seconds,finished_at,(SELECT COUNT(*) FROM pk_challenges pc WHERE pc.target_nickname=r.nickname) AS challenged_count FROM r WHERE rn=1 ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC LIMIT 50`).all(),
-     env.DB.prepare('SELECT nickname,started_at FROM attempts WHERE finished_at IS NULL AND started_at>? ORDER BY started_at DESC LIMIT 35').bind(now-60*60*1000).all(),
-     env.DB.prepare('SELECT COUNT(*) AS total FROM attempts WHERE finished_at IS NOT NULL').first()
+     env.DB.prepare('SELECT nickname,started_at FROM attempts WHERE finished_at IS NULL AND defeated_at IS NULL AND started_at>? ORDER BY started_at DESC LIMIT 35').bind(now-60*60*1000).all(),
+     env.DB.prepare('SELECT COUNT(*) AS total FROM attempts WHERE finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)').first()
     ]);
     const uniqueActive=[...new Map((active.results||[]).map(x=>[x.nickname,x])).values()];
     return json({leaderboard:leaders.results||[],active:uniqueActive,completed:Number(stats?.total||0),asOf:now});
