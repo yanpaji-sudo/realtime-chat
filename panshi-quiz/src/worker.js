@@ -1,4 +1,5 @@
 import { questions, chapterNames } from '../data/questions.js';
+import { legacyQuestions } from '../data/legacy-grading.js';
 
 export const TOTAL_PER_EXAM=100;
 const BASE_CHAPTERS=['仓位篇','收益篇','流量篇','保障篇','动态篇','市场方法篇','市场问题篇','磐石甄选篇','福利制度篇'];
@@ -6,21 +7,25 @@ const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEADERS});
 const fail=(message,status=400)=>json({error:message},status);
 const index=new Map(questions.map(q=>[q.id,q]));
-function shuffle(arr){
+// Historical exams remain gradeable; retired questions never appear in newly issued exams.
+const gradingIndex=new Map([...legacyQuestions,...questions].map(q=>[q.id,q]));
+function shuffle(arr,nextRandom){
   for(let i=arr.length-1;i>0;i--){
-    const random=new Uint32Array(1);
-    crypto.getRandomValues(random);
-    const j=random[0]%(i+1);
+    const j=nextRandom()%(i+1);
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
   return arr;
 }
 export function createPlan(pool=questions,amount=TOTAL_PER_EXAM){
   if(pool.length<amount || amount%4!==0) throw new Error('题库数量不足或试卷分配错误');
-  const picks=shuffle([...pool]).slice(0,amount);
-  const targets=shuffle(Array.from({length:amount},(_,i)=>i%4));
+  // A single crypto call avoids hundreds of calls during concurrent participation.
+  const bytes=new Uint32Array(pool.length+5*amount);
+  crypto.getRandomValues(bytes);
+  let cursor=0;const nextRandom=()=>bytes[cursor++];
+  const picks=shuffle([...pool],nextRandom).slice(0,amount);
+  const targets=shuffle(Array.from({length:amount},(_,i)=>i%4),nextRandom);
   return picks.map((q,i)=>{
-    const order=shuffle([0,1,2,3]);
+    const order=shuffle([0,1,2,3],nextRandom);
     const correctPosition=order.indexOf(q.answer);
     [order[correctPosition],order[targets[i]]]=[order[targets[i]],order[correctPosition]];
     return {id:q.id,order};
@@ -41,7 +46,7 @@ function presentPlan(plan){return plan.map(item=>{const q=index.get(item.id);ret
 export function gradePlan(plan,answers){
   if(!Array.isArray(answers)||answers.length!==plan.length||answers.some(a=>!Number.isInteger(a)||a<0||a>3))throw new Error('答案数量或格式错误');
   const detail=plan.map((item,i)=>{
-    const q=index.get(item.id);
+    const q=gradingIndex.get(item.id);
     if(!q||!Array.isArray(item.order)||item.order.length!==4)throw new Error('题目不存在');
     const correct=item.order.indexOf(q.answer);
     return {id:q.id,selected:answers[i],correct,ok:correct===answers[i],explanation:q.explanation,question:q.question,options:item.order.map(j=>q.options[j])};
@@ -84,6 +89,8 @@ export default {
       target=await env.DB.prepare('SELECT id,nickname,score,question_plan FROM attempts WHERE id=? AND finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)').bind(targetId).first();
       if(!target)return fail('该成员已不在榜单，请刷新排行榜后重试',409);
       if(target.nickname===nickname)return fail('不能用相同昵称挑战自己');
+      const targetPlan=JSON.parse(target.question_plan);
+      if(targetPlan.some(p=>!index.has(p.id)))return fail('对手成绩来自旧版题库，已移除部分旧题；请对方重新参加新版考试后，再发起同卷PK挑战',409);
     }
     const plan=target?JSON.parse(target.question_plan):createPlan();
     const id=crypto.randomUUID(),token=crypto.randomUUID()+'-'+crypto.randomUUID(),now=Date.now();
@@ -128,7 +135,8 @@ export default {
   }catch(e){
    if(e instanceof SyntaxError)return fail('JSON格式有误');
    if(e instanceof Error&&/答案数量|内容超过|题目不存在/.test(e.message))return fail(e.message);
-   return fail('服务处理失败，请检查数据库初始化和运行日志',500);
+   console.error('panshi-quiz API failure',path,e instanceof Error?e.message:String(e));
+   return fail('服务请求异常，请刷新后重试；如持续失败请联系管理员检查云端日志',500);
   }
  }
 };
