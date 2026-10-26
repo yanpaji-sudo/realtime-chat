@@ -49,7 +49,12 @@ export function gradePlan(plan,answers){
   const count=detail.filter(v=>v.ok).length;
   return {detail,count,score:Math.round(count*100/plan.length)};
 }
-const makeCertificate=row=>({id:row.id,nickname:row.nickname,score:row.score,correctCount:row.correct_count,total:TOTAL_PER_EXAM,finishedAt:row.finished_at,grade:row.score>=95?'知识王者':row.score>=85?'闯关达人':row.score>=80?'合格学员':'学习参与证书'});
+const makeCertificate=row=>({
+ id:row.id,nickname:row.nickname,score:row.score,correctCount:row.correct_count,total:TOTAL_PER_EXAM,finishedAt:row.finished_at,
+ grade:row.score>=95?'知识王者':row.score>=85?'闯关达人':row.score>=80?'合格学员':'学习参与证书',
+ isPk:!!row.is_pk,pkSuccess:!!row.pk_success,
+ targetNickname:row.challenge_target_nickname||null,targetScore:row.challenge_target_score??null
+});
 export default {
  async fetch(request,env){
   const url=new URL(request.url),path=url.pathname;
@@ -62,7 +67,7 @@ export default {
    if(request.method==='GET'&&path==='/api/leaderboard'){
     const now=Date.now();
     const [leaders,active,stats]=await Promise.all([
-     env.DB.prepare(`WITH r AS(SELECT nickname,score,elapsed_seconds,finished_at,ROW_NUMBER() OVER(PARTITION BY nickname ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC) rn FROM attempts WHERE finished_at IS NOT NULL) SELECT nickname,score,elapsed_seconds,finished_at FROM r WHERE rn=1 ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC LIMIT 50`).all(),
+     env.DB.prepare(`WITH r AS(SELECT id,nickname,score,elapsed_seconds,finished_at,ROW_NUMBER() OVER(PARTITION BY nickname ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC) rn FROM attempts WHERE finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)) SELECT id,nickname,score,elapsed_seconds,finished_at,(SELECT COUNT(*) FROM pk_challenges pc WHERE pc.target_nickname=r.nickname) AS challenged_count FROM r WHERE rn=1 ORDER BY score DESC,elapsed_seconds ASC,finished_at ASC LIMIT 50`).all(),
      env.DB.prepare('SELECT nickname,started_at FROM attempts WHERE finished_at IS NULL AND started_at>? ORDER BY started_at DESC LIMIT 35').bind(now-60*60*1000).all(),
      env.DB.prepare('SELECT COUNT(*) AS total FROM attempts WHERE finished_at IS NOT NULL').first()
     ]);
@@ -72,9 +77,18 @@ export default {
    if(request.method==='POST'&&path==='/api/start'){
     const data=await payload(request),nickname=cleanName(data?.nickname);
     if(!nickname)return fail('昵称需为2到16字符，仅支持中文、英文、数字、空格、下划线、短横线');
-    const plan=createPlan(),id=crypto.randomUUID(),token=crypto.randomUUID()+'-'+crypto.randomUUID(),now=Date.now();
-    await env.DB.prepare('INSERT INTO attempts (id,token,nickname,started_at,question_plan) VALUES (?,?,?,?,?)').bind(id,token,nickname,now,JSON.stringify(plan)).run();
-    return json({id,token,nickname,startedAt:now,questions:presentPlan(plan),poolCount:questions.length},201);
+    const targetId=data?.targetId;
+    let target=null;
+    if(targetId!==undefined&&targetId!==null){
+      if(typeof targetId!=='string'||!/^[0-9a-f-]{36}$/i.test(targetId))return fail('PK对手编号无效');
+      target=await env.DB.prepare('SELECT id,nickname,score,question_plan FROM attempts WHERE id=? AND finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)').bind(targetId).first();
+      if(!target)return fail('该成员已不在榜单，请刷新排行榜后重试',409);
+      if(target.nickname===nickname)return fail('不能用相同昵称挑战自己');
+    }
+    const plan=target?JSON.parse(target.question_plan):createPlan();
+    const id=crypto.randomUUID(),token=crypto.randomUUID()+'-'+crypto.randomUUID(),now=Date.now();
+    await env.DB.prepare('INSERT INTO attempts (id,token,nickname,started_at,question_plan,is_pk,challenge_target_id,challenge_target_nickname,challenge_target_score) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,token,nickname,now,JSON.stringify(plan),target?1:0,target?.id??null,target?.nickname??null,target?.score??null).run();
+    return json({id,token,nickname,startedAt:now,questions:presentPlan(plan),poolCount:questions.length,isPk:!!target,targetNickname:target?.nickname??null,targetScore:target?.score??null},201);
    }
    if(request.method==='POST'&&path==='/api/submit'){
     const data=await payload(request);
@@ -84,14 +98,29 @@ export default {
     if(row.finished_at!==null)return fail('该考试已经完成评分，无法重复交卷',409);
     const plan=JSON.parse(row.question_plan),out=gradePlan(plan,data.answers);
     const now=Date.now(),elapsed=Math.max(1,Math.round((now-row.started_at)/1000));
+    let pkSuccess=false;
+    let target=null;
+    if(row.is_pk){
+      target=await env.DB.prepare('SELECT id,nickname,score,defeated_at FROM attempts WHERE id=? AND finished_at IS NOT NULL AND defeated_at IS NULL AND (is_pk=0 OR pk_success=1)').bind(row.challenge_target_id).first();
+      pkSuccess=!!target && target.nickname!==row.nickname && out.score>target.score;
+    }
     const dbResult=await env.DB.prepare('UPDATE attempts SET score=?,correct_count=?,elapsed_seconds=?,finished_at=? WHERE id=? AND token=? AND finished_at IS NULL').bind(out.score,out.count,elapsed,now,data.id,data.token).run();
     if(dbResult.meta?.changes!==1)return fail('本次交卷已经处理',409);
-    return json({certificate:makeCertificate({...row,score:out.score,correct_count:out.count,finished_at:now}),review:out.detail,elapsedSeconds:elapsed});
+    if(row.is_pk){
+      if(pkSuccess){
+        // Defeat the target's existing ranking scores; a later completed exam can return to the chart.
+        const defeated=await env.DB.prepare('UPDATE attempts SET defeated_at=? WHERE nickname=? AND finished_at IS NOT NULL AND defeated_at IS NULL AND id<>?').bind(now,target.nickname,data.id).run();
+        if((defeated.meta?.changes||0)===0)pkSuccess=false;
+      }
+      if(pkSuccess)await env.DB.prepare('UPDATE attempts SET pk_success=1 WHERE id=?').bind(data.id).run();
+      await env.DB.prepare('INSERT INTO pk_challenges (id,target_id,target_nickname,challenger_nickname,success,finished_at) VALUES (?,?,?,?,?,?)').bind(data.id,row.challenge_target_id,row.challenge_target_nickname,row.nickname,pkSuccess?1:0,now).run();
+    }
+    return json({certificate:makeCertificate({...row,score:out.score,correct_count:out.count,finished_at:now,pk_success:pkSuccess?1:0}),review:out.detail,elapsedSeconds:elapsed,pkSuccess});
    }
    if(request.method==='GET'&&path.startsWith('/api/certificate/')){
     const id=path.slice('/api/certificate/'.length);
     if(!/^[0-9a-f-]{36}$/i.test(id))return fail('证书编号无效');
-    const row=await env.DB.prepare('SELECT id,nickname,score,correct_count,finished_at FROM attempts WHERE id=? AND finished_at IS NOT NULL').bind(id).first();
+    const row=await env.DB.prepare('SELECT id,nickname,score,correct_count,finished_at,is_pk,pk_success,challenge_target_nickname,challenge_target_score FROM attempts WHERE id=? AND finished_at IS NOT NULL').bind(id).first();
     if(!row)return fail('未找到证书',404);
     return json({certificate:makeCertificate(row)});
    }
