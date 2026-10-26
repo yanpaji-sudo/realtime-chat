@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#101a34" />
+<meta name="description" content="磐石九大知识闯关赛：匿名参与，100道题，云端共享排行榜，完成自动获颁知识结业证书。" />
+<title>磐石学习学院 · 九大知识闯关赛</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="shell">
+<header class="topbar">
+ <div class="brand"><span class="brand-mark">磐</span><div><strong>磐石学习学院</strong><small>KNOWLEDGE CHALLENGE</small></div></div>
+ <div class="topbar-right"><span class="online-pill"><span class="dot"></span> 云端排行榜</span><a href="#leaderboard">查看排行</a></div>
+</header>
+<section class="hero">
+ <div class="hero-inner">
+  <span class="eyebrow">知识闯关 · 自动评分 · 电子证书</span>
+  <h1>知识成就实力<br/><em>九关等你挑战</em></h1>
+  <form id="startForm" class="start-form"><label for="nickname">你的参赛昵称</label><div class="form-line"><input id="nickname" type="text" maxlength="16" autocomplete="off" placeholder="例如：星光学员01" required aria-label="匿名昵称"/><button type="submit">开始闯关 <span aria-hidden="true">→</span></button></div><span class="help">仅展示匿名昵称；同名成绩按最高分展示。无需手机号、真实姓名或充值。</span></form>
+ </div>
+ <div class="hero-decor" aria-hidden="true"><div class="orbit orbit-1"></div><div class="orbit orbit-2"></div><span class="huge-nine">9</span><span class="huge-label">LEVELS</span></div>
+</section>
+<div id="notice" class="notice hidden" role="alert"></div>
+<div class="columns">
+ <main class="main-col">
+  <section id="mapPanel" class="panel"><div class="section-heading"><div><small>YOUR LEARNING JOURNEY</small><h2>九大知识关卡</h2></div><span class="light-label">循序渐进 · 全面掌握</span></div><div id="chapterMap" class="map"></div><div class="map-footer"><span>★</span> 学习知识、核实事实、理解风险，比背诵口号更重要。</div></section>
+  <section id="quizPanel" class="panel hidden">
+   <div class="quiz-header"><div><span id="chapterTag" class="stage-tag">第1关</span><h2 id="questionNum">第 1 / 100 题</h2></div><div class="quiz-stats"><span id="quizAlias">匿名学员</span><strong id="answeredNum">已选0/100</strong></div></div>
+   <div class="progress-track"><div id="progressFill"></div></div>
+   <div class="question-area"><p id="questionText" class="question-text"></p><div id="choices" class="choices"></div></div>
+   <div class="quiz-controls"><button id="prevBtn" type="button" class="btn-secondary">上一题</button><span class="subtle" id="pageHint">请选择一个答案后继续</span><button id="nextBtn" type="button">下一题 →</button><button id="finishBtn" type="button" class="hidden">交卷 · 自动评分</button></div>
+   <div class="quiz-footnote">答题期间可以修改选项。提交前不会显示标准答案，交卷后可查看解析和错题。</div>
+  </section>
+  <section id="resultPanel" class="panel hidden"><div class="section-heading"><div><small>CONGRATULATIONS</small><h2>考试完成 · 自动颁证</h2></div><span class="success-pill">已评分</span></div>
+   <div class="score-summary"><div><small>最终得分</small><div><strong id="scoreValue">0</strong><span>/100</span></div></div><div><small>答对题目</small><strong id="correctValue">0 / 100</strong></div><div><small>学习称号</small><strong id="gradeValue">知识新星</strong></div></div>
+   <div class="certificate" id="certificate">
+    <div class="certificate-border"><div class="cert-badge">✦</div><span class="cert-en">CERTIFICATE OF COMPLETION</span><h2>知识学习结业证书</h2><p class="cert-subtitle">磐石学习学院 · 九大知识闯关赛</p><p class="cert-honor">兹证明</p><h3 id="certName">匿名学员</h3><p class="cert-text">已完成九大知识模块100道随机题的知识学习测评</p><div class="cert-score"><strong id="certScore">0</strong><span>分 / 满分100分</span></div><p id="certGrade">学习称号：知识新星</p><div class="cert-footer"><span id="certDate">颁发日期：—</span><span>颁发方：磐石学习学院</span></div><small id="certId">证书编号：</small><p class="cert-disclaimer">本证书仅证明完成知识答题，不代表投资资质、收入承诺或业务合规认证。</p></div>
+   </div>
+   <div class="result-actions"><button id="pngBtn" type="button">下载证书 PNG</button><button id="printBtn" type="button" class="btn-secondary">打印 / 保存 PDF</button><button id="reviewBtn" type="button" class="btn-secondary">查看错题解析</button><button id="restartBtn" type="button" class="btn-secondary">再挑战一次</button></div>
+   <div id="review" class="review hidden"></div>
+  </section>
+ </main>
+ <aside class="side-col" id="leaderboard">
+  <section class="panel sidepanel"><div class="section-heading compact"><div><small>TOP PLAYERS</small><h2>实时排行榜</h2></div><span class="refresh-note">约20秒刷新</span></div><div class="tabs"><button type="button" class="tab active" id="leaderTab">成绩榜</button><button type="button" class="tab" id="activeTab">正在参加</button></div><div class="live-metrics"><span>已完成：<b id="countCompleted">—</b></span><span>参与中：<b id="countActive">—</b></span></div><div id="leaderList" class="ranking-list"><p class="empty">读取云端排名中…</p></div><div id="activeList" class="ranking-list hidden"></div><p class="side-tip">部署并配置D1后，全体访问者看到同一份云端数据。排行榜按最高分、用时排序；昵称不代表真实身份。</p></section>
+  <section class="panel sidepanel tips-panel"><div class="section-heading compact"><div><small>CHALLENGE GUIDE</small><h2>闯关规则</h2></div></div><div class="rule"><span>01</span><p>填写匿名昵称即可进入</p></div><div class="rule"><span>02</span><p>120题库随机抽100题，每题1分</p></div><div class="rule"><span>03</span><p>提交后由服务器自动评分</p></div><div class="rule"><span>04</span><p>立即生成可下载的个人证书</p></div></section>
+ </aside>
+</div>
+<footer>磐石学习学院 · 知识测评与学习演示 | 数据存储于部署方的云端数据库</footer>
+</div>
+<script src="/app.js" defer></script>
+</body>
+</html>
