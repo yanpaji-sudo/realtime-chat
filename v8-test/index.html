@@ -1,0 +1,467 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>分支分布图 + 撤回 + 管理日志 · 独立离线测试</title><style>:root{--ink:#1b2c47;--navy:#101d35;--muted:#8390a5;--line:#e6ecf4;--bg:#f5f7fb;--accent:#3d63eb;--blue:#eaf0ff;--green:#0d9279}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}h1,h2,h3,p{margin-top:0}.hidden{display:none!important}.muted{color:var(--muted)}.tip{font-size:12px;color:#8291a6}.req{color:#d54848}.button{border:1px solid #dbe4f0;border-radius:9px;background:#fff;color:#4e637e;padding:9px 13px;font-size:12px;font-weight:700}.button.primary{border-color:var(--accent);background:var(--accent);color:#fff}.button.full{width:100%;padding:12px}.button:hover:not(:disabled){filter:brightness(.97)}.err{min-height:17px;color:#be3434;font-size:12px;margin:8px 0}.login-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:radial-gradient(circle at 20% 5%,#e3eafc,transparent 45%),linear-gradient(140deg,#f5f7fc,#ecf2fb)}.login-card{width:min(430px,100%);padding:35px;background:white;border:1px solid var(--line);border-radius:18px;box-shadow:0 22px 70px #1b37601c;text-align:center}.brandmark{display:inline-grid;place-items:center;width:45px;height:45px;border-radius:13px;background:linear-gradient(135deg,#547afa,#5ed0c2);color:white;font-size:26px;font-weight:700}.login-card h1{font-size:24px;margin:15px 0 4px}.login-card .muted{font-size:12px}.login-tabs{display:flex;background:#f3f6fb;padding:4px;margin:25px 0 18px;border-radius:10px}.login-tabs button{flex:1;background:transparent;border:0;border-radius:8px;padding:10px;font-weight:700;color:#62748c}.login-tabs button.selected{background:#fff;color:#3258d2;box-shadow:0 1px 6px #1b37501c}.login-card label{text-align:left;font-size:12px;font-weight:700;color:#516783;display:block;margin:0 0 17px}.login-card input{width:100%;padding:12px;margin:6px 0 0;border:1px solid #dce5f0;border-radius:9px}.app{display:flex;min-height:100vh}.sidebar{background:var(--navy);width:218px;flex:0 0 218px;color:#b6c2d7;padding:22px 13px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}.logo{display:flex;align-items:center;gap:10px;padding:0 10px 30px}.logo b{display:block;color:white;font-size:16px}.logo small{font-size:9px;color:#91a3bf}.navhead{font-size:10px;letter-spacing:2px;color:#7a8ba9;padding:0 12px;margin-bottom:8px}.nav{width:100%;border:0;background:transparent;color:#b7c5d9;text-align:left;padding:12px;border-radius:9px;margin:1px 0;font-size:13px;font-weight:600}.nav.active,.nav:hover{background:#263a5c;color:#fff}.sidebar-bottom{margin-top:auto;padding:13px;background:#1c2c4a;border:1px solid #30435f;border-radius:11px;font-size:12px}.sidebar-bottom p{font-size:10px;color:#8497b6;margin:8px 0 0}.ghost{margin-left:10px}.main{flex:1;min-width:0;padding:29px 29px 40px;max-width:1900px;margin:0 auto}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.top h1{font-size:25px;margin:10px 0 2px}.top p{font-size:12px;margin:0}.breadcrumb{font-size:12px;color:#8290a5}.top-actions{display:flex;align-items:center;gap:10px}.pill{font-size:11px;border-radius:99px;background:#e4f6ef;color:#09896b;padding:7px 13px;font-weight:700}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat{background:white;border:1px solid var(--line);padding:18px;border-radius:13px;box-shadow:0 4px 18px #16355b08}.stat small{display:block;color:#8392a8;font-size:12px}.stat strong{display:block;font-size:25px;margin:6px 0 3px;letter-spacing:-.5px;overflow-wrap:anywhere}.stat em{display:block;font-size:10px;font-style:normal;color:#a1acb9}.panel{border-radius:15px;border:1px solid var(--line);background:#fff;min-height:570px;overflow:hidden;box-shadow:0 4px 22px #12385b08}.panel-header{padding:17px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.panel-header h2{font-size:17px;margin:0}.panel-header p{font-size:11px;margin:2px 0 0}.actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.search{padding:9px 11px;border:1px solid #dbe5f0;background:#f8fbff;border-radius:9px;width:200px;font-size:12px}.content{padding:20px;min-height:490px;overflow:auto;max-height:calc(100vh - 300px);background:radial-gradient(#e5ebf3 .75px,transparent .75px) 0 0/23px 23px,#fff}.content .loading,.empty{color:#97a4b5;text-align:center;padding:70px 12px}.tree{list-style:none;padding:0;margin:0;min-width:740px}.tree>li{margin-bottom:13px}.tree ul{list-style:none;margin:0 0 0 20px;padding:0 0 0 28px;border-left:2px solid #e2eaf6}.tree ul>li{position:relative;margin:9px 0}.tree ul>li:before{content:"";position:absolute;width:28px;height:2px;background:#e2eaf6;left:-28px;top:34px}.member{background:#fff;border:1px solid #e0e8f4;border-radius:11px;width:720px;padding:11px 14px;box-shadow:0 2px 10px #152c4b0b}.member.root{background:linear-gradient(95deg,#f6f9ff,#fff);border-color:#9eb3ee}.member.matched{outline:2px solid #e4ad4b}.member-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.account{display:flex;align-items:center;gap:8px}.avatar{width:32px;height:32px;display:grid;place-items:center;background:#eaf0ff;color:#4069ce;border-radius:9px;font-weight:800}.account b{font-size:14px;letter-spacing:.2px}.account small{display:block;font-size:10px;color:#91a1b4}.nodeactions{display:flex;gap:6px;align-items:center}.count{border-radius:50px;background:#edf3fc;color:#6480a9;padding:3px 8px;font-size:10px}.tiny{border:1px solid #e0e8f2;background:#f8fafc;color:#516987;border-radius:7px;padding:5px 9px;font-size:11px}.metricrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}.metric{border-radius:7px;padding:8px 10px;border:1px solid #eaf0f7;background:#f8faff}.metric label{display:block;font-size:10px;color:#8293ab}.metric .self,.metric .sum{display:flex;justify-content:space-between;font-size:11px;gap:10px;padding-top:4px}.metric .sum{border-top:1px dashed #d7e0ef;margin-top:5px}.metric .self b{font-size:12px}.metric .sum b{font-size:13px;color:#315fca}.simple-list{min-width:680px}.itemrow{display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr .8fr auto;gap:10px;align-items:center;border-bottom:1px solid #eef2f7;padding:13px 8px;font-size:12px}.itemrow.head{background:#f7faff;font-weight:700;color:#7688a0}.itemrow b{font-weight:700}.import-panel{max-width:960px}.import-modes{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.mode{padding:10px 14px;background:#fff;border:1px solid #dce6f1;border-radius:9px;font-weight:700;color:#5d7291}.mode.selected{background:#eaf0ff;color:#345bd4;border-color:#91aaf4}.import-panel h3,.help h3{margin:0 0 10px}.import-panel p,.help p,.help li{color:#7688a0;font-size:12px;line-height:1.9}.import-panel textarea{display:block;width:100%;height:205px;border:1px solid #dce5f1;border-radius:9px;padding:12px;font:12px/1.8 Consolas,"Microsoft Yahei",monospace;background:#fafcff;resize:vertical}.import-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}.import-controls input{font-size:12px}.preview{margin:16px 0;border:1px solid #dce8f9;background:#f5f8ff;padding:15px;border-radius:9px;font-size:12px;white-space:pre-wrap;color:#436188;line-height:2}.alert{border:1px solid #eeddb8;background:#fff9e9;padding:12px;border-radius:9px;color:#a17a34;font-size:12px}.foot{padding:16px;font-size:10px;text-align:right;color:#9aa8b7}dialog{border:0;border-radius:14px;padding:0;width:475px;max-width:95vw;box-shadow:0 25px 70px #12324c40}dialog::backdrop{background:#12243b70}.dialogHead{display:flex;justify-content:space-between;align-items:center;padding:18px 21px;border-bottom:1px solid #e9eef5}.dialogHead h2{font-size:19px;margin:0}.dialogBody{padding:20px}.dialogBody label{display:block;font-size:12px;color:#60748c;font-weight:700;margin-bottom:13px}.dialogBody input,.dialogBody select{display:block;width:100%;border-radius:8px;border:1px solid #dce5f0;padding:9px 11px;margin:5px 0 0;background:#fff}.dialogActions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.toast{position:fixed;right:20px;bottom:20px;background:#172c48;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 10px 30px #14344a44;max-width:85vw;z-index:100;font-size:12px}@media(max-width:1050px){.sidebar{width:188px;flex-basis:188px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{padding:20px 16px}}@media(max-width:720px){.app{display:block}.sidebar{position:static;width:auto;height:auto;padding:11px;display:block}.logo{padding-bottom:11px}.sidebar .navhead,.sidebar-bottom p{display:none}.sidebar .nav{display:inline-block;width:auto;font-size:11px;padding:8px;margin:2px}.sidebar-bottom{margin-top:8px;padding:8px}.top{display:block}.top-actions{margin-top:12px}.main{padding:15px 10px}.top h1{font-size:21px}.stat{padding:12px}.stat strong{font-size:20px}.stats{gap:7px}.panel-header{padding:14px}.content{padding:12px;max-height:none;min-height:380px}.tree{min-width:650px}.member{width:620px}.search{width:100%}.actions{width:100%}.itemrow{min-width:650px}.metric .sum b{font-size:12px}.login-card{padding:24px}}
+
+/* V2: 5 financial metrics, each split into self, direct-only and entire descendant subtree. */
+.stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tree{min-width:1010px}
+.member{width:980px}
+.metricrow{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.metric{padding:8px}
+.metric .direct,.metric .self,.metric .sum{display:flex;justify-content:space-between;align-items:center;gap:4px;padding-top:5px;font-size:10px}
+.metric .direct{border-top:1px dashed #e8edf6;margin-top:4px}
+.metric .sum{border-top:1px dashed #d7e0ef;margin-top:5px}
+.metric .self b,.metric .direct b{font-size:11px}
+.metric .sum b{font-size:11px}
+.metric .negative{color:#bb4d55}
+.itemrow{grid-template-columns:1.1fr .7fr repeat(5,.82fr) auto;min-width:900px}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.tree{min-width:1010px}.member{width:980px}}
+
+/* V3: searchable, scoped node data table. Mobile users can scroll wide tables. */
+.table-data{background:#fff;min-width:0}.table-intro{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}.table-intro b{font-size:15px;color:#1b355d}.table-intro small,.table-status,.table-footnote{color:#8292a8;font-size:12px}.table-filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}.filter-select{border:1px solid #d9e4ef;background:#fff;color:#31547b;border-radius:8px;padding:9px;max-width:100%;min-width:138px;font-size:12px}.table-scroll{width:100%;overflow-x:auto;border:1px solid #e1e9f3;border-radius:10px;background:#fff}.member-table{width:100%;border-collapse:separate;border-spacing:0;min-width:1100px;font-size:12px}.member-table th{white-space:nowrap;position:sticky;top:0;background:#f2f6fd;color:#637790;font-weight:700;padding:12px;border-bottom:1px solid #dfe8f2;text-align:left}.member-table td{padding:11px 12px;border-bottom:1px solid #ebf0f7;color:#3b516e;white-space:nowrap}.member-table tbody tr:hover{background:#f8faff}.member-table .money-cell{text-align:right;font-variant-numeric:tabular-nums}.member-table .account-cell{font-weight:700;color:#294b81}.member-table .actions-cell{display:flex;gap:5px}.table-footnote{margin-top:12px;line-height:1.8}.table-status{margin:10px 0}.member-table .empty{padding:24px;text-align:center}.member .nodeactions{flex-wrap:wrap;justify-content:flex-end}
+
+/* V4 — daily withdrawal amounts are always red; every other money amount
+   is dark for zero/positive and red when negative (including subtree totals). */
+.amount-red,.metric .self b.amount-red,.metric .direct b.amount-red,.metric .sum b.amount-red,.member-table td.amount-red{color:#C62828!important}
+.amount-black,.metric .self b.amount-black,.metric .direct b.amount-black,.metric .sum b.amount-black,.member-table td.amount-black{color:#111827!important}
+.export-layers{border-color:#B6CAF8;background:#F0F5FF;color:#234F9B;font-weight:700}
+.export-layers:hover{background:#E2ECFF}
+.row-actions{display:flex;flex-wrap:wrap;gap:5px}
+
+/* V5: level + remark in card header, admin name and list width */
+.member-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:27px}
+.level-tag{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid #b9cbed;border-radius:6px;background:#f0f5ff;color:#264d9a;font-size:11px;font-weight:700;white-space:nowrap}
+.remark-tag{display:inline-flex;align-items:center;max-width:290px;overflow-wrap:anywhere;padding:2px 10px;border:1px solid #d7dfe9;border-radius:6px;background:#f8fafc;color:#485875;font-size:11px}
+.member-details{min-width:270px}
+.itemrow{grid-template-columns: 1.1fr .8fr .5fr 1fr repeat(5,.82fr) 1fr;min-width:1200px}
+.member-table th,.member-table td{white-space:nowrap}
+#loginUsernameWrap input{width:100%}
+
+/* V6: six progressively deeper membership backgrounds. Zero months remains neutral.
+   Deepest blue remains readable with dark text; these are view-only styles. */
+.member.age-1{background:#F3F8FF;border-color:#D4E4F8}
+.member.age-2{background:#E9F3FF;border-color:#BDD7F8}
+.member.age-3{background:#DCEBFD;border-color:#AACAF3}
+.member.age-4{background:#CBDFF8;border-color:#8EB7E7}
+.member.age-5{background:#AED0F2;border-color:#73A5DF}
+.member.age-6{background:#89B8E7;border-color:#548FD0}
+.member.age-5 .member-details small,.member.age-6 .member-details small{color:#234A78}
+.age-legend{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:12px 0 18px;font-size:12px;color:#60748c}
+.age-chip{display:inline-block;font-size:11px;padding:6px 10px;border:1px solid #aec6e7;border-radius:7px;color:#153E70}
+.age-chip.age-1{background:#F3F8FF}.age-chip.age-2{background:#E9F3FF}.age-chip.age-3{background:#DCEBFD}
+.age-chip.age-4{background:#CBDFF8}.age-chip.age-5{background:#AED0F2}.age-chip.age-6{background:#89B8E7}
+.ranking-header{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.ranking-title{font-size:18px;color:#1C3D6F;font-weight:800}
+.ranking-note{font-size:12px;color:#697D99;line-height:1.8;margin:5px 0 12px}
+.ranking-switch{display:flex;gap:8px;flex-wrap:wrap}
+.ranking-switch .selected{background:#234C83;color:#fff;border-color:#234C83}
+.ranking-table{min-width:1050px}
+.ranking-table td:first-child{font-size:16px;font-weight:800;color:#31569A}
+
+/* V7 — presentation-only; no member data or schema changes. */
+.amount-green,.metric .self b.amount-green,.metric .direct b.amount-green,
+.metric .sum b.amount-green,.member-table td.amount-green {color:#167447!important}
+.member.joined-today,.member.root.joined-today {
+ background:#e6f7e9!important;border-color:#79c89b!important;
+ box-shadow:0 1px 0 #c9efd2,0 3px 15px rgba(31,131,76,.13);
+}
+.member.joined-today .member-details small {color:#267449}
+.today-new-summary{display:flex;justify-content:space-between;align-items:center;gap:8px 20px;
+ flex-wrap:wrap;margin:10px 0 5px;padding:8px 12px;border-radius:9px;
+ border:1px solid #dce7f5;background:rgba(245,249,255,.88)}
+.today-new-summary.has-new{border-color:#aadcc0;background:#effaf4}
+.today-new-head{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.today-new-label{font-size:13px;font-weight:800;color:#405b78}
+.today-new-number{font-size:28px;font-weight:900;line-height:1.15;color:#147345;
+ font-variant-numeric:tabular-nums}
+.today-new-summary.no-new .today-new-number{color:#6c7c92}
+.today-new-unit{font-size:12px;font-weight:700;color:#46755b}
+.today-self-tag{align-self:center;margin-left:8px;padding:2px 8px;
+ color:#147345;border:1px solid #9ed5b4;background:#ddf4e6;border-radius:99px;font-size:11px;font-weight:800}
+.today-new-levels{display:flex;flex-wrap:wrap;gap:5px 7px;align-items:center}
+.today-level-chip{padding:4px 9px;border:1px solid #a9d7ba;border-radius:7px;
+ color:#1b6b42;background:#fff;font-weight:700;font-size:12px}
+.today-no-desc{font-size:11px;color:#8393a7}
+@media(max-width:720px){.today-new-number{font-size:25px}.today-new-summary{padding:7px 9px}}
+
+
+/* Isolated next-version branch distribution and administrative history UI */
+.branch-view{width:100%;min-width:0}
+.branch-intro{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.branch-intro strong{display:block;color:#23466e;font-size:17px}
+.branch-intro small{display:block;color:#74849b;font-size:12px}
+.branch-controls{display:flex;gap:7px;flex-wrap:wrap}
+.branch-canvas{height:min(70vh,690px);min-height:450px;overflow:hidden;border:1px solid #253346;border-radius:14px;background:#181a1d;color:white;cursor:grab;user-select:none;touch-action:none;position:relative}
+.branch-canvas:active{cursor:grabbing}
+.branch-svg{width:100%;height:100%;display:block;touch-action:none}
+.branch-line{fill:none;stroke:#3599d1;stroke-width:2.5;opacity:.93}
+.branch-node{cursor:pointer;outline:none}
+.branch-node>rect{fill:#2e3339;stroke:#4d6270;stroke-width:1.4;filter:drop-shadow(0 3px 4px #0005)}
+.branch-node:hover>rect,.branch-node.branch-match>rect{stroke:#ffc35b;stroke-width:3}
+.branch-node.branch-root>rect{fill:#5dcddd;stroke:#8dffff}
+.branch-node text{pointer-events:none;font-family:"Microsoft YaHei",Arial,sans-serif}
+.branch-date{font-size:11px;fill:#c7d4df}
+.branch-name{font-size:17px;font-weight:800;fill:#fff}
+.branch-remark{font-size:11px;fill:#fac674}
+.branch-root .branch-name{fill:#063a53}.branch-root .branch-date{fill:#1c5266}.branch-root .branch-remark{fill:#23546a}
+.branch-toggle{fill:#16283c;stroke:#aac1d7;stroke-width:1.2}
+.branch-toggle-label{fill:#fff;font-size:17px;font-weight:bold}
+.branch-caption,.audit-note{color:#8292a8;font-size:12px;line-height:1.8;margin:10px 0}
+.audit-wrap h3{margin:0;color:#244168}
+.audit-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.audit-toolbar .search{width:min(460px,100%)}
+.audit-table{min-width:790px}
+.audit-table td{white-space:normal;max-width:550px;vertical-align:top}
+.audit-detail{color:#546b85!important;overflow-wrap:anywhere;line-height:1.7}
+#undoButton:disabled{opacity:.5}
+@media(max-width:700px){.branch-canvas{min-height:390px;height:60vh}.branch-intro small{font-size:11px}}
+</style></head><body>
+<div id="loginView" class="login-screen"><div class="login-card"><div class="brandmark">▦</div><h1>会员树状统计系统</h1><p class="muted">公开功能测试 · 纯虚拟会员数据 · 不接入正式会员库</p><div class="login-tabs"><button id="viewerTab" class="selected" type="button">成员查看</button><button id="adminTab" type="button">管理员登录</button></div><label id="loginUsernameWrap" class="hidden">管理员账号<input id="loginUsername" type="text" autocomplete="username" placeholder="例如：admin01" maxlength="32"></label><label>访问密码<input id="loginPassword" type="password" placeholder="输入访问密码" autocomplete="current-password"></label><button class="button primary full" id="loginButton">安全登录</button><p id="loginError" class="err" role="alert"></p><p class="tip">仅管理员能添加、修改、删除与导入数据。成员只能查看。</p></div></div>
+<div id="app" class="app hidden"><aside class="sidebar"><div class="logo"><span class="brandmark">▦</span><div><b>会员数据中心</b><small>MEMBER HIERARCHY</small></div></div><div class="navhead">工作台</div><button class="nav active" data-view="tree">◫　会员树状图</button><button class="nav" data-view="list">☷　会员列表</button><button class="nav" data-view="table">▦　表格数据</button><button class="nav" data-view="ranking">★　团队排行榜</button><button class="nav" data-view="branch">⑂　分支分布图</button><button class="nav admin-only" data-view="logs">▤　管理员操作日志</button><button class="nav admin-only" data-view="import">⇩　批量上传</button><button class="nav" data-view="help">ⓘ　操作说明</button><div class="sidebar-bottom"><span id="roleLabel">内部查看</span><button class="tiny ghost" id="logoutButton">退出登录</button><p>模拟会员数据仅用于功能演示，不是实际资金信息</p></div></aside><main class="main"><header class="top"><div><span class="breadcrumb">控制台　/　<span id="crumb">会员树状图</span></span><h1>会员树状统计系统</h1><p class="muted"><b style="color:#19794c">独立离线测试版 · 所有会员均为虚构演示数据 · 绝不连接正式数据库</b></p></div><div class="top-actions"><span class="pill" id="sessionLabel">成员查看模式</span><button class="button admin-only" id="undoButton" type="button" title="仅撤回本人最后一次操作，其他管理员修改后不能强行撤回">↶ 撤回上一步</button><button class="button admin-only hidden" id="seedButton">导入虚拟演示数据</button><button class="button primary admin-only" id="addButton">＋ 新增会员</button></div></header><section class="stats"><div class="stat"><small>会员总数</small><strong id="totalMembers">0</strong><em>当前已录入的有效会员</em></div><div class="stat"><small>全部建仓资金</small><strong id="totalStake">¥0.00</strong><em>全体会员建仓合计</em></div><div class="stat"><small>全部余额合计</small><strong id="totalBalance">¥0.00</strong><em>全体会员当前余额</em></div><div class="stat"><small>累计提现合计</small><strong id="totalWithdraw">¥0</strong><em>全部会员总提现</em></div><div class="stat"><small>当日提现合计</small><strong id="totalDaily">¥0</strong><em>全部会员当日提现</em></div><div class="stat"><small>全部输赢合计</small><strong id="totalProfit">¥0.00</strong><em>总建仓资金减去总提现</em></div></section><section class="panel"><div class="panel-header"><div><h2 id="sectionTitle">树状会员关系</h2><p class="muted" id="sectionSub">单人维护 · 全员查看 · 所有下级自动汇总</p></div><div class="actions"><input class="search" id="search" placeholder="🔎 搜索会员账号"><button class="button" id="expandAll">全部展开</button><button class="button" id="collapseAll">全部收起</button><button class="button admin-only" id="exportBtn">导出全部CSV</button></div></div><div id="content" class="content"><p class="loading">正在读取会员数据…</p></div></section><footer class="foot">内部资料 · 非公开搜索引擎页面 · <span id="updatedAt">尚未更新</span></footer></main></div>
+<dialog id="editDialog"><form id="editForm" method="dialog"><div class="dialogHead"><h2 id="dialogTitle">新增会员</h2><button type="button" class="tiny" id="closeEdit">✕</button></div><div class="dialogBody"><input type="hidden" id="editId"><label>会员账号 <span class="req">*</span><input id="editAccount" maxlength="64" required placeholder="例如 000100"></label><label>加入日期（手动填写） <span class="req">*</span><input id="editDate" type="date" required></label><label>推荐人／上级账号（直接输入搜索）<input id="editParentAccount" list="parentAccounts" autocomplete="off" placeholder="输入账号，点击建议选择；留空为根节点"><datalist id="parentAccounts"></datalist></label><label>本人建仓资金（必选）<select id="editStake" required><option value="5000">5,000 元</option><option value="10000">10,000 元</option></select></label><label>会员备注（最多20字，手动填写）<input id="editRemark" maxlength="20" placeholder="例如：已回访、团队骨干"></label><label>总提现（手动填写）<input id="editWithdraw" inputmode="decimal" value="0" placeholder="0.00"></label><p class="tip">余额和当日提现通过批量导入更新。总提现允许填写历史累计，后续每日上传提现时自动累加（同日按差额修正）。会员账号可保留前导零。</p><div class="dialogActions"><button type="button" class="button" id="cancelEdit">取消</button><button type="button" class="button" id="deleteEdit">删除会员</button><button type="submit" class="button primary">保存会员</button></div><p id="editError" class="err"></p></div></form></dialog><div id="toast" class="toast hidden" role="status"></div><script>
+/* 本页面全部虚拟会员数据存在浏览器临时内存；不发送任何请求到正式网站。 */
+const DEMO_SERVER=(()=>{
+ const day='2026-11-05';let currentUser='admin01';let idNum=1000;
+ const rows=[
+ {id:'1',account:'ROOT001',joined_on:'2026-08-25',parent_id:null,remark:'演示总节点',stake_cents:1000000,balance_cents:400000,total_withdraw_cents:200000,daily_withdraw_cents:15000},
+ {id:'2',account:'TEAM_A',joined_on:'2026-09-03',parent_id:'1',remark:'东方团队',stake_cents:1000000,balance_cents:600000,total_withdraw_cents:100000,daily_withdraw_cents:25000},
+ {id:'3',account:'TEAM_B',joined_on:'2026-10-14',parent_id:'1',remark:'南方团队',stake_cents:500000,balance_cents:320000,total_withdraw_cents:50000,daily_withdraw_cents:0},
+ {id:'4',account:'A001',joined_on:day,parent_id:'2',remark:'今日加入',stake_cents:500000,balance_cents:500000,total_withdraw_cents:0,daily_withdraw_cents:0},
+ {id:'5',account:'A002',joined_on:'2026-10-19',parent_id:'2',remark:'重点跟进',stake_cents:1000000,balance_cents:890000,total_withdraw_cents:10000,daily_withdraw_cents:0},
+ {id:'6',account:'B001',joined_on:'2026-10-23',parent_id:'3',remark:'已回访',stake_cents:500000,balance_cents:450000,total_withdraw_cents:0,daily_withdraw_cents:0},
+ {id:'7',account:'B002',joined_on:day,parent_id:'3',remark:'新伙伴',stake_cents:500000,balance_cents:500000,total_withdraw_cents:0,daily_withdraw_cents:0},
+ {id:'8',account:'A001_X',joined_on:day,parent_id:'4',remark:'第4层成员',stake_cents:500000,balance_cents:500000,total_withdraw_cents:0,daily_withdraw_cents:0},
+ {id:'9',account:'A001_Y',joined_on:'2026-11-02',parent_id:'4',remark:'已完成学习',stake_cents:1000000,balance_cents:800000,total_withdraw_cents:20000,daily_withdraw_cents:0}]
+ .map(r=>({...r,daily_withdraw_on:day,revision:1,deleted:0,updated_at:new Date().toISOString()}));
+ let history=[],logs=[{event:'login',operator:'admin01',created_at:new Date().toISOString(),detail:{operator:'admin01'}},
+ {event:'create',operator:'admin01',created_at:'2026-11-05T03:00:00Z',detail:{account:'A001',remark:'今日加入',operator:'admin01'}}];
+ let csrf='offline';
+ function clone(x){return JSON.parse(JSON.stringify(x))}
+ function send(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}})}
+ function failure(message,status=400){return send({detail:message},status)}
+ function active(){return rows.filter(r=>!r.deleted)}
+ function tree(){const list=clone(active());const by=new Map(list.map(x=>[x.id,x]));
+  const keys=['stake_cents','balance_cents','total_withdraw_cents','daily_withdraw_cents'];
+  const children=new Map(list.map(x=>[x.id,[]]));for(const x of list){if(children.has(x.parent_id))children.get(x.parent_id).push(x)}
+  for(const x of list){let walk=x,anc=[],s=new Set();while(walk&&!s.has(walk.id)){anc.push(walk);s.add(walk.id);walk=by.get(walk.parent_id)}anc.reverse();x.level=anc.length;x.group_account=anc[0].account;x.group_path=anc.map(a=>a.account).join(' / ');x.parent_account=by.get(x.parent_id)?.account||''}
+  function descend(x,seen=new Set()){if(seen.has(x.id))return [x];seen.add(x.id);return [x,...children.get(x.id).flatMap(c=>descend(c,seen))]}
+  for(const x of list){const d=descend(x),direct=children.get(x.id);
+    for(const k of keys){x['direct_'+k]=direct.reduce((a,b)=>a+b[k],0);x['subtree_'+k]=d.reduce((a,b)=>a+b[k],0)}
+    x.direct_count=direct.length;x.descendant_count=d.length-1;x.profit_cents=x.stake_cents-x.total_withdraw_cents;
+    x.direct_profit_cents=x.direct_stake_cents-x.direct_total_withdraw_cents;
+    x.subtree_profit_cents=x.subtree_stake_cents-x.subtree_total_withdraw_cents;}
+  const totals=Object.fromEntries(keys.map(k=>[k,list.reduce((a,x)=>a+x[k],0)]));totals.profit_cents=totals.stake_cents-totals.total_withdraw_cents;
+  return {members:list,totals,business_day:day,updated_at:new Date().toISOString()}
+ }
+ function addLog(event,detail){logs.unshift({event,detail:{...detail,operator:currentUser},operator:currentUser,created_at:new Date().toISOString()})}
+ function mutate(event,label,changes){history.push({id:String(Date.now())+Math.random(),event,label,operator:currentUser,changes})}
+ async function fetchMock(path,opts={}){
+  const method=(opts.method||'GET').toUpperCase(),pathname=path.split('?')[0],body=opts.body&&typeof opts.body==='string'?JSON.parse(opts.body):{};
+  if(pathname==='/api/me')return send({role:currentUser?'admin':null,username:currentUser,csrf});
+  if(pathname==='/api/tree')return send(tree());
+  if(pathname==='/api/admin/logs')return send({logs});
+  if(pathname==='/api/admin/undo/status'){
+   const a=history.at(-1);return send(a?{can_undo:true,action_id:a.id,label:a.label,created_at:new Date().toISOString(),event:a.event}:{can_undo:false,reason:'暂无可撤回的模拟修改'});
+  }
+  if(pathname==='/api/admin/undo'&&method==='POST'){
+   const last=history.at(-1);if(!last||last.id!==body.action_id)return failure('操作已改变，请刷新状态',409);
+   for(const c of last.changes){let idx=rows.findIndex(r=>r.id===c.id);if(c.before===null){if(rows.some(r=>r.parent_id===c.id&&!r.deleted))return failure('该会员还有下级，不能撤回',409);rows[idx].deleted=1;}
+    else rows[idx]={...clone(c.before),revision:rows[idx].revision+1,updated_at:new Date().toISOString()};}
+   history.pop();addLog('undo',{label:last.label,affected:last.changes.length});return send({ok:true,undone:last.label,affected:last.changes.length});
+  }
+  if(pathname==='/api/login'&&method==='POST'){if(body.role==='admin'){currentUser=body.username||'admin01';addLog('login',{});return send({role:'admin',username:currentUser,csrf})}currentUser='';return send({role:'viewer',csrf})}
+  if(pathname==='/api/logout'&&method==='POST'){addLog('logout',{});currentUser=null;return send({ok:true})}
+  if(pathname==='/api/members'&&method==='POST'){
+   if(rows.some(r=>r.account===body.account))return failure('账号已存在',409);
+   let p=body.parent_account?rows.find(r=>r.account===body.parent_account&&!r.deleted):null;
+   if(body.parent_account&&!p)return failure('找不到上级账号');
+   const r={id:String(++idNum),account:body.account,joined_on:body.joined_on,parent_id:p?.id||null,remark:body.remark||'',stake_cents:Number(body.stake)*100,balance_cents:0,total_withdraw_cents:Math.round(Number(body.total_withdraw)*100),daily_withdraw_cents:0,daily_withdraw_on:day,revision:1,deleted:0,updated_at:new Date().toISOString()};rows.push(r);
+   mutate('create','新增会员 '+r.account,[{id:r.id,before:null,after:clone(r)}]);addLog('create',{account:r.account,remark:r.remark});return send({ok:true,id:r.id});
+  }
+  const match=/^\/api\/members\/([^/]+)$/.exec(pathname);
+  if(match){const r=rows.find(r=>r.id===match[1]&&!r.deleted);if(!r)return failure('会员不存在',404);
+   if(method==='PUT'){if(body.expected_revision!==r.revision)return failure('资料已更新，需刷新',409);const before=clone(r);
+     let p=body.parent_account?rows.find(x=>x.account===body.parent_account&&!x.deleted):null;
+     if(body.parent_account&&!p)return failure('上级账号不存在');
+     Object.assign(r,{account:body.account,joined_on:body.joined_on,remark:body.remark||'',parent_id:p?.id||null,stake_cents:Number(body.stake)*100,total_withdraw_cents:Math.round(Number(body.total_withdraw)*100),revision:r.revision+1,updated_at:new Date().toISOString()});
+     mutate('update','编辑会员 '+r.account,[{id:r.id,before,after:clone(r)}]);addLog('update',{before:{account:before.account,parent:before.parent_id,total:before.total_withdraw_cents,stake:before.stake_cents,remark:before.remark},after:{account:r.account,parent:r.parent_id,total:r.total_withdraw_cents,stake:r.stake_cents,remark:r.remark}});return send({ok:true})}
+   if(method==='DELETE'){if(rows.some(x=>x.parent_id===r.id&&!x.deleted))return failure('该会员还有下级，不能直接删除',409);const before=clone(r);r.deleted=1;r.revision++;r.updated_at=new Date().toISOString();mutate('delete','删除会员 '+r.account,[{id:r.id,before,after:clone(r)}]);addLog('delete',{account:r.account});return send({ok:true})}
+  }
+  if(pathname.includes('/import/')||pathname==='/api/demo/seed')return failure('离线展示不支持批量更新资金；正式测试版后端有完整撤回逻辑',403);
+  return failure('离线演示未模拟此接口，正式测试后端包含该功能',404);
+ }
+ return fetchMock
+})();
+window.fetch=DEMO_SERVER;
+</script><script>'use strict';
+const el=id=>document.getElementById(id);
+let role=null,csrf='',members=[],total={},view='branch',query='',collapsed=new Set(),editId=null,previewJob=null,importMode='both',toastTimer=null,tableScope='',tableGroup='',tableMetric='self',rankSort='desc',businessDay='',lastDisplayDay='',branchClosed=new Set(),branchTransform={scale:1,dx:0,dy:0};
+const url='/api';
+function money(c,integer=false){return '¥'+(Number(c||0)/100).toLocaleString('zh-CN',{minimumFractionDigits:integer?0:2,maximumFractionDigits:integer?0:2})}
+// V7 is a presentation-only upgrade; financial figures stay in the existing database.
+function amountClass(c,type='normal'){
+ const n=Number(c||0);
+ if(n===0)return 'amount-black';
+ if(type==='daily')return 'amount-red'; // every non-zero daily withdrawal is red
+ if(type==='profit')return n>0?'amount-green':'amount-red';
+ return n<0?'amount-red':'amount-black';
+}
+function setAmount(id,c,integer=false,type='normal'){
+ const e=el(id);e.textContent=money(c,integer);
+ e.classList.remove('amount-red','amount-black','amount-green');e.classList.add(amountClass(c,type));
+}
+// Counts new sign-ups by their *absolute visible tree level*, for each ancestor node.
+// Only derives totals from already-loaded read-only member records; no database writes.
+function todaysNewByNode(rows,day){
+ const byId=new Map(rows.map(r=>[r.id,r]));
+ const result=new Map(rows.map(r=>[r.id,{total:0,own:0,byLevel:new Map()}]));
+ for(const newcomer of rows){
+  if(String(newcomer.joined_on)!==day)continue;
+  let current=newcomer,visited=new Set();
+  while(current&&!visited.has(current.id)){
+   visited.add(current.id);
+   const summary=result.get(current.id);if(!summary)break;
+   summary.total++;
+   if(current.id===newcomer.id)summary.own++;
+   const level=Number(newcomer.level||1);
+   summary.byLevel.set(level,(summary.byLevel.get(level)||0)+1);
+   current=byId.get(current.parent_id);
+  }
+ }
+ return result;
+}
+function newBadge(x,byId,day){
+ const v=byId.get(x.id)||{total:0,own:0,byLevel:new Map()};
+ const shell=mk('div','today-new-summary'+(v.total?' has-new':' no-new'));
+ const main=mk('div','today-new-head');
+ main.append(mk('span','today-new-label','今日新增'),mk('strong','today-new-number',String(v.total)),mk('span','today-new-unit','人'));
+ if(v.own)main.append(mk('span','today-self-tag','本人今日加入'));
+ shell.append(main);
+ const detail=mk('div','today-new-levels');
+ if(v.total){
+  for(const [level,count] of [...v.byLevel].sort((a,b)=>a[0]-b[0])){
+   detail.append(mk('span','today-level-chip',`第${level}层 ${count}人`));
+  }
+ }else detail.append(mk('span','today-no-desc','当日暂无新增'));
+ shell.append(detail);
+ return shell;
+}
+function dateNow(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function membershipMonths(joinedOn,asOf=dateNow()){
+ const a=String(joinedOn||'').split('-').map(Number),b=String(asOf||'').split('-').map(Number);
+ if(a.length!==3||b.length!==3||a.some(x=>!Number.isFinite(x))||b.some(x=>!Number.isFinite(x)))return 0;
+ const full=(b[0]-a[0])*12+b[1]-a[1]-(b[2]<a[2]?1:0);
+ return Math.max(0,Math.min(6,full));
+}
+function computeRanking(rows,day){
+ // One leaderboard row per second-level member; team includes that member and every descendant.
+ const tree=new Map(rows.map(r=>[r.id,{deposit: String(r.joined_on)===day ? Number(r.stake_cents||0):0,withdraw:Number(r.daily_withdraw_cents||0),newCount:String(r.joined_on)===day?1:0,count:1}]));
+ const ordered=rows.slice().sort((a,b)=>Number(b.level||0)-Number(a.level||0));
+ for(const x of ordered){const mine=tree.get(x.id),parent=tree.get(x.parent_id);if(parent){parent.deposit+=mine.deposit;parent.withdraw+=mine.withdraw;parent.newCount+=mine.newCount;parent.count+=mine.count}}
+ return rows.filter(r=>Number(r.level)===2).map(r=>{const t=tree.get(r.id);return {account:r.account,group:r.group_account||'',teamCount:t.count,newCount:t.newCount,dailyStake:t.deposit,dailyWithdraw:t.withdraw,score:t.deposit-t.withdraw}})
+ .sort((a,b)=>b.score-a.score||b.dailyStake-a.dailyStake||a.dailyWithdraw-b.dailyWithdraw||a.account.localeCompare(b.account,'zh-CN'));
+}
+function showToast(s){const x=el('toast');x.textContent=s;x.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>x.classList.add('hidden'),4500)}
+async function api(path,method='GET',body=null){const opt={method,credentials:'same-origin',headers:{}};if(method!=='GET')opt.headers['X-CSRF-Token']=csrf;if(body instanceof FormData)opt.body=body;else if(body!==null){opt.body=JSON.stringify(body);opt.headers['Content-Type']='application/json'}const resp=await fetch(url+path,opt);const d=await resp.json().catch(()=>({}));if(!resp.ok)throw Error(d.detail||`服务器返回${resp.status}`);return d}
+function mk(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function message(s){el('content').replaceChildren(mk('p','empty',s))}
+function setRole(r,c,username=''){role=r;csrf=c||'';el('loginView').classList.toggle('hidden',!!r);el('app').classList.toggle('hidden',!r);document.querySelectorAll('.admin-only').forEach(x=>x.classList.toggle('hidden',r!=='admin'));el('roleLabel').textContent=r==='admin'?'管理员 '+(username||'已登录'):'内部成员查看';el('sessionLabel').textContent=r==='admin'?'管理员 · '+(username||'已登录'):'只读查看模式'}
+async function login(){el('loginError').textContent='';try{const r=await api('/login','POST',{role:el('loginView').dataset.role||'viewer',username:el('loginUsername').value.trim(),password:el('loginPassword').value});el('loginPassword').value='';setRole(r.role,r.csrf,r.username);await refresh();showToast('已进入模拟测试模式')}catch(e){el('loginError').textContent=e.message}}
+function selectedLogin(mode){el('loginView').dataset.role=mode;el('adminTab').classList.toggle('selected',mode==='admin');el('viewerTab').classList.toggle('selected',mode==='viewer');el('loginUsernameWrap').classList.toggle('hidden',mode!=='admin');(mode==='admin'?el('loginUsername'):el('loginPassword')).focus()}
+async function logout(){try{await api('/logout','POST',{})}catch(e){}setRole(null,null);members=[];selectedLogin('viewer')}
+function index(){return new Map(members.map(m=>[m.id,m]))}
+function descendants(){const m=index();let graph=new Map();for(const row of members){if(!graph.has(row.parent_id))graph.set(row.parent_id,[]);graph.get(row.parent_id).push(row)}return {m,graph}}
+function getShown(){if(!query)return null;const ids=new Set(), {m}=descendants();for(const x of members){if(x.account.toLowerCase().includes(query.toLowerCase())){let n=x,seen=new Set();while(n&&!seen.has(n.id)){ids.add(n.id);seen.add(n.id);n=m.get(n.parent_id)}}}return ids}
+function metric(title,self,direct,sum,isDaily=false){const box=mk('div','metric');box.append(mk('label','',title));const type=isDaily?'daily':title.startsWith('输赢')?'profit':'normal';for(const [name,val,cls] of [['本人',self,'self'],['直属一层',direct,'direct'],['节点总计',sum,'sum']]){const line=mk('div',cls);line.append(mk('span','',name),mk('b',amountClass(val,type),money(val,title.includes('提现'))));box.append(line)}return box} 
+function nodeCard(x,isRoot,newByNode,day){const li=mk('li'),age=membershipMonths(x.joined_on,day),isNew=String(x.joined_on)===day,card=mk('div','member age-'+age+(isRoot?' root':'')+(isNew?' joined-today':'')+(query&&x.account.toLowerCase().includes(query.toLowerCase())?' matched':''));card.title=isNew?'今日加入：淡绿色背景；北京时间零点后自动恢复入会时长对应颜色':age===0?'加入不足1个月':`加入已满${age}个月${age===6?'（6个月及以上）':''}`;const head=mk('div','member-top'),iden=mk('div','account');iden.append(mk('span','avatar','会'));const top=mk('div','member-details'),title=mk('div','member-title');title.append(mk('b','',x.account),mk('span','level-tag',`第${x.level||1}层`),mk('span','remark-tag',`备注：${x.remark||'无'}`));top.append(title,mk('small','',`加入日期：${x.joined_on}`));iden.append(top);head.append(iden);const ops=mk('div','nodeactions');ops.append(mk('span','count',`直属 ${x.direct_count} · 全部下级 ${x.descendant_count}`));if(x.direct_count){const btn=mk('button','tiny',collapsed.has(x.id)&&!query?'＋ 展开':'－ 收起');btn.onclick=()=>{collapsed.has(x.id)?collapsed.delete(x.id):collapsed.add(x.id);render()};ops.append(btn)}{const btn=mk('button','tiny export-layers','导出逐层表格');btn.onclick=()=>downloadLayers(x.account);ops.append(btn)}if(role==='admin'){const edit=mk('button','tiny','编辑');edit.onclick=()=>openEdit(x);ops.append(edit)}head.append(ops);card.append(head);card.append(newBadge(x,newByNode,day));const grid=mk('div','metricrow');grid.append(
+ metric('建仓资金',x.stake_cents,x.direct_stake_cents,x.subtree_stake_cents),
+ metric('当前余额',x.balance_cents,x.direct_balance_cents,x.subtree_balance_cents),
+ metric('累计总提现',x.total_withdraw_cents,x.direct_total_withdraw_cents,x.subtree_total_withdraw_cents),
+ metric('当日提现',x.daily_withdraw_cents,x.direct_daily_withdraw_cents,x.subtree_daily_withdraw_cents,true),
+ metric('输赢（建仓－总提现）',x.profit_cents,x.direct_profit_cents,x.subtree_profit_cents));card.append(grid);li.append(card);return li}
+function renderTree(){const {m,graph}=descendants(),visible=getShown();const day=businessDay||dateNow(),newByNode=todaysNewByNode(members,day);const tree=mk('ul','tree'),roots=members.filter(x=>!x.parent_id||!m.has(x.parent_id));const seen=new Set();function walk(x,level){if(seen.has(x.id)||visible&&!visible.has(x.id))return null;seen.add(x.id);const li=nodeCard(x,level===0,newByNode,day);if(!collapsed.has(x.id)||query){const children=graph.get(x.id)||[];const sub=mk('ul');for(const k of children){const child=walk(k,level+1);if(child)sub.append(child)}if(sub.childNodes.length)li.append(sub)}return li}for(const root of roots){const li=walk(root,0);if(li)tree.append(li)}return tree}
+function renderList(){const wrap=mk('div','simple-list'),header=mk('div','itemrow head');['会员账号','加入日期','层级','备注','建仓资金','余额','总提现','当日提现','本人输赢','操作'].forEach(x=>header.append(mk('span','',x)));wrap.append(header);for(const r of members.filter(x=>!query||x.account.toLowerCase().includes(query.toLowerCase()))){const row=mk('div','itemrow');const cells=[r.account,r.joined_on,`第${r.level||1}层`,r.remark||'—',money(r.stake_cents),money(r.balance_cents),money(r.total_withdraw_cents,true),money(r.daily_withdraw_cents,true),money(r.profit_cents)];cells.forEach((x,i)=>row.append(mk(i===0?'b':'span',i>=4?amountClass([r.stake_cents,r.balance_cents,r.total_withdraw_cents,r.daily_withdraw_cents,r.profit_cents][i-4],i===7?'daily':i===8?'profit':'normal'):'',x)));const actions=mk('div','row-actions'),exportBtn=mk('button','tiny export-layers','逐层导出');exportBtn.onclick=()=>downloadLayers(r.account);actions.append(exportBtn);if(role==='admin'){const b=mk('button','tiny','编辑');b.onclick=()=>openEdit(r);actions.append(b)}row.append(actions);wrap.append(row)}return wrap}
+function downloadNode(account){if(role!=='admin')return;showToast('此公开预览版暂不提供Excel下载，请使用独立测试源码验证')}
+function downloadLayers(account){if(!role)return;showToast('此公开预览版暂不提供Excel下载，请使用独立测试源码验证')}
+function groupFor(x){return x.group_account||x.account}
+function tableNodeIds(rootAccount){if(!rootAccount)return null;const root=members.find(m=>m.account===rootAccount);if(!root)return new Set();const selected=new Set([root.id]);let changed=true;while(changed){changed=false;for(const r of members){if(r.parent_id&&selected.has(r.parent_id)&&!selected.has(r.id)){selected.add(r.id);changed=true}}}return selected}
+function renderDataTable(){
+  const wrap=mk('div','table-data'),toolbar=mk('div','table-toolbar');
+  const label=mk('div','table-intro');label.append(mk('b','', '会员节点表格数据'),mk('small','', '选择本人／直属一层／全部层级，快速查看对应金额；每行保留所属分组和直属上级。'));wrap.append(label);
+  const filter=mk('div','table-filters');
+  const gp=mk('select','filter-select');gp.append(new Option('全部分组',''));const groups=[...new Set(members.map(x=>groupFor(x)))].sort();groups.forEach(g=>gp.append(new Option('分组：'+g,g)));gp.value=tableGroup;gp.onchange=()=>{tableGroup=gp.value;tableScope='';render()};filter.append(gp);
+  const range=mk('select','filter-select');range.append(new Option('全部会员',''));members.slice().sort((a,b)=>a.account.localeCompare(b.account,'zh-CN')).forEach(x=>range.append(new Option('仅看节点 '+x.account+' 及所有下级',x.account)));range.value=tableScope;range.onchange=()=>{tableScope=range.value;render()};filter.append(range);
+  const metricMode=mk('select','filter-select');[['self','本人数据'],['direct','直属一层数据'],['subtree','节点全部层级数据']].forEach(x=>metricMode.append(new Option(x[1],x[0])));metricMode.value=tableMetric;metricMode.onchange=()=>{tableMetric=metricMode.value;render()};filter.append(metricMode);
+  if(tableScope){const exportLayers=mk('button','button','导出选中节点逐层表格');exportLayers.onclick=()=>downloadLayers(tableScope);filter.append(exportLayers)}if(role==='admin'){const exportAll=mk('button','button','导出全部会员明细');exportAll.onclick=()=>{if(tableScope)downloadNode(tableScope);else showToast('此公开预览版暂不提供Excel下载')};filter.append(exportAll)}
+  wrap.append(filter);
+  const scoped=tableNodeIds(tableScope), rows=members.filter(x=>(!query||x.account.toLowerCase().includes(query.toLowerCase()))&&(!tableGroup||groupFor(x)===tableGroup)&&(!scoped||scoped.has(x.id)));
+  const status=mk('p','table-status',`当前显示 ${rows.length} / ${members.length} 位会员 · 统计口径：${tableMetric==='self'?'本人':tableMetric==='direct'?'直属一层':'本人和所有下级'}`);wrap.append(status);
+  const shell=mk('div','table-scroll'),table=mk('table','member-table'),thead=mk('thead'),theadRow=mk('tr');
+  ['会员账号','所在分组','直属上级','加入日期','层级','备注','直属人数','团队下级','建仓资金','余额','总提现','当日提现','输赢','节点操作'].forEach(v=>theadRow.append(mk('th','',v)));
+  thead.append(theadRow);table.append(thead);
+  const tbody=mk('tbody');const prefix=tableMetric==='self'?'':tableMetric+'_';
+  rows.forEach(x=>{const tr=mk('tr');const cells=[x.account,groupFor(x),x.parent_account||'—',x.joined_on,String(x.level||1),x.remark||'—',String(x.direct_count),String(x.descendant_count),money(x[prefix+'stake_cents']),money(x[prefix+'balance_cents']),money(x[prefix+'total_withdraw_cents'],true),money(x[prefix+'daily_withdraw_cents'],true),money(x[prefix+'profit_cents'])];cells.forEach((v,i)=>{const values=[x[prefix+'stake_cents'],x[prefix+'balance_cents'],x[prefix+'total_withdraw_cents'],x[prefix+'daily_withdraw_cents'],x[prefix+'profit_cents']];const td=mk('td',i>=8?'money-cell '+amountClass(values[i-8],i===11?'daily':i===12?'profit':'normal'):'',v);if(i===0)td.classList.add('account-cell');tr.append(td)});const action=mk('td','actions-cell');const browse=mk('button','tiny','查看节点');browse.onclick=()=>{tableScope=x.account;query='';el('search').value='';render()};action.append(browse);{const ex=mk('button','tiny export-layers','逐层导出');ex.onclick=()=>downloadLayers(x.account);action.append(ex)}tr.append(action);tbody.append(tr)});
+  if(rows.length===0){const tr=mk('tr'),td=mk('td','empty','没有符合筛选条件的会员');td.colSpan=14;tr.append(td);tbody.append(tr)}
+  table.append(tbody);shell.append(table);wrap.append(shell);
+  const foot=mk('p','table-footnote','所属分组为该会员向上追溯到的最顶层根账号；直属一层统计不包含节点本人。逐层导出仅含本人数据，下面按第1层、第2层……分别汇总各层人数和金额，不列出下级个人明细。');wrap.append(foot);
+  return wrap
+}
+function renderRanking(){
+ const day=businessDay||dateNow(), all=computeRanking(members,day);
+ const ordered=rankSort==='asc'?all.slice().reverse():all;
+ const filtered=ordered.filter(x=>!query||x.account.toLowerCase().includes(query.toLowerCase()));
+ const root=mk('div','ranking');
+ const header=mk('div','ranking-header');header.append(mk('div','ranking-title',`第二层团队排行榜 · ${day}（北京时间）`));
+ header.append(mk('p','ranking-note','仅列出第2层账号；每个账号的成绩包含其本人和下方所有层级，按当日输赢＝今日新增建仓－当日提现计算。第1层根账号不参评。'));
+ const switcher=mk('div','ranking-switch');for(const [mode,text] of [['desc','从高到低'],['asc','从低到高']]){const btn=mk('button','button'+(rankSort===mode?' selected':''),text);btn.onclick=()=>{rankSort=mode;render()};switcher.append(btn)}header.append(switcher);root.append(header);
+ const legend=mk('div','age-legend');legend.append(mk('span','','入会时间背景等级：'));
+ for(let age=1;age<=6;age++){const tag=mk('span','age-chip age-'+age,`${age}个月${age===6?'+':''}`);legend.append(tag)}root.append(legend);
+ const shell=mk('div','table-scroll'),table=mk('table','member-table ranking-table'),thead=mk('thead'),tr=mk('tr');
+ ['名次','第二层会员账号','所属第1层分组','团队总人数','当日新增会员','当日新增建仓','当日提现','当日输赢'].forEach(x=>tr.append(mk('th','',x)));thead.append(tr);table.append(thead);
+ const body=mk('tbody');for(const entry of filtered){const row=mk('tr');const position=all.findIndex(x=>x.account===entry.account)+1;const actualRank=rankSort==='desc'?position:all.length-position+1;const vals=[String(actualRank),entry.account,entry.group,String(entry.teamCount),String(entry.newCount),money(entry.dailyStake),money(entry.dailyWithdraw,true),money(entry.score,true)];vals.forEach((v,i)=>{const td=mk('td',i>=5?'money-cell '+amountClass([entry.dailyStake,entry.dailyWithdraw,entry.score][i-5],i===6?'daily':i===7?'profit':'normal'):'',v);if(i===1)td.classList.add('account-cell');row.append(td)});body.append(row)}
+ if(!filtered.length){const row=mk('tr'),td=mk('td','empty',all.length?'没有符合搜索条件的第2层会员':'当前没有第2层会员，无法生成排行');td.colSpan=8;row.append(td);body.append(row)}
+ table.append(body);shell.append(table);root.append(shell);
+ root.append(mk('p','ranking-note','口径：当日新增建仓仅统计加入日期为今天的会员建仓金额；当日提现为北京时间今天已上传的数据。跨午夜自动切换；不会更改原始会员金额或记录。当前尚无单独的老会员追加充值流水，因此不在今日新增建仓内。'));
+ return root;
+}
+// Read-only left-to-right distribution map derived from the same /api/tree records.
+// Only display state changes when zooming, panning or folding a branch.
+function svgEl(tag, attrs={}, txt){
+ const x=document.createElementNS('http://www.w3.org/2000/svg',tag);
+ for(const [k,v] of Object.entries(attrs))x.setAttribute(k,String(v));
+ if(txt!==undefined)x.textContent=String(txt);return x;
+}
+function branchLayout(rows,folded){
+ const byId=new Map(rows.map(r=>[r.id,r]));
+ const children=new Map(rows.map(r=>[r.id,[]]));
+ const roots=[];
+ for(const r of rows){const parent=children.get(r.parent_id);if(parent)parent.push(r);else roots.push(r)}
+ const positions=new Map();let nextLeaf=0,maxDepth=0;
+ function place(r,depth,stack){
+  if(stack.has(r.id))return;const here=new Set(stack);here.add(r.id);
+  const visible=folded.has(r.id)?[]:children.get(r.id)||[];
+  const first=nextLeaf;
+  for(const c of visible)place(c,depth+1,here);
+  let y;
+  if(nextLeaf===first){y=nextLeaf*99+57;nextLeaf++}
+  else{const ys=visible.filter(x=>positions.has(x.id)).map(x=>positions.get(x.id).y);
+    y=ys.length?(Math.min(...ys)+Math.max(...ys))/2:nextLeaf++*99+57}
+  positions.set(r.id,{x:depth*315+52,y,depth});maxDepth=Math.max(maxDepth,depth)
+ }
+ for(const r of roots)place(r,0,new Set());
+ const edges=[];for(const r of rows){if(!positions.has(r.id)||!positions.has(r.parent_id)||folded.has(r.parent_id))continue;edges.push([r.parent_id,r.id])}
+ return {positions,edges,width:Math.max(720,(maxDepth+1)*315+110),height:Math.max(350,nextLeaf*99+115),roots:roots.length};
+}
+function renderBranch(){
+ const outer=mk('div','branch-view');
+ const intro=mk('div','branch-intro');
+ const info=mk('div','');info.append(mk('strong','','会员分支分布图'),mk('small','','从左向右 · 根据真实上下级结构自动生成 · 拖动画布、滚轮缩放 · 点击节点展开/收起'));
+ intro.append(info);
+ const controls=mk('div','branch-controls');
+ const zoomIn=mk('button','button','＋ 放大'),zoomOut=mk('button','button','－ 缩小'),fit=mk('button','button','适应屏幕'),all=mk('button','button','全部展开');
+ controls.append(zoomOut,zoomIn,fit,all);intro.append(controls);outer.append(intro);
+ const host=mk('div','branch-canvas');host.tabIndex=0;host.setAttribute('aria-label','可拖动、放大缩小的会员分支图');
+ const svg=svgEl('svg',{class:'branch-svg',preserveAspectRatio:'xMidYMid meet'});
+ const viewport=svgEl('g');svg.append(viewport);host.append(svg);outer.append(host);
+ const foot=mk('div','branch-caption','每个节点显示加入日期、账号、备注。层级结构只读；图上的展开/收起与缩放不会改变会员资料。');outer.append(foot);
+ function draw(){
+  const L=branchLayout(members,branchClosed);svg.setAttribute('viewBox',`0 0 ${Math.max(300,host.clientWidth||1100)} ${Math.max(320,host.clientHeight||590)}`);viewport.replaceChildren();
+  for(const [a,b]of L.edges){const p=L.positions.get(a),q=L.positions.get(b),start=p.x+227,end=q.x;
+   viewport.append(svgEl('path',{class:'branch-line',d:`M ${start} ${p.y} C ${start+65} ${p.y}, ${end-65} ${q.y}, ${end} ${q.y}`}))}
+  const highlight=query.toLowerCase();
+  for(const m of members){const pos=L.positions.get(m.id);if(!pos)continue;
+   const isRoot=pos.depth===0;const group=svgEl('g',{class:`branch-node${isRoot?' branch-root':''}${highlight&&(m.account.toLowerCase().includes(highlight)||String(m.remark||'').toLowerCase().includes(highlight))?' branch-match':''}`,transform:`translate(${pos.x},${pos.y-35})`,role:'button',tabindex:'0'});
+   group.append(svgEl('rect',{x:0,y:0,width:227,height:70,rx:13}));
+   group.append(svgEl('text',{x:13,y:17,class:'branch-date'},m.joined_on||'未填写加入日期'));
+   group.append(svgEl('text',{x:13,y:39,class:'branch-name'},m.account));
+   const note=String(m.remark||'无备注');group.append(svgEl('text',{x:13,y:58,class:'branch-remark'},`备注：${note.length>14?note.slice(0,14)+'…':note}`));
+   const kids=members.some(x=>x.parent_id===m.id);if(kids){group.append(svgEl('circle',{cx:225,cy:35,r:11,class:'branch-toggle'}));group.append(svgEl('text',{x:225,y:40,'text-anchor':'middle',class:'branch-toggle-label'},branchClosed.has(m.id)?'+':'−'))}
+   const toggle=()=>{if(!kids)return;branchClosed.has(m.id)?branchClosed.delete(m.id):branchClosed.add(m.id);draw()};
+   group.addEventListener('click',e=>{e.stopPropagation();if(!host.dataset.dragging)toggle()});
+   group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
+   viewport.append(group)
+  }
+  viewport.setAttribute('transform',`translate(${branchTransform.dx},${branchTransform.dy}) scale(${branchTransform.scale})`);
+  outer.dataset.height=String(L.height)
+ }
+ function apply(){viewport.setAttribute('transform',`translate(${branchTransform.dx},${branchTransform.dy}) scale(${branchTransform.scale})`)}
+ function reset(){const L=branchLayout(members,branchClosed);const w=Math.max(300,host.clientWidth),h=Math.max(320,host.clientHeight);
+  branchTransform.scale=Math.max(.16,Math.min(1.35,Math.min((w-55)/L.width,(h-45)/L.height)));
+  branchTransform.dx=Math.max(15,(w-L.width*branchTransform.scale)/2);
+  branchTransform.dy=Math.max(15,(h-L.height*branchTransform.scale)/2);draw()}
+ function zoom(factor,px=host.clientWidth/2,py=host.clientHeight/2){const before=branchTransform.scale,next=Math.max(.13,Math.min(3.8,before*factor));
+  branchTransform.dx=px-(px-branchTransform.dx)*next/before;
+  branchTransform.dy=py-(py-branchTransform.dy)*next/before;branchTransform.scale=next;apply()}
+ zoomIn.onclick=()=>zoom(1.28);zoomOut.onclick=()=>zoom(.78);fit.onclick=reset;all.onclick=()=>{branchClosed.clear();reset()};
+ host.addEventListener('wheel',e=>{e.preventDefault();const b=host.getBoundingClientRect();zoom(e.deltaY<0?1.12:.88,e.clientX-b.left,e.clientY-b.top)},{passive:false});
+ let drag=null;
+ svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,dx:branchTransform.dx,dy:branchTransform.dy};svg.setPointerCapture(e.pointerId)});
+ svg.addEventListener('pointermove',e=>{if(!drag)return;const ax=e.clientX-drag.x,ay=e.clientY-drag.y;
+  if(Math.abs(ax)+Math.abs(ay)>5)host.dataset.dragging='1';branchTransform.dx=drag.dx+ax;branchTransform.dy=drag.dy+ay;apply()});
+ svg.addEventListener('pointerup',()=>{drag=null;setTimeout(()=>delete host.dataset.dragging,0)});
+ svg.addEventListener('pointercancel',()=>{drag=null;delete host.dataset.dragging});
+ host.addEventListener('keydown',e=>{if(e.key==='+'||e.key==='=')zoom(1.2);else if(e.key==='-')zoom(.8);else if(e.key==='0')reset()});
+ requestAnimationFrame(reset);return outer
+}
+
+const EVENT_LABEL={create:'新增会员',update:'编辑会员',delete:'删除会员',import:'批量导入',undo:'撤回操作',seed_demo:'导入演示会员',login:'管理员登录',logout:'管理员退出'};
+function summarizeLog(log){const d=log.detail||{};
+ if(log.event==='update'){const before=d.before||{},after=d.after||{};const fields=[['account','账号'],['parent','直属上级'],['stake','建仓'],['total','总提现'],['remark','备注']];
+  const changes=fields.filter(([k])=>String(before[k]??'')!==String(after[k]??'')).map(([k,name])=>`${name}：${String(before[k]??'—')} → ${String(after[k]??'—')}`);
+  return changes.join('；')||'会员资料修改'}
+ if(log.event==='create')return `账号：${d.account||'—'}；备注：${d.remark||'无'}`;
+ if(log.event==='delete')return `账号：${d.account||'—'}`;
+ if(log.event==='import')return `模式：${d.mode||'—'}；匹配：${d.matched||0}位；提现变化：${money(d.withdraw_delta_cents||0,true)}`;
+ if(log.event==='undo')return `${d.label||'最近一次操作'}；影响${d.affected||0}条`;
+ if(log.event==='seed_demo')return `演示会员：${d.count||0}位`;
+ return '—'
+}
+function renderAdminLogs(){const root=mk('div','audit-wrap');root.append(mk('h3','','管理员操作日志'));
+ root.append(mk('p','audit-note','仅管理员可查看。记录操作时间、账号、类型和修改摘要；日志只追加，不会因撤回操作而删除。'));
+ const head=mk('div','audit-toolbar');const filter=mk('input','search');filter.placeholder='搜索管理员、账号、操作内容';
+ const reload=mk('button','button','↻ 刷新日志');head.append(filter,reload);root.append(head);
+ const tableWrap=mk('div','table-scroll');const table=mk('table','member-table audit-table');const thead=mk('thead'),tr=mk('tr');
+ ['时间（北京时间）','管理员','操作类型','内容'].forEach(h=>tr.append(mk('th','',h)));thead.append(tr);table.append(thead);
+ const tbody=mk('tbody');tbody.append(mk('tr','',''));table.append(tbody);tableWrap.append(table);root.append(tableWrap);
+ const fmt=t=>{try{return new Date(t).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(e){return t||''}};
+ async function load(){tbody.replaceChildren();const l=mk('tr');const cell=mk('td','empty','正在获取操作日志…');cell.colSpan=4;l.append(cell);tbody.append(l);
+  try{const data=await api('/admin/logs?limit=200');const rows=data.logs||[];
+    function fill(){const search=filter.value.trim().toLowerCase();tbody.replaceChildren();let count=0;
+     for(const log of rows){const value=[log.operator,log.event,JSON.stringify(log.detail||{})].join(' ').toLowerCase();if(search&&!value.includes(search))continue;
+      count++;const r=mk('tr');r.append(mk('td','',fmt(log.created_at)),mk('td','',log.operator||'系统'),mk('td','',EVENT_LABEL[log.event]||log.event),mk('td','audit-detail',summarizeLog(log)));tbody.append(r)}
+     if(!count){const r=mk('tr'),cell=mk('td','empty','没有匹配的操作日志');cell.colSpan=4;r.append(cell);tbody.append(r)}}
+    filter.oninput=fill;fill();
+  }catch(e){tbody.replaceChildren();const r=mk('tr'),cell=mk('td','empty','读取失败：'+e.message);cell.colSpan=4;r.append(cell);tbody.append(r)}}
+ reload.onclick=load;load();return root
+}
+async function syncUndoStatus(){if(role!=='admin')return;const btn=el('undoButton');if(!btn)return;
+ try{const x=await api('/admin/undo/status');btn.disabled=!x.can_undo;btn.title=x.can_undo?`可撤回：${x.label}`:x.reason;btn.dataset.actionId=x.action_id||'';btn.dataset.actionLabel=x.label||''}
+ catch(e){btn.disabled=true;btn.title='暂时无法查询撤回状态：'+e.message}}
+async function undoPrevious(){const btn=el('undoButton');if(btn.disabled)return;
+ const id=btn.dataset.actionId,desc=btn.dataset.actionLabel||'最近一次操作';
+ if(!id||!confirm(`确定撤回你最近一次的修改「${desc}」吗？\n仅撤回最近的管理员数据操作，并保留操作日志。`))return;
+ try{const d=await api('/admin/undo','POST',{action_id:id});showToast('已撤回：'+d.undone);await refresh();if(view==='logs')render();await syncUndoStatus()}
+ catch(e){showToast('撤回失败：'+e.message);await syncUndoStatus()}}
+
+function renderHelp(){const d=mk('div','help');d.innerHTML=`<h3>会员树状统计 · 使用说明</h3>
+<p>五项财务数据：建仓资金、余额、总提现、当日提现、输赢。其中输赢＝建仓资金－总提现；正数代表建仓金额大于累计提现，负数代表累计提现超过建仓金额。该口径不包含当前余额，不等同于最终投资盈亏。</p>
+<ol><li>新增会员：填写会员账号、加入日期、上级账号（可搜索选择）、建仓资金5000或10000元、历史累计总提现。</li>
+<li>节点卡片的每项金额分成三行：<b>本人</b>、<b>直属一层</b>（仅第一层下级，不含本人）、<b>节点总计</b>（本人＋所有下级所有层级）。</li>
+<li>余额与当日提现分别按照完整会员账号粘贴或上传；缺失会员的选中字段按0处理。可一次上传三列“会员账号 余额 当日提现”。</li>
+<li><b>当日提现自动增加总提现：</b>今天首次上传计入当天金额；同一天再次上传仅按新旧金额差额修正，避免重复累计；第二天上传计入新一天的金额。北京时间零点后“当日提现”重置显示为0，历史累计保留。</li>
+<li>上传时先点“预览核对”，核对会员数、置零数及总提现预计变化，再点“确认批量更新”。上传过程为完整事务，失败不会修改一半。</li>
+<li>层级从每个根节点的第1层开始向下递增；备注由管理员填写，最多20个字。</li><li>管理员账号独立分配，支持8名管理员同时在线；同一会员被其他管理员更新时会提示先刷新，防止覆盖。</li><li>金额颜色规则：当日提现有金额则红色、为0则黑色；输赢正数绿色、负数红色、为0黑色；其他金额正数和0黑色、负数红色。提现显示整数，数据库原始金额不变。</li><li>今天加入的会员节点淡绿色提醒；北京时间次日0点后自动恢复按入会时长的蓝色阶梯。满1、2、3、4、5、6个月逐档加深。每个节点的今日新增包括本人和全部后代，详细列出新增来自哪一层。</li><li>第二层团队排行榜：只列出每个根节点的直属会员（第2层），将该会员本人及全部层级下属的当日新增建仓减去当日提现作为排名依据。按北京时间每日0点更新，支持升序和降序。</li><li>分支分布图只读：按当前会员上下级关系从左往右绘制，节点包含加入日期、账号和备注；可滚轮缩放、拖动画布、搜索、展开收起，操作不写数据库。</li><li>管理员操作日志仅管理员可查看，包含操作者、时间、操作类型、内容摘要；撤回会额外记一条日志，历史不会被删除。</li><li>管理员「撤回上一步」只允许撤回本人最近一次创建、编辑、删除、批量导入或演示导入。若另一管理员已提交新的修改，或数据发生冲突，则拒绝撤回；撤回后会员版本号仍然递增，避免覆盖他人的旧窗口数据。</li><li>每个会员卡片和表格行均有「逐层导出」，导出本人一行，随后为第1层、第2层直到最深层的汇总（人数、建仓、余额、总提现、当日提现和输赢），不包含下级逐人明细。普通查看成员也可导出这些授权查看的汇总。</li><li>总提现仍允许管理员手动修改，用来校正历史累计；请谨慎使用并定期备份。数据仅供授权内部人员查看。</li><li>表格数据菜单可按账号搜索、按所在分组筛选、切换本人／直属一层／节点全部层级统计。每个会员均可导出本人及下级按层级汇总的Excel表格（仅汇总，不显示下级逐人明细）。</li></ol>
+<div class="alert">注意：导入的是“当天累计提现快照”，不是每一笔新增提现流水。同日上传两次相同数据不会重复添加。需要把会员账号列设为文本，保留前导0。</div>`;return d}
+function importPanel(){const wrap=mk('div','import-panel');wrap.innerHTML=`<h3>上传会员余额 / 当日提现</h3><p>按会员账号匹配。三列模式允许某些行只有「账号＋余额」，这类行当日提现自动按0处理；未上传到的其他会员对应字段也设0。</p><div class="import-modes"><button class="mode" data-mode="balance">仅余额</button><button class="mode" data-mode="daily">仅当日提现</button><button class="mode" data-mode="both">余额 + 当日提现</button></div><textarea id="importText" placeholder="DEMO000  1000.00  100.00&#10;DEMO001  2000.00  300.00"></textarea><div class="import-controls"><input type="file" accept=".csv,.txt,.tsv,.xlsx,.xlsm" id="uploadFile"><button class="button" id="sample">填入示例</button><button class="button primary" id="previewButton">① 预览核对</button><button class="button primary" disabled id="confirmButton">② 确认批量更新</button></div><div class="preview" id="previewBox">尚未上传数据。</div><div class="alert">⚠ 余额和当日提现按所选字段全量覆盖，文件没有的账号设为0。上传“当日提现”将自动按当天新旧差额更新“总提现”，同日重复上传不会重复累计。</div>`;
+wrap.querySelectorAll('.mode').forEach(b=>{b.classList.toggle('selected',b.dataset.mode===importMode);b.onclick=()=>{importMode=b.dataset.mode;previewJob=null;render()}});
+wrap.querySelector('#sample').onclick=()=>{wrap.querySelector('#importText').value=importMode==='both'?'DEMO000 1000.00 100.00\nDEMO001 2000.00 300.00':importMode==='balance'?'DEMO000 1000.00\nDEMO001 2000.00':'DEMO000 100.00\nDEMO001 300.00'};
+wrap.querySelector('#previewButton').onclick=async()=>{const fd=new FormData();fd.append('mode',importMode);fd.append('content',wrap.querySelector('#importText').value);const file=wrap.querySelector('#uploadFile').files[0];if(file)fd.append('upload',file);try{const d=await api('/import/preview','POST',fd);previewJob=d.job_id;wrap.querySelector('#confirmButton').disabled=!d.valid;wrap.querySelector('#previewBox').textContent=`匹配成功：${d.matched} 位会员\n当日提现所属日期：${d.daily_date||'—'}\n预计对累计总提现的调整：${money(d.withdraw_delta_cents||0,true)}\n未出现在本次上传中（将置0）：${d.missing} 位\n不存在的会员账号：${d.unmatched_count} 个 ${d.unmatched.join('、')}\n重复账号：${d.duplicates.length} 个 ${d.duplicates.join('、')}\n格式错误：${d.errors.length} ${d.errors.join('；')}\n更新项目：${importMode==='balance'?'仅余额':importMode==='daily'?'仅当日提现':'余额和当日提现'}\n${d.summary}`;if(!d.valid)showToast('检查发现问题，本批次不可提交')}catch(e){wrap.querySelector('#previewBox').textContent='预览失败：'+e.message;wrap.querySelector('#confirmButton').disabled=true}};
+wrap.querySelector('#confirmButton').onclick=async()=>{if(!previewJob)return;const agree=confirm('确认进行全量更新吗？本次未上传的会员，对应选定字段将被置0。');if(!agree)return;try{const res=await api('/import/'+previewJob+'/confirm','POST',{});previewJob=null;showToast(`成功更新 ${res.matched} 位会员；总提现调整 ${money(res.withdraw_delta_cents||0,true)}`);await refresh();render();await syncUndoStatus()}catch(e){showToast(e.message)}};
+return wrap}
+function render(){if(!role)return;const c=el('content');el('totalMembers').textContent=members.length;setAmount('totalStake',total.stake_cents);setAmount('totalBalance',total.balance_cents);setAmount('totalProfit',total.profit_cents,false,'profit');setAmount('totalWithdraw',total.total_withdraw_cents,true);setAmount('totalDaily',total.daily_withdraw_cents,true,'daily');el('updatedAt').textContent='最近更新：'+(window.lastRefresh||'—');const labels={tree:'会员树状图',list:'会员列表',table:'表格数据',ranking:'团队排行榜',branch:'分支分布图',logs:'管理员操作日志',import:'批量上传',help:'操作说明'};el('crumb').textContent=labels[view];el('sectionTitle').textContent=labels[view];document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));el('seedButton').classList.toggle('hidden',!(role==='admin'&&members.length===0));el('search').classList.toggle('hidden',!['tree','list','table','ranking','branch'].includes(view));el('expandAll').classList.toggle('hidden',view!=='tree');el('collapseAll').classList.toggle('hidden',view!=='tree');c.replaceChildren(view==='help'?renderHelp():view==='import'?importPanel():view==='list'?renderList():view==='table'?renderDataTable():view==='ranking'?renderRanking():view==='branch'?renderBranch():view==='logs'?renderAdminLogs():renderTree());lastDisplayDay=businessDay||dateNow();if(!members.length&&['tree','list'].includes(view))message(role==='admin'?'暂无会员。点击“新增会员”或者在操作说明中了解如何导入演示数据。':'暂无会员数据，请联系管理员添加。')}
+async function refresh(silent=false){if(!role)return;try{const d=await api('/tree');const changed=JSON.stringify(d.members)!==JSON.stringify(members);const dateChanged=businessDay!==d.business_day;members=d.members;total=d.totals;businessDay=d.business_day||dateNow();window.lastRefresh=new Date().toLocaleString('zh-CN');if(changed||dateChanged||!silent||dateNow()!==lastDisplayDay)render();else el('updatedAt').textContent='最近同步：'+window.lastRefresh}catch(e){if(e.message.includes('登录')){setRole(null,null);return}if(!silent)message('加载失败：'+e.message)}}
+function openEdit(m=null){if(role!=='admin')return;editId=m?.id||null;el('dialogTitle').textContent=m?'编辑会员':'新增会员';el('editId').value=editId||'';el('editAccount').value=m?.account||'';el('editDate').value=m?.joined_on||dateNow();el('editWithdraw').value=m?(m.total_withdraw_cents/100).toFixed(2):'0';el('editStake').value=m?String(m.stake_cents/100):'5000';el('editRemark').value=m?.remark||'';el('editError').textContent='';const opts=el('parentAccounts');opts.replaceChildren();members.forEach(x=>{if(x.id!==editId)opts.append(new Option(x.account,x.account))});const byId=index();el('editParentAccount').value=m?.parent_id?(byId.get(m.parent_id)?.account||''):'';el('editDialog').showModal()}
+async function saveEdit(e){e.preventDefault();const payload={account:el('editAccount').value.trim(),joined_on:el('editDate').value,parent_account:el('editParentAccount').value.trim()||null,stake:el('editStake').value,total_withdraw:el('editWithdraw').value.trim(),remark:el('editRemark').value.trim(),expected_revision:editId?(members.find(x=>x.id===editId)?.revision||null):null};try{await api(editId?'/members/'+editId:'/members',editId?'PUT':'POST',payload);el('editDialog').close();showToast(editId?'会员已更新':'会员添加成功');await refresh();await syncUndoStatus()}catch(e){el('editError').textContent=e.message}}
+async function removeEdit(){if(!editId||!confirm('确定删除该会员？有下级的会员不可直接删除。'))return;try{await api('/members/'+editId+'?expected_revision='+encodeURIComponent(members.find(x=>x.id===editId)?.revision||0),'DELETE',{});el('editDialog').close();showToast('会员已删除');await refresh();await syncUndoStatus()}catch(e){el('editError').textContent=e.message}}
+function configure(){el('viewerTab').onclick=()=>selectedLogin('viewer');el('adminTab').onclick=()=>selectedLogin('admin');el('loginButton').onclick=login;el('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')login()});el('logoutButton').onclick=logout;document.querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>{if(['import','logs'].includes(x.dataset.view)&&role!=='admin')return;view=x.dataset.view;render()});el('search').oninput=e=>{query=e.target.value.trim();render()};el('expandAll').onclick=()=>{collapsed.clear();render()};el('collapseAll').onclick=()=>{collapsed=new Set(members.map(x=>x.id));render()};el('addButton').onclick=()=>openEdit();el('undoButton').onclick=undoPrevious;el('seedButton').onclick=async()=>{if(!confirm('确认导入七个虚拟演示会员吗？仅可在全空数据库执行。'))return;try{await api('/demo/seed','POST',{});showToast('演示会员已导入');await refresh();await syncUndoStatus()}catch(e){showToast(e.message)}};el('closeEdit').onclick=()=>el('editDialog').close();el('cancelEdit').onclick=()=>el('editDialog').close();el('editForm').onsubmit=saveEdit;el('deleteEdit').onclick=removeEdit;el('exportBtn').onclick=()=>{showToast('此公开预览版暂不提供CSV下载')};selectedLogin('viewer')}
+configure();api('/me').then(async d=>{if(d.role){setRole(d.role,d.csrf,d.username);await refresh();await syncUndoStatus()}}).catch(()=>{});setInterval(()=>{if(role&&view!=='import'&&!document.querySelector('dialog[open]'))refresh(true)},15000);
+</script></body></html>
