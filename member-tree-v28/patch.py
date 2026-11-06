@@ -123,7 +123,10 @@ badgeStart=js.find("const amount=svgEl('g',{class:'branch-withdraw-badge'")
 badgeIf=js.rfind("if(withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0){",0,badgeStart)
 if badgeStart<0 or badgeIf<0:raise RuntimeError("expected unique withdrawal badge anchor")
 js=js[:badgeIf]+"}\n   if(!compactMode&&"+js[badgeIf+len("if("):]
-js=rep(js,"if(role==='admin'){\n     const editor=svgEl","if(!compactMode&&role==='admin'){\n     const editor=svgEl","hide edit")
+editorStart=js.find("const editor=svgEl('g',{class:'branch-editbtn'")
+editorIf=js.rfind("if(role==='admin'){",0,editorStart)
+if editorStart<0 or editorIf<0:raise RuntimeError("branch editor anchor missing")
+js=js[:editorIf]+"if(!compactMode&&role==='admin'){"+js[editorIf+len("if(role==='admin'){"):]
 js=rep(js,"cx:260,cy:51,r:12,class:'branch-toggle'","cx:cardW,cy:cardH/2,r:compactMode?8:12,class:'branch-toggle'","fold circle")
 js=rep(js,"x:260,y:57,'text-anchor':'middle',class:'branch-toggle-label'","x:cardW,y:cardH/2+(compactMode?3:6),'text-anchor':'middle',class:'branch-toggle-label'","fold label")
 js=rep(js,"(w-48)/310","(w-48)/(compactMode?200:310)","focus width")
