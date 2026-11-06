@@ -23,7 +23,8 @@ jobs:
       - name: Run V26 and regression tests
         run: |
           cd member-tree
-          python3 -m pytest -q tests/test_v26_duplicate_reconcile.py tests/test_v11_backup.py tests/test_v25_all_level_stake.py tests/test_v20_daily_settlement.py tests/test_v24_palette_risk.cjs || exit 1
+          python3 -m pytest -q tests/test_v26_duplicate_reconcile.py tests/test_v11_backup.py tests/test_v25_all_level_stake.py tests/test_v20_daily_settlement.py || exit 1
+          node tests/test_v24_palette_risk.cjs
       - name: Pack tested files and commit to test branch
         run: |
           tar -czf /tmp/member-tree-v26.tgz member-tree
