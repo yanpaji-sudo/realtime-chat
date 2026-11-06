@@ -16,9 +16,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           selections = {
-            'member-tree/app.py': [(1270,1365),(1480,1505)],
-            'member-tree/static/app.js': [(505,524),(880,893)],
-            'member-tree/static/style.css': [(305,327),(412,417)],
+            'member-tree/app.py': [(1356,1483)],
+            'member-tree/static/app.js': [(509,518)],
+            'member-tree/static/style.css': [(325,334)],
           }
           for f,ranges in selections.items():
             lines=Path(f).read_text().splitlines()
