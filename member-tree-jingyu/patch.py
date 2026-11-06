@@ -11,7 +11,7 @@ html=html_file.read_text(encoding='utf-8')
 # Explicitly disconnect this branch from all configurable external database URLs.
 # The test site CANNOT consult or write the production PostgreSQL database.
 before="DB_URL = os.environ.get('DATABASE_URL', 'sqlite:///' + str(ROOT / 'local-demo.db'))"
-after="DB_URL = 'sqlite:////tmp/jingyu_isolated_member_tree_1000.sqlite3'  # isolated TEST-ONLY database; ignores DATABASE_URL"
+after="DB_URL = 'sqlite:////tmp/jingyu_isolated_member_tree_v28_1000.sqlite3'  # isolated TEST-ONLY database; ignores DATABASE_URL"
 assert app.count(before)==1, 'DB initialization code changed'
 app=app.replace(before,after)
 assert "COOKIE = 'member_tree_v3_session'" in app
@@ -35,7 +35,7 @@ assert '鲸鱼小组数据报表（' in app and '鲸鱼小组数据报表（' in
 assert html.count('会员树状统计系统 · 数据报表V22版')==2
 html=html.replace('会员树状统计系统 · 数据报表V22版','会员树状统计系统 · 鲸鱼小组测试版')
 html=html.replace('8位管理员独立登录','3位测试管理员独立登录')
-html=html.replace('<title>会员树状系统 · V21实时报表与树状图</title>','<title>鲸鱼小组 · 独立测试版 V27</title>')
+html=html.replace('<title>会员树状系统 · V21实时报表与树状图</title>','<title>鲸鱼小组 · 独立测试版 V28</title>')
 html=html.replace('▥　今日报表总览','▥　鲸鱼小组数据报表')
 js=js.replace("report:'今日报表总览'","report:'鲸鱼小组数据报表'")
 js=js.replace('8位管理员','3位测试管理员')
@@ -48,7 +48,7 @@ seed_source=r'''
 # Independent whale group synthetic testing (1,000 FAKE accounts, no customer data)
 def jingyu_seed_1000():
     import random
-    if DB_URL != 'sqlite:////tmp/jingyu_isolated_member_tree_1000.sqlite3':
+    if DB_URL != 'sqlite:////tmp/jingyu_isolated_member_tree_v28_1000.sqlite3':
         raise RuntimeError('鲸鱼测试服务数据库隔离检查失败')
     rng=random.Random(int.from_bytes(os.urandom(16),'big'))
     today=date.fromisoformat(current_day())
@@ -64,10 +64,11 @@ def jingyu_seed_1000():
         join_dates={}
         group_totals={g:{'n':0,'balance':0} for g in groups}
         rows=[]
+        random_accounts=iter(rng.sample(range(100000,1000000),995))
         for i in range(1000):
             g=groups[i%5]
             is_root=i<5
-            account=g if is_root else ('JY%06d'%i)
+            account=g if is_root else ('JY%06d'%next(random_accounts))
             mid=str(uuid.uuid4())
             if is_root:
                 parent=None
@@ -177,7 +178,7 @@ import os
 from sqlalchemy import text
 from app import DB_URL, engine, db_init, jingyu_seed_1000
 def test_1000_fake_members_and_separate_db():
-    assert DB_URL == 'sqlite:////tmp/jingyu_isolated_member_tree_1000.sqlite3'
+    assert DB_URL == 'sqlite:////tmp/jingyu_isolated_member_tree_v28_1000.sqlite3'
     assert 'postgres' not in DB_URL
     db_init()
     n=jingyu_seed_1000()
@@ -192,4 +193,4 @@ def test_1000_fake_members_and_separate_db():
         assert db.execute(text("SELECT COUNT(*) FROM daily_withdraw_ledger")).scalar() > 0
     assert jingyu_seed_1000()==1000
 ''',encoding='utf-8')
-print('JINGYU patch applied: V27 features preserved, independent database, 1000 synthetic members.')
+print('JINGYU V28 patch applied: compact view and all prior features preserved, independent database, 1000 synthetic members.')
