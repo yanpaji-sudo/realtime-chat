@@ -173,8 +173,8 @@ checks = [
     ("if(accounts.has(lower))throw Error('备份包含重复会员账号');", ""),
     ("await api('/admin/restore','POST',{state:data,confirm:'RESTORE_WITH_BACKUP'});",
      "const restoreResult=await api('/admin/restore','POST',{state:data,confirm:'RESTORE_WITH_BACKUP'});"),
-    ("showToast(\`已从加密备份恢复 \${active.length} 位会员及操作日志\`)",
-     "showToast(\`成功恢复 \${restoreResult.members} 位会员；安全去重 \${restoreResult.duplicate_members_removed||0} 条\`)"),
+    ("showToast(`已从加密备份恢复 ${active.length} 位会员及操作日志`)",
+     "showToast(`成功恢复 ${restoreResult.members} 位会员；安全去重 ${restoreResult.duplicate_members_removed||0} 条`)"),
     ("🔵 今日提现：", "⚡ 今日提现："),
 ]
 for a, b in checks:
