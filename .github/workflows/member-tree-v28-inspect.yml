@@ -1,0 +1,34 @@
+name: Inspect V28 compact tree implementation
+on:
+  push:
+    branches: [member-tree-v28-compact-view]
+    paths: ['.github/workflows/member-tree-v28-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source and print focused code (no user data)
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('member-tree/static/app.js').read_text().splitlines()
+          css=Path('member-tree/static/style.css').read_text().splitlines()
+          html=Path('member-tree/static/index.html').read_text()
+          for a,b in [(1,28),(200,298),(380,430),(488,578),(774,807)]:
+              print('--- APP.JS lines',a,b)
+              for n in range(a-1,min(len(js),b)):
+                  if n+1 in (201,202,203): print(n+1,'[login omitted]')
+                  else: print(n+1,js[n][:5200])
+          print('--- RELEVANT CSS RULES')
+          for i,line in enumerate(css):
+              if any(v in line for v in ('.tree ','.tree{','.member{','.branch-node','branch-canvas','branch-svg','branch-layout','branch-stage','.branch-intro','.branch-controls','.member-top','.member-details','.member-title','.member .','branch-tooltip','branch-hover','branch-name','branch-date','branch-remark','branch-withdraw','branch-node>','branch-node >')):
+                  print(i+1,line[:1800])
+          for phrase in ('id="treeGroupFilter"','id="withdrawTreeBtn"','id="branchZoomOut"','id="treeFullscreenBtn"','class="branch-controls"','id="riskTreeBtn"'):
+              i=html.find(phrase)
+              print('--- HTML',phrase,'position',i)
+              if i>=0: print(html[max(0,i-800):i+1300])
+          PY
