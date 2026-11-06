@@ -1,0 +1,35 @@
+name: Inspect member-tree V26 safely
+on:
+  push:
+    branches: [member-tree-v26-safe-fix]
+    paths: ['.github/workflows/member-tree-v26-inspect.yml', 'member-tree-v26/**']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect unpacked source (read only)
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('member-tree')
+          print('--- FILE LIST ---')
+          for p in sorted(root.rglob('*')):
+              if p.is_file():
+                  print(str(p),p.stat().st_size)
+          print('--- RELEVANT STATIC / TEMPLATE SNIPPETS ---')
+          pat=re.compile(r'提现光圈|关闭提现|今日提现|恢复失败|备份包含重复|重复会员账号|mtbackup|一键加密备份|恢复加密备份|box-shadow|halo|glow|restoreBackup|restore_backup|backup',re.I)
+          for p in sorted(root.rglob('*')):
+              if p.is_file() and p.suffix.lower() in ('.js','.css','.html','.py'):
+                  try: lines=p.read_text(encoding='utf-8').splitlines()
+                  except Exception: continue
+                  hits=[(i,l) for i,l in enumerate(lines) if pat.search(l)]
+                  if hits:
+                      print('FILE',p,'MATCHES',len(hits))
+                      for i,l in hits[:65]:
+                          print('LINE',i+1,repr(l[:350]))
+          PY
