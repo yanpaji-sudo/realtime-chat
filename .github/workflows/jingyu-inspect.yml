@@ -10,29 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read code structure (no data or credentials)
+      - name: Read exact safe source lines
         run: |
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          py=Path('member-tree/app.py').read_text().splitlines()
-          js=Path('member-tree/static/app.js').read_text().splitlines()
-          html=Path('member-tree/static/index.html').read_text().splitlines()
-          patterns={
-             'member-tree/app.py':(py,r'DATABASE_URL|sqlite|engine\s*=|admin_users|ADMIN_|PASSWORD|CREATE TABLE|CREATE TABLE IF NOT EXISTS|@app\.get\(|@app\.post\(|def seed|def init|def require\(|INSERT INTO members|INSERT INTO admin|def admin_login|group_account|report|initialize'),
-             'member-tree/static/app.js':(js,r'报表|鲸鱼|ADMIN|admin\d+|密码|登录|groups|小组|report|入会|testRestore|seedButton|今日新增'),
-             'member-tree/static/index.html':(html,r'报表|会员树状|鲸鱼|管理员|登录|seedButton|testRestoreBtn'),
+          sel={
+           'member-tree/app.py':[(27,49),(269,287),(345,380),(1210,1250),(760,770)],
+           'member-tree/static/app.js':[(740,790)],
+           'member-tree/static/index.html':[(1,5)]
           }
-          for file,(lines,pat) in patterns.items():
-              print('======',file,len(lines),'lines ======')
-              hits=[(i,line) for i,line in enumerate(lines) if re.search(pat,line,re.I)]
-              for i,line in hits[:100]:
-                  if re.search(r'PASSWORD|SECRET|password|passwd|admin.*=',line,re.I):
-                      print('LINE',i+1,'[credential-bearing line redacted]',line[:70].split('=')[0])
-                  else: print('LINE',i+1,repr(line[:380]))
-          print('==== APP TOP IMPORTS AND DB ==== ')
-          for i,line in enumerate(py[:170]):
-              if not re.search(r'password|secret|hash|passwd|credential',line,re.I):
-                  print(i+1,repr(line[:500]))
+          for f,rr in sel.items():
+           print("FILE",f)
+           ls=Path(f).read_text().splitlines()
+           for a,b in rr:
+            for i in range(a-1,min(b,len(ls))):
+             x=ls[i]
+             if 'password' in x.lower() or 'SESSION_SECRET' in x or 'ADMIN_HASH' in x or 'VIEWER_HASH' in x:
+              if f.endswith('app.py') and i+1 in (35,37,38):
+               print(i+1,'[configuration lines redacted]')
+              else:
+               print(i+1,x[:500].replace("hash_pw(data.password)","hash_pw([input])"))
+             else: print(i+1,x[:1800])
           PY
