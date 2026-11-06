@@ -22,11 +22,13 @@ jobs:
       - name: Test isolation, synthetic 1000 members, and V27 features
         run: |
           cd member-tree
+          rm -f /tmp/jingyu_isolated_member_tree_1000.sqlite3
+          JINGYU_AUTOFILL=0 python3 -m pytest -q tests/test_v26_duplicate_reconcile.py tests/test_v25_all_level_stake.py
+          rm -f /tmp/jingyu_isolated_member_tree_1000.sqlite3
           python3 -m pytest -q tests/test_jingyu_isolation.py
           node tests/test_v27_red_withdrawal_ui.cjs
           node tests/test_v24_palette_risk.cjs
           node tests/test_v23_compact_ai.cjs
-          python3 -m pytest -q tests/test_v26_duplicate_reconcile.py tests/test_v25_all_level_stake.py
       - name: Pack tested copy for separate Render service
         run: |
           tar -czf /tmp/jingyu-isolated.tgz member-tree
