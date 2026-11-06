@@ -1,0 +1,29 @@
+name: Inspect member-tree V26 safely
+on:
+  push:
+    branches: [member-tree-v26-safe-fix]
+    paths: ['.github/workflows/member-tree-v26-inspect.yml', 'member-tree-v26/**']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect restore and tree rendering (read only)
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          selections = {
+            'member-tree/app.py': [(1356,1483)],
+            'member-tree/static/app.js': [(509,518)],
+            'member-tree/static/style.css': [(325,334)],
+          }
+          for f,ranges in selections.items():
+            lines=Path(f).read_text().splitlines()
+            for a,b in ranges:
+              print('>>> FILE',f,'LINES',a,b)
+              for i in range(a-1,min(b,len(lines))):
+                print(f'{i+1}: {lines[i][:5000]}')
+          PY
