@@ -119,7 +119,10 @@ prepend="""if(compactMode){
     }else{
     group.append(svgEl('text',{x:13,y:18,class:'branch-date'}"""
 js=rep(js,anchor,prepend,"tiny text start")
-js=rep(js,"if(withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0){\n     const amount=svgEl","}\n    if(!compactMode&&withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0){\n     const amount=svgEl","tiny text end hide badge")
+badgeStart=js.find("const amount=svgEl('g',{class:'branch-withdraw-badge'")
+badgeIf=js.rfind("if(withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0){",0,badgeStart)
+if badgeStart<0 or badgeIf<0:raise RuntimeError("expected unique withdrawal badge anchor")
+js=js[:badgeIf]+"}\n   if(!compactMode&&"+js[badgeIf+len("if("):]
 js=rep(js,"if(role==='admin'){\n     const editor=svgEl","if(!compactMode&&role==='admin'){\n     const editor=svgEl","hide edit")
 js=rep(js,"cx:260,cy:51,r:12,class:'branch-toggle'","cx:cardW,cy:cardH/2,r:compactMode?8:12,class:'branch-toggle'","fold circle")
 js=rep(js,"x:260,y:57,'text-anchor':'middle',class:'branch-toggle-label'","x:cardW,y:cardH/2+(compactMode?3:6),'text-anchor':'middle',class:'branch-toggle-label'","fold label")
