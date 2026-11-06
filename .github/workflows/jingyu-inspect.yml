@@ -10,26 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read exact safe source lines
+      - name: Read report and startup entry points
         run: |
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          sel={
-           'member-tree/app.py':[(27,49),(269,287),(345,380),(1210,1250),(760,770)],
-           'member-tree/static/app.js':[(740,790)],
-           'member-tree/static/index.html':[(1,5)]
-          }
-          for f,rr in sel.items():
-           print("FILE",f)
-           ls=Path(f).read_text().splitlines()
-           for a,b in rr:
-            for i in range(a-1,min(b,len(ls))):
-             x=ls[i]
-             if 'password' in x.lower() or 'SESSION_SECRET' in x or 'ADMIN_HASH' in x or 'VIEWER_HASH' in x:
-              if f.endswith('app.py') and i+1 in (35,37,38):
-               print(i+1,'[configuration lines redacted]')
-              else:
-               print(i+1,x[:500].replace("hash_pw(data.password)","hash_pw([input])"))
-             else: print(i+1,x[:1800])
+          py=Path('member-tree/app.py').read_text().splitlines()
+          for a,b in [(130,159),(191,260),(494,545),(1900,1970),(1970,2030)]:
+           print('--- app.py',a,b)
+           for i in range(a-1,min(b,len(py))):
+            v=py[i]
+            if 'password' in v.lower() or 'SECRET' in v: print(i+1,'[credentials redacted]')
+            else: print(i+1,v[:1300])
           PY
