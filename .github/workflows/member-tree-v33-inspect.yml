@@ -1,4 +1,4 @@
-name: Inspect V33 alert timeline and ranking persistence
+name: Inspect V33 precise ranking and team-name pathways
 on:
   push:
     branches: [member-tree-v33-alerts-rank-remarks]
@@ -10,36 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract source read-only
+      - name: Inspect exact handlers and formulas
         run: |
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          files=['member-tree/app.py','member-tree/static/app.js','member-tree/static/style.css']
-          terms={
-           'member-tree/app.py':r'CREATE TABLE|team_names|rank|report|rename|remark|memo|stake|withdraw|deposit|business_day|on_event|UPDATE members|ALTER TABLE|def db_init',
-           'member-tree/static/app.js':r'teamName|team_names|renameTeam|rank|teamRemark|teamNotes|备注|改队名|team_name|group_account|v29Position|positionAlarm|v29TeamStats|daily_withdraw|daily_stake',
-           'member-tree/static/style.css':r'v29-position|ranking|risk-banner|branch-view|v28-compact-tooltip|branch-canvas',
-          }
-          for file in files:
-           lines=Path(file).read_text(encoding='utf-8').splitlines()
-           p=re.compile(terms[file],re.I)
-           match=[i for i,l in enumerate(lines) if p.search(l)]
-           print('--- FILE',file,'total',len(lines),'match',len(match))
-           for i in match[:140 if file.endswith('.js') else (100 if file.endswith('.py') else 25)]:
-            if file.endswith('.py') and ('password' in lines[i].lower() or 'secret' in lines[i].lower()):
-             print(i+1,'[redacted]')
-            else:
-             print(i+1,repr(lines[i][:420]))
-          js=Path('member-tree/static/app.js').read_text(encoding='utf-8').splitlines()
-          for a,b in [(1,36),(210,255),(272,335),(463,565),(640,760),(950,966)]:
-           print('--- JS LINES',a,b)
-           for i in range(a-1,min(b,len(js))): print(i+1,js[i][:2100])
-          py=Path('member-tree/app.py').read_text(encoding='utf-8').splitlines()
-          for a,b in [(35,70),(110,215),(400,475),(980,1050),(1660,1750)]:
-           print('--- PY LINES',a,b)
-           for i in range(a-1,min(b,len(py))):
-            if any(k in py[i].lower() for k in ('password','secret','token')): print(i+1,'[redacted]')
-            else: print(i+1,py[i][:1350])
+          js=Path('member-tree/static/app.js').read_text().splitlines()
+          py=Path('member-tree/app.py').read_text().splitlines()
+          for a,b in [(105,175),(210,265),(344,368),(635,705)]:
+           print('===== JS',a,b)
+           for i in range(a-1,min(len(js),b)):print(str(i+1)+':'+js[i][:2200])
+          markers=['team_names','team-name','rename_team','team_name','def active_rows','def get_tree','/api/tree','def restore_backup','def run_restore','def backup','def ranking','def tree']
+          for mark in markers:
+           indexes=[i for i,x in enumerate(py) if mark.lower() in x.lower()]
+           print('===== PY MARK',mark,'LINES',indexes[:30])
+           for i in indexes[:7]:
+            for k in range(max(0,i-5),min(len(py),i+11)):
+             if any(q in py[k].lower() for q in ('password','secret','token')): print(k+1,'[redacted]')
+             else:print(k+1,py[k][:2200])
           PY
