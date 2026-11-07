@@ -104,6 +104,15 @@ s=s[:start]+chunk+s[stop:]
 start=s.index("@app.post('/api/admin/restore')")
 stop=s.index("# V14: restore members",start)
 chunk=s[start:stop]
+chunk=swap(chunk,"        write_lock(db)\n        db.execute(text('DELETE FROM import_jobs'))",
+"""        write_lock(db)
+        # Retain current nonblank member notes when an older backup omits them.
+        previous_remarks={str(r['account']).casefold():r['remark'] for r in
+          db.execute(text("SELECT account,remark FROM members WHERE deleted=0 AND remark<>''")).mappings()}
+        for backup_member in rows:
+            if not backup_member['remark']:
+                backup_member['remark']=previous_remarks.get(str(backup_member['account']).casefold(),'')
+        db.execute(text('DELETE FROM import_jobs'))""",'preserve member remarks from older backups')
 chunk=swap(chunk,"        db.execute(text('DELETE FROM team_names'))","        preserved_team_names=v33_capture_team_names(db)\n        db.execute(text('DELETE FROM team_names'))",'restore backup capture labels')
 chunk=swap(chunk,"        for item in report_overrides:\n            db.execute(text(","        v33_restore_team_names(db,preserved_team_names)\n        for item in report_overrides:\n            db.execute(text(",'restore backup labels')
 s=s[:start]+chunk+s[stop:]
@@ -111,6 +120,13 @@ s=s[:start]+chunk+s[stop:]
 start=s.index("# V14: restore members")
 stop=s.index("# V15 report extension",start)
 chunk=s[start:stop]
+chunk=swap(chunk,"        parsed=json.loads(job['rows_json'])\n        now=utc_now();today=current_day()",
+"""        parsed=json.loads(job['rows_json'])
+        previous_remarks={str(r['account']).casefold():r['remark'] for r in existing if r.get('remark')}
+        for imported in parsed:
+            if not imported['remark']:
+                imported['remark']=previous_remarks.get(str(imported['account']).casefold(),'')
+        now=utc_now();today=current_day()""",'preserve member notes from legacy Excel')
 chunk=swap(chunk,"        db.execute(text('DELETE FROM team_names'))","        preserved_team_names=v33_capture_team_names(db)\n        db.execute(text('DELETE FROM team_names'))",'restore legacy capture labels')
 chunk=swap(chunk,"        db.execute(text(\"UPDATE reporting_meta SET value=:d WHERE name='tracking_since'\"),",
  "        v33_restore_team_names(db,preserved_team_names)\n        db.execute(text(\"UPDATE reporting_meta SET value=:d WHERE name='tracking_since'\"),",'restore legacy labels')
