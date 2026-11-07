@@ -38,7 +38,7 @@ assert(f,'position rule missing');
 const c={};vm.createContext(c);
 vm.runInContext('let positionAlarmById=null;\n'+f[0]+';this.check=v29Position',c);
 const cases=[
- [5000,0,7500,7500,7000,0,false],
+ [5000,0,7500,7500,7000,500,false],
  [5000,0,7500.01,7500,7000,750.01,true],
  [5000,5,9000,7500,7000,2000,true],
  [10000,0,15000,15000,13000,2000,false],
