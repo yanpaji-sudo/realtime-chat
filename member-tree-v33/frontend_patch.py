@@ -110,7 +110,7 @@ s=swap(s,
  "header.append(mk('p','ranking-note','默认只显示第2层会员账号；成绩包括本人及全部下级，点击「详细」查看第3层至最深层逐层汇总。'));",
  "header.append(mk('p','ranking-note','排行榜统计整个团队；点击「详细」仅列出本期有充值或提现的会员账号，零活动会员不列出。'));",
  'ranking help')
-start=s.index('   if(open){',s.index('function renderRanking(){'))
+start=s.index('if(open){',s.index('function renderRanking(){'))
 end=s.index('\n  });',start)
 old=s[start:end]
 assert 'for(const layer of entry.layers)' in old and 'detailRow' in old,'ranking detail source changed'
