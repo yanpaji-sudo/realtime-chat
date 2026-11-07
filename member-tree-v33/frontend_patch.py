@@ -153,7 +153,14 @@ s=swap(s,anchor,replacement,'refresh alert states')
 s=swap(s,"if(changed||dateChanged||!silent||dateNow()!==lastDisplayDay)render();",
          "if(changed||dateChanged||alarmsChanged||!silent||dateNow()!==lastDisplayDay)render();",
          'render when warnings changed')
+s=swap(s,'团队建议放款=所有团队成员各自超出其直属人数对应阈值的余额合计；仅为规则提示，不执行放款。',
+       '团队建议放款按未解除告警成员各自仓位的目标余额计算；仅为规则提示，不执行放款。','tooltip explanatory text')
 p.write_text(s,encoding='utf-8')
+htmlp=root/'static/index.html'
+html=htmlp.read_text(encoding='utf-8')
+html=swap(html,'标记直属不足5人本人余额超过13000、直属至少5人本人余额超过20000的会员',
+          '仓位告警：5000仓位超过7500；10000仓位超过15000；点击查看建议放款及到期天数','position warning button tooltip')
+htmlp.write_text(html,encoding='utf-8')
 
 css+='''
 
