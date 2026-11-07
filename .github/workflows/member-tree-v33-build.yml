@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Patch isolated original V32 bundle
         run: |
-          base64 -d member-tree-deploy/payload.b64 | tar xz
+          git fetch --no-tags origin member-tree-render
+          test "$(git rev-parse FETCH_HEAD)" = "36aafbeb48029767e6104965d4d60ab0a50ed381"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
           python3 member-tree-v33/backend_patch.py
           python3 member-tree-v33/frontend_patch.py
           python3 member-tree-v33/test_patch.py
