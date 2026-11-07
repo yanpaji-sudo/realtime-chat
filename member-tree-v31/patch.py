@@ -31,6 +31,10 @@ anchor='assert(js.includes("(Number(m.direct_count||0)>=5?20000:13000)*100"));'
 replacement='assert(js.includes("stake===500000?700000:(Number(m.direct_count||0)>=5?2000000:1300000)"));'
 assert ss.count(anchor)==1, "V29 legacy test anchor changed"
 ss=ss.replace(anchor,replacement,1)
+old_balance_check="assert(js.includes('Number(m.balance_cents||0)-threshold'));"
+new_balance_check="assert(js.includes('Math.max(0,balance-threshold)'));"
+assert ss.count(old_balance_check)==1, "V29 balance test anchor changed"
+ss=ss.replace(old_balance_check,new_balance_check,1)
 t.write_text(ss,encoding="utf-8")
 (root/"tests/test_v31_stake_threshold.cjs").write_text(r'''const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
