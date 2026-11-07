@@ -200,8 +200,8 @@ const part=s.slice(a,b);
 const sandbox={};
 vm.createContext(sandbox);
 vm.runInContext(
- "const periodAmounts=(m,day,period)=>({deposit:period==='week'&&m.newFlag?m.stake_cents:0,withdraw:m.week_withdraw_cents||0});\\n"+
- part+"\\nthis.filter=v33ActiveRankingMembers;",sandbox);
+ "const periodAmounts=(m,day,period)=>({deposit:period==='week'&&m.newFlag?m.stake_cents:0,withdraw:m.week_withdraw_cents||0});\n"+
+ part+"\nthis.filter=v33ActiveRankingMembers;",sandbox);
 const rows=[
  {id:'one',account:'leader',parent_id:null,level:2,stake_cents:1000,newFlag:false,week_withdraw_cents:0},
  {id:'two',account:'deposit',parent_id:'one',level:3,stake_cents:1000,newFlag:true,week_withdraw_cents:0},
