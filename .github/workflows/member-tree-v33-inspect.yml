@@ -1,0 +1,27 @@
+name: Inspect V33 integration anchors
+on:
+  push:
+    branches: [member-tree-v33-alerts-rank-remarks]
+    paths: ['.github/workflows/member-tree-v33-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          py=Path('member-tree/app.py').read_text().splitlines()
+          js=Path('member-tree/static/app.js').read_text().splitlines()
+          for a,b in [(1780,1865),(1,42)]:
+           print('==== PY',a,b)
+           for i in range(a-1,min(b,len(py))):print(i+1,py[i][:1800] if not any(k in py[i].lower() for k in ['secret','password','token']) else '[redacted]')
+          for a,b in [(94,109),(416,456),(960,985)]:
+           print('==== JS',a,b)
+           for i in range(a-1,min(b,len(js))):print(i+1,js[i][:2300])
+          for i,line in enumerate(js):
+           if 'function refresh(' in line: print('==== REFRESH');print('\n'.join(f'{k+1} {js[k][:1900]}' for k in range(i,min(i+21,len(js)))))
+          PY
