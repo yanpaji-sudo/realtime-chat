@@ -1,0 +1,22 @@
+name: Verify V29 membership-month calculation
+on:
+  push:
+    branches: [member-tree-v29-position-risk-tooltip]
+    paths: ['.github/workflows/member-tree-v29-verify.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('member-tree/static/app.js').read_text()
+          for term in ('function membershipMonths(', 'function dateNow(', 'function v29TeamStats(m){','function compactInfo(m){'):
+            i=s.find(term)
+            print('ANCHOR',term,'POSITION',i)
+            if i>=0: print(s[i:i+750])
+          PY
