@@ -111,7 +111,7 @@ s=swap(s,
  "header.append(mk('p','ranking-note','排行榜统计整个团队；点击「详细」仅列出本期有充值或提现的会员账号，零活动会员不列出。'));",
  'ranking help')
 start=s.index('if(open){',s.index('function renderRanking(){'))
-end=s.index('\n  });',start)
+end=s.index('}',s.index('cell.append(subt);detailRow.append(cell);body.append(detailRow);',start))+1
 old=s[start:end]
 assert 'for(const layer of entry.layers)' in old and 'detailRow' in old,'ranking detail source changed'
 replace='''   if(open){
