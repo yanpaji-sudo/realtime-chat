@@ -1,0 +1,50 @@
+name: Build V33 alert queue, active-member ranking and notes persistence
+on:
+  push:
+    branches: [member-tree-v33-alerts-rank-remarks]
+    paths:
+      - 'member-tree-v33/backend_patch.py'
+      - 'member-tree-v33/frontend_patch.py'
+      - 'member-tree-v33/test_patch.py'
+      - '.github/workflows/member-tree-v33-build.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch isolated original V32 bundle
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 member-tree-v33/backend_patch.py
+          python3 member-tree-v33/frontend_patch.py
+          python3 member-tree-v33/test_patch.py
+          python3 -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Run new tests and previous regressions
+        run: |
+          cd member-tree
+          python3 -m pytest -q tests/test_v33_alert_state.py
+          node tests/test_v33_rank_alert.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v31_stake_threshold.cjs
+          node tests/test_v30_balance.cjs
+          node tests/test_v29_position_alert.cjs
+          node tests/test_v28_compact.cjs
+          node tests/test_v27_red_withdrawal_ui.cjs
+          node tests/test_v24_palette_risk.cjs
+          node tests/test_v23_compact_ai.cjs
+          python3 -m pytest -q tests/test_v26_duplicate_reconcile.py tests/test_v25_all_level_stake.py tests/test_v11_backup.py
+      - name: Pack tested source for isolated branch only
+        run: |
+          tar -czf /tmp/member-tree-v33.tgz member-tree
+          base64 -w0 /tmp/member-tree-v33.tgz > member-tree-deploy/payload.b64
+          git config user.name "V33 Verified Build"
+          git config user.email "actions@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "V33: dated balance warnings, nonzero ranking details and preserved team names"
+          git push origin HEAD:member-tree-v33-alerts-rank-remarks
