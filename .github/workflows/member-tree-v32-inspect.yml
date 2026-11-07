@@ -1,0 +1,30 @@
+name: Inspect V32 fullscreen hover layer (read only)
+on:
+  push:
+    branches: [member-tree-v32-compact-fullscreen-tooltip]
+    paths: ['.github/workflows/member-tree-v32-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract packaged source and inspect fullscreen layers
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          paths=['member-tree/static/app.js','member-tree/static/style.css','member-tree/static/index.html']
+          patterns=[r'fullscreen',r'Fullscreen',r'fullScreen',r'compactTooltipEl',r'attachCompactHover',r'moveCompactTooltip',r'branchZoom',r'branchView',r'branch-view',r'branch-canvas',r'treeFullscreen',r'full-page',r'fullscreenchange',r'v28-compact-tooltip']
+          for p in paths:
+            lines=Path(p).read_text(encoding='utf-8').splitlines()
+            print('FILE',p,'LINES',len(lines))
+            selected=set()
+            for i,line in enumerate(lines):
+              if any(re.search(pat,line,re.I) for pat in patterns):
+                selected.update(range(max(0,i-2),min(len(lines),i+4)))
+            for i in sorted(selected):
+              print(str(i+1)+': '+lines[i][:1200])
+          PY
