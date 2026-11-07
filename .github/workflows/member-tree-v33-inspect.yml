@@ -1,4 +1,4 @@
-name: Inspect V33 precise ranking and team-name pathways
+name: Inspect V33 restore and team-name write details
 on:
   push:
     branches: [member-tree-v33-alerts-rank-remarks]
@@ -10,22 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect exact handlers and formulas
-        run: |
+      - run: |
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          js=Path('member-tree/static/app.js').read_text().splitlines()
-          py=Path('member-tree/app.py').read_text().splitlines()
-          for a,b in [(105,175),(210,265),(344,368),(635,705)]:
-           print('===== JS',a,b)
-           for i in range(a-1,min(len(js),b)):print(str(i+1)+':'+js[i][:2200])
-          markers=['team_names','team-name','rename_team','team_name','def active_rows','def get_tree','/api/tree','def restore_backup','def run_restore','def backup','def ranking','def tree']
-          for mark in markers:
-           indexes=[i for i,x in enumerate(py) if mark.lower() in x.lower()]
-           print('===== PY MARK',mark,'LINES',indexes[:30])
-           for i in indexes[:7]:
-            for k in range(max(0,i-5),min(len(py),i+11)):
-             if any(q in py[k].lower() for q in ('password','secret','token')): print(k+1,'[redacted]')
-             else:print(k+1,py[k][:2200])
+          p=Path('member-tree/app.py').read_text().splitlines()
+          j=Path('member-tree/static/app.js').read_text().splitlines()
+          for a,b in [(500,536),(1416,1502),(1514,1647),(1790,1810),(2097,2122)]:
+           print('==== PY',a,b)
+           for i in range(a-1,min(len(p),b)): print(i+1,p[i][:1900])
+          for a,b in [(45,90),(1000,1042)]:
+           print('==== JS',a,b)
+           for i in range(a-1,min(len(j),b)):print(i+1,j[i][:1800])
           PY
