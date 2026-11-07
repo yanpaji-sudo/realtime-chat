@@ -1,4 +1,4 @@
-name: Inspect V33 restore and team-name write details
+name: Inspect V33 integration anchors
 on:
   push:
     branches: [member-tree-v33-alerts-rank-remarks]
@@ -14,12 +14,14 @@ jobs:
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('member-tree/app.py').read_text().splitlines()
-          j=Path('member-tree/static/app.js').read_text().splitlines()
-          for a,b in [(500,536),(1416,1502),(1514,1647),(1790,1810),(2097,2122)]:
+          py=Path('member-tree/app.py').read_text().splitlines()
+          js=Path('member-tree/static/app.js').read_text().splitlines()
+          for a,b in [(1780,1865),(1,42)]:
            print('==== PY',a,b)
-           for i in range(a-1,min(len(p),b)): print(i+1,p[i][:1900])
-          for a,b in [(45,90),(1000,1042)]:
+           for i in range(a-1,min(b,len(py))):print(i+1,py[i][:1800] if not any(k in py[i].lower() for k in ['secret','password','token']) else '[redacted]')
+          for a,b in [(94,109),(416,456),(960,985)]:
            print('==== JS',a,b)
-           for i in range(a-1,min(len(j),b)):print(i+1,j[i][:1800])
+           for i in range(a-1,min(b,len(js))):print(i+1,js[i][:2300])
+          for i,line in enumerate(js):
+           if 'function refresh(' in line: print('==== REFRESH');print('\n'.join(f'{k+1} {js[k][:1900]}' for k in range(i,min(i+21,len(js)))))
           PY
