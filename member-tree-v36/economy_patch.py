@@ -40,8 +40,10 @@ new2="""        # 4 matching references x ~450 characters rather than 7 x ~780.
 """
 assert s.count(old2)==1,'evidence anchor missing'
 s=s.replace(old2,new2)
-old3="        messages+=cleaned[-12:]"
-assert s.count(old3)==1,'history anchor missing'
-s=s.replace(old3,"        messages+=cleaned[-8:]",1)
+# Keep all twelve recent turns to retain the V35 dialogue behavior. Save
+# tokens by narrowing each saved chat turn (was 1500 characters).
+old3="                cleaned.append({'role':m['role'],'content':content[:1500]})"
+assert s.count(old3)==1,'history content cap anchor missing'
+s=s.replace(old3,"                cleaned.append({'role':m['role'],'content':content[:600]})",1)
 p.write_text(s,encoding='utf-8')
 print('V36: GPT-6 Luna lowest-cost active model, no paid reasoning, bounded course evidence and chat context.')
