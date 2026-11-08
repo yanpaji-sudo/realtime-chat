@@ -193,7 +193,18 @@ def register_academy(app,engine,require,utc_now):
                 'message':'原文未改动；默认待审核，管理员可逐篇批准发布'}
 
     def retrieve(question,limit=7):
-        terms=re.findall(r'[\u4e00-\u9fff]{2,}|[A-Za-z0-9_]{3,}',question)[:6]
+        # Natural Chinese questions require short overlapping search terms.
+        raw_terms=re.findall(r'[\u4e00-\u9fff]{2,}|[A-Za-z0-9_]{3,}',question)[:18]
+        tokens=set()
+        for raw in raw_terms:
+            if len(raw)<=7:tokens.add(raw)
+            if re.search(r'[\u4e00-\u9fff]',raw):
+                for n in (2,3):
+                    for i in range(min(60,max(0,len(raw)-n+1))):
+                        tokens.add(raw[i:i+n])
+            else:tokens.add(raw)
+        terms=[t for t in sorted(tokens,key=lambda x:(-len(x),x)) if t not in
+            {'如何','怎么','什么','请问','可以','帮我','一下','大家','我们','你们'}][:90]
         with engine.connect() as db:
             rows=[dict(x) for x in db.execute(text("""
                 SELECT id,title,source_path,priority,display_text,
