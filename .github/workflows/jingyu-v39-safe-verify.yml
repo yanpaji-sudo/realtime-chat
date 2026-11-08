@@ -19,9 +19,11 @@ jobs:
           test -f member-tree/app.py
           test -f member-tree/static/app.js
           find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
-      - name: Apply Whale-specific data isolation and fake seed
+      - name: Apply V39 feature and then Whale-specific isolation
         run: |
           set -euo pipefail
+          python3 member-tree-v39/course_speech_patch.py
+          cp member-tree-v39/test_v39_speech.py member-tree/tests/test_v39_speech.py
           python3 member-tree-jingyu-upgrade/patch.py
           python3 -m py_compile member-tree/app.py member-tree/academy.py
           node --check member-tree/static/app.js
