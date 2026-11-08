@@ -1,0 +1,30 @@
+name: Confirm V34 production Academy is reachable
+on:
+  push:
+    branches: [member-tree-v34-ai-knowledge-hub]
+    paths: ['.github/workflows/v34-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify unauthenticated home, JS, and DB health
+        run: |
+          python3 - <<'PY'
+          import urllib.request,time
+          base='https://member-tree-dashboard-demo.onrender.com'
+          for path,mark in [
+              ('/','data-view="academy"'),
+              ('/static/app.js','function renderAcademy(){'),
+              ('/api/health','"status":"ok"')]:
+              started=time.monotonic()
+              req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'V34-Verification/1.0'})
+              with urllib.request.urlopen(req,timeout=70) as response:
+                  body=response.read(250000)
+                  print('CHECK',path,'STATUS',response.status,'MARKER_FOUND',mark.encode() in body,'SECONDS',round(time.monotonic()-started,1),flush=True)
+                  if response.status!=200 or mark.encode() not in body:
+                      raise SystemExit('V34 marker failed for '+path)
+          print('V34 production Academy homepage, JS module, and DB health all reachable.')
+          PY
