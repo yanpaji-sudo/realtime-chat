@@ -1,0 +1,43 @@
+name: Inspect V34 AI knowledge integration anchors
+on:
+  push:
+    branches: [member-tree-v34-ai-knowledge-hub]
+    paths: [.github/workflows/v34-inspect.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          f=Path('member-tree/app.py')
+          p=f.read_text().splitlines()
+          print('PY_LINES',len(p))
+          for a,b in [(1,32),(60,115),(170,245),(380,452),(1780,1855),(2210,2290)]:
+            print('--- PY',a,b)
+            for i in range(a-1,min(b,len(p))):
+              line=p[i]
+              if any(t in line.lower() for t in ('password','secret','token','admin_users_json')):print(i+1,'[credential-related source redacted]')
+              else:print(i+1,line[:550])
+          for mark in ["def require","def auth","def current_user","def verify","@app.get('/api/tree')","@app.post('/api/admin","def db_init","app.mount","@app.get('/')"]:
+            hits=[i+1 for i,v in enumerate(p) if mark in v]
+            print('PY_MARK',mark,hits[:15])
+          j=Path('member-tree/static/app.js').read_text().splitlines()
+          print('JS_LINES',len(j))
+          for a,b in [(1,108),(780,840),(940,990),(1000,1075)]:
+            print('--- JS',a,b)
+            for i in range(a-1,min(b,len(j))):
+              line=j[i]
+              if 'password' in line.lower() or 'secret' in line.lower():print(i+1,'[credential UI omitted]')
+              else:print(i+1,line[:1000])
+          h=Path('member-tree/static/index.html').read_text().splitlines()
+          print('HTML_LINES',len(h))
+          for a,b in [(1,80),(80,155)]:
+            print('--- HTML',a,b)
+            for i in range(a-1,min(b,len(h))):print(i+1,h[i][:1100])
+          PY
