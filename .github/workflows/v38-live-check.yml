@@ -1,0 +1,35 @@
+name: Verify live V38 course-first tutor without reading private courses
+on:
+  push:
+    branches: [member-tree-v38-strict-course-grounding]
+    paths: ['.github/workflows/v38-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time
+          base='https://member-tree-dashboard-demo.onrender.com'
+          for path,marker in [
+              ('/','data-view="academy"'),
+              ('/static/app.js','严格课程模式'),
+              ('/api/health','"status":"ok"')]:
+              t=time.monotonic()
+              req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'V38-ReadOnly-Verification'})
+              with urllib.request.urlopen(req,timeout=65) as rsp:
+                  body=rsp.read(600000)
+                  good=rsp.status==200 and marker.encode('utf-8') in body
+                  print('PRODUCTION',path,'HTTP',rsp.status,'MARKER',good,'TIME',round(time.monotonic()-t,1),flush=True)
+                  if not good:raise SystemExit('V38 source grounding front-end unavailable')
+          try:
+              urllib.request.urlopen(base+'/api/academy/documents',timeout=10)
+              raise SystemExit('Security issue: Academy exposed without session')
+          except urllib.error.HTTPError as err:
+              print('ACADEMY AUTH HTTP',err.code,flush=True)
+              if err.code!=401:raise
+          print('V38_PRODUCTION_OK')
+          PY
