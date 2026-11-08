@@ -1,0 +1,36 @@
+name: Confirm production V35 chat is live (read-only)
+on:
+  push:
+    branches: [member-tree-v35-chat-tutor]
+    paths: ['.github/workflows/v35-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify V35 UI, backend health, and authorization
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time
+          base='https://member-tree-dashboard-demo.onrender.com'
+          for path,needle in [
+              ('/','data-view="academy"'),
+              ('/static/app.js','function academySendChat(){'),
+              ('/api/health','"status":"ok"')]:
+              st=time.monotonic()
+              req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'V35-Live-Check/1.0'})
+              with urllib.request.urlopen(req,timeout=65) as r:
+                  content=r.read(350000)
+                  good=r.status==200 and needle.encode() in content
+                  print('PROBE',path,'HTTP',r.status,'V35_MARKER',good,'SECONDS',round(time.monotonic()-st,1),flush=True)
+                  if not good:raise SystemExit(1)
+          try:
+              urllib.request.urlopen(base+'/api/academy/stats',timeout=10)
+              raise SystemExit('Knowledge access without login — FAILURE')
+          except urllib.error.HTTPError as e:
+              print('PROBE /api/academy/stats logged-out HTTP',e.code,flush=True)
+              if e.code!=401:raise
+          print('PRODUCTION V35 VERIFIED')
+          PY
