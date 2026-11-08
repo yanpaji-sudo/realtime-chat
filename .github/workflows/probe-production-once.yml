@@ -1,0 +1,37 @@
+name: One-time Render production availability probe
+on:
+  push:
+    branches: [member-tree-uptime-check-20261108]
+    paths: ['.github/workflows/probe-production-once.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake sleeping free service and check homepage and JS bundle
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time,ssl
+          base='https://member-tree-dashboard-demo.onrender.com'
+          for path in ['/','/static/app.js']:
+              for attempt in (1,2):
+                  started=time.monotonic()
+                  try:
+                      req=urllib.request.Request(base+path,headers={'User-Agent':'Production-health-probe/1.0','Cache-Control':'no-cache'})
+                      with urllib.request.urlopen(req,timeout=95) as r:
+                          body=r.read(250000)
+                          print('RESULT',path,'attempt',attempt,'status',r.status,'mime',r.headers.get('Content-Type',''),'bytes_sample',len(body),'seconds',round(time.monotonic()-started,2),flush=True)
+                          if path=='/':
+                              txt=body.decode('utf-8','replace')
+                              print('HTML_TITLE',txt.split('<title>')[1].split('</title>')[0][:160] if '<title>' in txt else 'missing')
+                          else:
+                              txt=body.decode('utf-8','replace')
+                              print('JS_MARKER_V33',('v33AlertPanel' in txt),'SIZE_SAMPLE',len(body))
+                          break
+                  except Exception as exc:
+                      print('ERROR',path,'attempt',attempt,type(exc).__name__,str(exc)[:220],'seconds',round(time.monotonic()-started,1),flush=True)
+              else:
+                  raise SystemExit('HTTP probe failed to open '+path)
+          PY
