@@ -99,3 +99,30 @@ def test_preservation_utilities():
     assert '流星划过' in t
     assert '999' in t and '1.5%' in t
     assert _decode('中文'.encode('gbk'))=='中文'
+
+
+def test_exact_source_bytes_with_nul_and_batch_approval():
+    raw=b'\xe4\xbd\xa0\xe5\xa5\xbd\x00\x00\x00 15% XYZ \x00'
+    for c,_ in make_app():
+        archive=make_zip({'01_核心_群洗/raw.txt':raw})
+        response=c.post('/api/academy/upload',
+             files={'file':('raw.zip',archive,'application/zip')},
+             headers={'x-test-role':'admin'})
+        assert response.status_code==200,response.text
+        docs=c.get('/api/academy/documents',
+              headers={'x-test-role':'admin'}).json()['rows']
+        docid=docs[0]['id']
+        assert c.get('/api/academy/documents/'+docid+'/download',
+              headers={'x-test-role':'admin'}).content==raw
+        assert c.get('/api/academy/documents/'+docid+'/download').status_code==404
+        assert c.post('/api/academy/approve-batch',
+              json={'scope':'core','acknowledge':True}).status_code==403
+        assert c.post('/api/academy/approve-batch',
+              json={'scope':'core','acknowledge':False},
+              headers={'x-test-role':'admin'}).status_code==400
+        approved=c.post('/api/academy/approve-batch',
+              json={'scope':'core','acknowledge':True},
+              headers={'x-test-role':'admin'})
+        assert approved.status_code==200,approved.text
+        assert approved.json()['approved']==1
+        assert c.get('/api/academy/documents/'+docid+'/download').content==raw
