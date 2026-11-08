@@ -74,7 +74,7 @@ def register_academy(app,engine,require,utc_now):
                 id TEXT PRIMARY KEY,title TEXT NOT NULL,content TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'draft',created_at TEXT NOT NULL,
                 approved_at TEXT,operator TEXT)"""))
-    app.add_event_handler('startup',create_tables)
+    app.on_event('startup')(create_tables)
 
     @router.get('/stats')
     def stats(req:Request):
