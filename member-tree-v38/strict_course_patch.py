@@ -120,7 +120,13 @@ strict_retrieval=r'''    # V38: course-first relevance retrieval. Never make bro
             # can still beat a weakly matching core lesson.
             blended=score*(1.30 if priority>=100 else 1.0)
             ranked.append((blended,score,priority,r))
-        ranked.sort(key=lambda x:(-x[0],-x[1],-x[2],x[3]['title']))
+        # First eliminate documents with far weaker topical relevance.
+        # Within that relevant set always prefer the author's core courses,
+        # even when a supporting document repeats the same word more often.
+        best=max((x[1] for x in ranked),default=0)
+        cutoff=max(2.2,best*0.33)
+        ranked=[x for x in ranked if x[1]>=cutoff]
+        ranked.sort(key=lambda x:(-x[2],-x[1],x[3]['title']))
         selected=ranked[:limit]
         # Guarantee the leading cited sources are relevant core lessons when
         # they exist; the input corpus is otherwise never promoted blindly.
