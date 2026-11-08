@@ -56,7 +56,7 @@ def test_original_preservation_scoped_priorities_and_no_auto_approval():
             headers={'x-test-role':'admin'}).status_code==200
         assert len(c.get('/api/academy/documents').json()['rows'])==1
         assert c.get('/api/academy/documents/'+orig_doc['id']).json()['original_text']==orig
-        result=c.post('/api/academy/ask',json={'question':'团队历史收益','tone':'领导讲话'})
+        result=c.post('/api/academy/ask',json={'question':'历史收益','tone':'领导讲话'})
         assert result.status_code==200,result.text
         assert result.json()['mode']=='retrieval_only'
         assert result.json()['sources'][0]['source'].startswith('01_核心_群洗')
@@ -76,7 +76,7 @@ def test_core_ranks_ahead_of_supplement_on_matching_search():
         docs=c.get('/api/academy/documents',headers={'x-test-role':'admin'}).json()['rows']
         for d in docs:
             c.post('/api/academy/documents/'+d['id']+'/approve',headers={'x-test-role':'admin'})
-        res=c.post('/api/academy/ask',json={'question':'沟通技巧'})
+        res=c.post('/api/academy/ask',json={'question':'沟通'})
         assert res.json()['sources'][0]['source'].startswith('01_核心_群洗')
 
 def test_unknown_files_and_rar_archive_rejected():
