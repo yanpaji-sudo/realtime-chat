@@ -1,4 +1,4 @@
-name: Inspect V34 AI knowledge integration anchors
+name: Inspect V34 form upload and API headers
 on:
   push:
     branches: [member-tree-v34-ai-knowledge-hub]
@@ -14,23 +14,8 @@ jobs:
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          f=Path('member-tree/app.py')
-          p=f.read_text().splitlines()
-          print('PY_LINES',len(p))
-          import re
-          for label,lines,needles in [
-           ('JS',Path('member-tree/static/app.js').read_text().splitlines(),
-            ['async function api','function api','function mk','function configure','function setRole','function render(){','function refresh(','function showToast','function message']),
-           ('PY',p,['class ','def require(','def db_init(','def db_init','def utc_now','def audit','def static('])]:
-            for needle in needles:
-             for i,line in enumerate(lines):
-              if needle in line:
-               print('ANCHOR',label,needle,'LINE',i+1)
-               for k in range(max(0,i-3),min(len(lines),i+12)):
-                v=lines[k]
-                if any(s in v.lower() for s in ('password','secret','token','admin_users_json')):v='[redacted]'
-                print(f'{k+1} {v[:1100]}')
-               break
-          print('requirements:',Path('member-tree/requirements.txt').read_text()[:2500])
+          s=Path('member-tree/static/app.js').read_text().splitlines()
+          for a,b in [(180,206),(1148,1153)]:
+           for i in range(a-1,b):
+            print(i+1,s[i].replace('csrf','csrf_value'))
           PY
