@@ -130,7 +130,18 @@ function renderAcademy(){
    }catch(e){showToast('导入失败：'+e.message)}
    finally{publish.disabled=false;publish.textContent='导入到知识库'}
   };
-  uploader.append(file,publish);docs.append(uploader);
+  uploader.append(file,publish);
+  const bulk=mk('button','button','审核发布核心课程');
+  bulk.type='button';
+  bulk.onclick=async()=>{
+    if(!confirm('确认已核对核心课程中的个人信息与原始表述，并发布所有待审核的核心课程给登录成员查看？'))return;
+    try{
+      const res=await api('/academy/approve-batch','POST',{scope:'core',acknowledge:true});
+      showToast('核心课程已发布：'+res.approved+'篇');await academyLoad();
+    }catch(e){showToast('批量审核失败：'+e.message)}
+  };
+  uploader.append(bulk);
+  docs.append(uploader);
  }
  const list=mk('div','academy-doc-list');
  if(!academyDocs.length)list.append(mk('p','academy-muted','尚无已发布课程。管理员可导入课程ZIP并审核。'));
@@ -166,7 +177,9 @@ function renderAcademy(){
   modes.onchange=()=>raw.textContent=academySelected[modes.value]||'';
   const close=mk('button','button','关闭');
   close.onclick=()=>{academySelected=null;render()};
-  section.append(modes,raw,close);docs.append(section);
+  const download=mk('button','button','下载未修改的原始文件');
+  download.onclick=()=>{window.location.href='/api/academy/documents/'+encodeURIComponent(academySelected.id)+'/download'};
+  section.append(modes,raw,download,close);docs.append(section);
  }
  root.append(docs);return root;
 }
