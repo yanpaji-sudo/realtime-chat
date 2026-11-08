@@ -1,0 +1,36 @@
+name: Diagnose V37 Academy document 404 and auth routing
+on:
+  push:
+    branches: [member-tree-v37-lesson-open-fix]
+    paths: [.github/workflows/v37-inspect.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git fetch --no-tags origin member-tree-render
+          test "$(git rev-parse FETCH_HEAD)" = "d23f85f29a27afb5168354010af9d1d3880c92b2"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('member-tree/app.py').read_text().splitlines()
+          terms=['def require(', '@app.get("/api/','@router.get(\'/documents','def list_docs','def get_doc','def approve(']
+          for term in terms:
+            hits=[i for i,l in enumerate(s) if term in l]
+            print('LOOKUP',term,'HITS',[i+1 for i in hits[:10]])
+            for hit in hits[:3]:
+              for i in range(max(hit-2,0),min(hit+29,len(s))):
+                line=s[i]
+                if any(t in line.lower() for t in ('password','secret','token','admin_users','database_url','session_secret')):
+                  print(f'{i+1} [credential-related source redacted]')
+                else:print(f'{i+1} {line[:450]}')
+          p=Path('member-tree/academy.py').read_text().splitlines()
+          for term in ["def list_docs(", "def get_doc(", "def approve("]:
+            hits=[i for i,l in enumerate(p) if term in l]
+            print('ACADEMY LOOKUP',term,'HITS',[i+1 for i in hits])
+            for hit in hits:
+              for i in range(max(hit-3,0),min(hit+21,len(p))): print(f'{i+1} {p[i][:500]}')
+          PY
