@@ -18,26 +18,20 @@ jobs:
           f=Path('member-tree/app.py')
           p=f.read_text().splitlines()
           print('PY_LINES',len(p))
-          for a,b in [(1,32),(60,115),(170,245),(380,452),(1780,1855),(2210,2290)]:
+          for a,b in [(28,58),(125,169),(250,344),(332,365),(465,502),(560,590)]:
             print('--- PY',a,b)
             for i in range(a-1,min(b,len(p))):
               line=p[i]
               if any(t in line.lower() for t in ('password','secret','token','admin_users_json')):print(i+1,'[credential-related source redacted]')
-              else:print(i+1,line[:550])
-          for mark in ["def require","def auth","def current_user","def verify","@app.get('/api/tree')","@app.post('/api/admin","def db_init","app.mount","@app.get('/')"]:
-            hits=[i+1 for i,v in enumerate(p) if mark in v]
-            print('PY_MARK',mark,hits[:15])
+              else:print(i+1,line[:850])
           j=Path('member-tree/static/app.js').read_text().splitlines()
-          print('JS_LINES',len(j))
-          for a,b in [(1,108),(780,840),(940,990),(1000,1075)]:
+          for a,b in [(1,44),(68,110),(1100,1153)]:
             print('--- JS',a,b)
             for i in range(a-1,min(b,len(j))):
               line=j[i]
               if 'password' in line.lower() or 'secret' in line.lower():print(i+1,'[credential UI omitted]')
-              else:print(i+1,line[:1000])
+              else:print(i+1,line[:1300])
           h=Path('member-tree/static/index.html').read_text().splitlines()
-          print('HTML_LINES',len(h))
-          for a,b in [(1,80),(80,155)]:
-            print('--- HTML',a,b)
-            for i in range(a-1,min(b,len(h))):print(i+1,h[i][:1100])
+          print('HTML view navigation line',h[2][:3600])
+          print('REQUIREMENTS',Path('member-tree/requirements.txt').read_text())
           PY
