@@ -1,0 +1,29 @@
+name: Fast DNS and TLS check for production endpoint
+on:
+  push:
+    branches: [member-tree-uptime-check-20261108]
+    paths: ['.github/workflows/probe-production-network.yml']
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: DNS lookup and 8-second route checks
+        run: |
+          python3 - <<'PY'
+          import socket,urllib.request,time
+          hosts=['member-tree-dashboard-demo.onrender.com','render.com','www.google.com']
+          for h in hosts:
+              try:
+                  result=socket.getaddrinfo(h,443,type=socket.SOCK_STREAM)
+                  print('DNS',h,'SUCCESS',sorted(set(a[4][0] for a in result))[:5],flush=True)
+              except Exception as e:print('DNS',h,'FAIL',repr(e),flush=True)
+          for url in ['https://member-tree-dashboard-demo.onrender.com/','https://render.com/docs/free']:
+              t=time.monotonic()
+              try:
+                  with urllib.request.urlopen(url,timeout=8) as r:
+                      print('HTTPS',url,'STATUS',r.status,'SECONDS',round(time.monotonic()-t,1),flush=True)
+              except Exception as e:print('HTTPS',url,'FAIL',repr(e),'SECONDS',round(time.monotonic()-t,1),flush=True)
+          PY
