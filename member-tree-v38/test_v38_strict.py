@@ -35,7 +35,7 @@ def test_only_material_from_approved_course_used(monkeypatch):
         def __enter__(self):return self
         def __exit__(self,*args):return None
         def read(self,n):
-            return b'{"choices":[{"message":{"content":"团队领导要多教新人，互相帮助。[1]"}}]}'
+            return '{"choices":[{"message":{"content":"团队领导要多教新人，互相帮助。[1]"}}]}'.encode('utf-8')
     def fake(request,timeout):
         seen.append(json.loads(request.data))
         return R()
