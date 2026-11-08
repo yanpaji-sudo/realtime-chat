@@ -26,7 +26,6 @@ ALLOWED={'.txt','.md','.text'}
 BRAND_MAP=[
     ('流星鸿轩','君主娱乐场'),('鸿轩','君主娱乐场'),
     ('百乐宫','君主娱乐场'),('顺达','磐石'),
-    ('流星','磐石'),
 ]
 def brand_display(original):
     """Creates a derived reading copy; does not modify original source text."""
@@ -38,7 +37,7 @@ def source_priority(source):
     return 100 if p.startswith(('01_核心_群洗/','02_核心_磐石9-10/')) else 20
 
 def _decode(data):
-    for enc in ('utf-8-sig','utf-16','gb18030'):
+    for enc in ('utf-8-sig','gb18030','utf-16'):
         try:
             out=data.decode(enc)
             if '\x00' not in out and len(out.strip())>0:return out
@@ -190,7 +189,7 @@ def register_academy(app,engine,require,utc_now):
             score=sum((3 if t.casefold() in r['title'].casefold() else 0)+
                       min(9,content.casefold().count(t.casefold())) for t in terms)
             if score>0:ranked.append((score,r))
-        ranked.sort(key=lambda sr:(-sr[0],-sr[1]['priority'],sr[1]['title']))
+        ranked.sort(key=lambda sr:(-sr[1]['priority'],-sr[0],sr[1]['title']))
         result=[]
         for _,r in ranked[:limit]:
             result.append({'id':r['id'],'title':r['title'],'source':r['source_path'],
