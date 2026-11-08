@@ -1,0 +1,49 @@
+name: Whale V39 safe isolated upgrade verification
+on:
+  push:
+    branches: [member-tree-jingyu-v39-safe-upgrade-20261109]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack V39 and check archive integrity
+        run: |
+          set -euo pipefail
+          test -s member-tree-deploy/payload.b64
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          test -f member-tree/app.py
+          test -f member-tree/static/app.js
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+      - name: Apply Whale-specific data isolation and fake seed
+        run: |
+          set -euo pipefail
+          python3 member-tree-jingyu-upgrade/patch.py
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          grep -q "jingyu_isolated_member_tree_v28_1000.sqlite3" member-tree/app.py
+          grep -q '鲸鱼小组数据报表' member-tree/static/app.js
+          grep -q '独立测试版 V39' member-tree/static/index.html
+      - name: Install tests
+        run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Verify synthetic isolation and report tree
+        run: |
+          cd member-tree
+          rm -f /tmp/jingyu_isolated_member_tree_v28_1000.sqlite3
+          python3 -m pytest -q tests/test_jingyu_isolation.py
+          node tests/test_v28_compact.cjs
+          node tests/test_v27_red_withdrawal_ui.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v33_rank_alert.cjs
+      - name: Verify newest Academy AI and course speech
+        run: |
+          cd member-tree
+          python3 -m pytest -q tests/test_v34_academy.py tests/test_v36_economy.py tests/test_v38_strict.py tests/test_v39_speech.py
+          node tests/test_v35_frontend.cjs
+      - name: Safety notice
+        run: |
+          echo "Pre-release tests only. No Render deploy, database import, or production branch changes."
