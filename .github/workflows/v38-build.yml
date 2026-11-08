@@ -1,0 +1,52 @@
+name: Verify V38 course-grounded AI and existing tree regression
+on:
+  push:
+    branches: [member-tree-v38-strict-course-grounding]
+    paths:
+      - 'member-tree-v38/strict_course_patch.py'
+      - 'member-tree-v38/test_v38_strict.py'
+      - '.github/workflows/v38-build.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract exact production V36 source and apply additive strict course patch
+        run: |
+          git fetch --no-tags origin member-tree-render
+          test "$(git rev-parse FETCH_HEAD)" = "d23f85f29a27afb5168354010af9d1d3880c92b2"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          python3 member-tree-v38/strict_course_patch.py
+          cp member-tree-v38/test_v38_strict.py member-tree/tests/test_v38_strict.py
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+      - name: Install test dependencies
+        run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Verify strict course grounding and original features
+        run: |
+          cd member-tree
+          python3 -m pytest -q tests/test_v38_strict.py tests/test_v36_economy.py tests/test_v34_academy.py
+          python3 -m pytest -q tests/test_v35_tutor.py -k 'not test_greetings_are_real_ai_conversation_without_sources and not test_safe_diagnostics_quota_and_authentication'
+          node tests/test_v35_frontend.cjs
+          node tests/test_v34_academy.cjs
+          node tests/test_v33_rank_alert.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v31_stake_threshold.cjs
+          node tests/test_v30_balance.cjs
+          node tests/test_v29_position_alert.cjs
+          node tests/test_v28_compact.cjs
+          node tests/test_v27_red_withdrawal_ui.cjs
+          node tests/test_v24_palette_risk.cjs
+          node tests/test_v23_compact_ai.cjs
+          python3 -m pytest -q tests/test_v33_alert_state.py tests/test_v26_duplicate_reconcile.py tests/test_v25_all_level_stake.py tests/test_v11_backup.py
+      - name: Commit tested V38 package on isolated branch only
+        run: |
+          tar -czf /tmp/member-tree-v38.tgz member-tree
+          base64 -w0 /tmp/member-tree-v38.tgz > member-tree-deploy/payload.b64
+          git config user.name "V38 Course Fidelity CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "V38: strict course-source tutor and relevant lesson retrieval"
+          git push origin HEAD:member-tree-v38-strict-course-grounding
