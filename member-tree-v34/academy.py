@@ -197,17 +197,18 @@ def register_academy(app,engine,require,utc_now):
         except zipfile.BadZipFile as exc:
             raise HTTPException(400,'课程ZIP损坏') from exc
         if not entries:raise HTTPException(400,'ZIP内没有可识别的TXT或MD课程')
-        created=0
         with engine.begin() as db:
-            for e in entries:
-                # Nothing is overwritten if this exact lesson has already been imported.
-                result=db.execute(text("""INSERT INTO academy_documents
+            before=int(db.execute(text('SELECT count(*) FROM academy_documents')).scalar() or 0)
+            statement=text("""INSERT INTO academy_documents
                   (id,title,source_path,source_sha256,priority,status,
                    original_text,display_text,raw_bytes_b64,created_at)
-                  VALUES (:id,:title,:source,:sha,:priority,'draft',:original,:display,:raw_b64,:now)
-                  ON CONFLICT(source_path,source_sha256) DO NOTHING"""),
-                  {**e,'now':utc_now()})
-                created+=max(0,result.rowcount)
+                  VALUES (:id,:title,:source,:sha,:priority,'draft',
+                          :original,:display,:raw_b64,:now)
+                  ON CONFLICT(source_path,source_sha256) DO NOTHING""")
+            # Bulk executemany avoids 1171 database round-trips on the free server.
+            db.execute(statement,[{**e,'now':utc_now()} for e in entries])
+            after=int(db.execute(text('SELECT count(*) FROM academy_documents')).scalar() or 0)
+        created=max(0,after-before)
         return {'ok':True,'created':created,'skipped':len(entries)-created,
                 'total_files':len(entries),'review_required':True,
                 'message':'原文未改动；默认待审核，管理员可逐篇批准发布'}
