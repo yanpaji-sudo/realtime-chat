@@ -18,20 +18,19 @@ jobs:
           f=Path('member-tree/app.py')
           p=f.read_text().splitlines()
           print('PY_LINES',len(p))
-          for a,b in [(28,58),(125,169),(250,344),(332,365),(465,502),(560,590)]:
-            print('--- PY',a,b)
-            for i in range(a-1,min(b,len(p))):
-              line=p[i]
-              if any(t in line.lower() for t in ('password','secret','token','admin_users_json')):print(i+1,'[credential-related source redacted]')
-              else:print(i+1,line[:850])
-          j=Path('member-tree/static/app.js').read_text().splitlines()
-          for a,b in [(1,44),(68,110),(1100,1153)]:
-            print('--- JS',a,b)
-            for i in range(a-1,min(b,len(j))):
-              line=j[i]
-              if 'password' in line.lower() or 'secret' in line.lower():print(i+1,'[credential UI omitted]')
-              else:print(i+1,line[:1300])
-          h=Path('member-tree/static/index.html').read_text().splitlines()
-          print('HTML view navigation line',h[2][:3600])
-          print('REQUIREMENTS',Path('member-tree/requirements.txt').read_text())
+          import re
+          for label,lines,needles in [
+           ('JS',Path('member-tree/static/app.js').read_text().splitlines(),
+            ['async function api','function api','function mk','function configure','function setRole','function render(){','function refresh(','function showToast','function message']),
+           ('PY',p,['class ','def require(','def db_init(','def db_init','def utc_now','def audit','def static('])]:
+            for needle in needles:
+             for i,line in enumerate(lines):
+              if needle in line:
+               print('ANCHOR',label,needle,'LINE',i+1)
+               for k in range(max(0,i-3),min(len(lines),i+12)):
+                v=lines[k]
+                if any(s in v.lower() for s in ('password','secret','token','admin_users_json')):v='[redacted]'
+                print(f'{k+1} {v[:1100]}')
+               break
+          print('requirements:',Path('member-tree/requirements.txt').read_text()[:2500])
           PY
