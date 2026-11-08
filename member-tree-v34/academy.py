@@ -5,6 +5,7 @@ middleware enforces viewer/admin permissions.  Original lesson text is never
 silently rewritten and uploaded archives are not automatically published.
 """
 import hashlib
+import base64
 import io
 import json
 import os
@@ -15,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from urllib import request as http_request, error as http_error
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -40,7 +42,7 @@ def _decode(data):
     for enc in ('utf-8-sig','gb18030','utf-16'):
         try:
             out=data.decode(enc)
-            if '\x00' not in out and len(out.strip())>0:return out
+            if len(out.strip())>0:return out
         except (UnicodeError,LookupError):pass
     raise ValueError('文本编码无法解析，请转换为UTF-8再上传')
 
@@ -66,7 +68,7 @@ def register_academy(app,engine,require,utc_now):
                 id TEXT PRIMARY KEY, title TEXT NOT NULL,source_path TEXT NOT NULL,
                 source_sha256 TEXT NOT NULL, priority INTEGER NOT NULL DEFAULT 20,
                 status TEXT NOT NULL DEFAULT 'draft', original_text TEXT NOT NULL,
-                display_text TEXT NOT NULL, created_at TEXT NOT NULL,
+                display_text TEXT NOT NULL,raw_bytes_b64 TEXT NOT NULL,created_at TEXT NOT NULL,
                 reviewed_at TEXT,reviewer TEXT,
                 UNIQUE(source_path,source_sha256))"""))
             db.execute(text("CREATE INDEX IF NOT EXISTS idx_academy_docs_status ON academy_documents(status,priority)"))
@@ -117,6 +119,20 @@ def register_academy(app,engine,require,utc_now):
             raise HTTPException(404,'课程不存在或未发布')
         return dict(row)
 
+    @router.get('/documents/{doc_id}/download')
+    def download_original(doc_id:str,req:Request):
+        user=require(req)
+        with engine.connect() as db:
+            row=db.execute(text("SELECT status,raw_bytes_b64 FROM academy_documents WHERE id=:id"),
+                           {'id':doc_id}).mappings().first()
+        if not row or (user['role']!='admin' and row['status']!='approved'):
+            raise HTTPException(404,'课程不存在或未发布')
+        # Original bytes, including unusual source encoding and embedded NULs,
+        # remain exactly the same as in the user-supplied ZIP.
+        data=base64.b64decode(row['raw_bytes_b64'],validate=True)
+        return Response(content=data,media_type='application/octet-stream',
+                        headers={'Content-Disposition':'attachment; filename="course-original.txt"'})
+
     @router.post('/documents/{doc_id}/approve')
     def approve(doc_id:str,req:Request):
         user=require(req,'admin',True)
@@ -156,7 +172,7 @@ def register_academy(app,engine,require,utc_now):
                        'title':PurePosixPath(name).stem[:220],
                        'source':name[:800],
                        'sha':hashlib.sha256(raw).hexdigest(),
-                       'priority':priority,'original':original,'display':brand_display(original)
+                       'priority':priority,'original':original.replace('\x00','␀'),'display':brand_display(original.replace('\x00','␀')),'raw_b64':base64.b64encode(raw).decode('ascii')
                     })
         except zipfile.BadZipFile as exc:
             raise HTTPException(400,'课程ZIP损坏') from exc
@@ -167,8 +183,8 @@ def register_academy(app,engine,require,utc_now):
                 # Nothing is overwritten if this exact lesson has already been imported.
                 result=db.execute(text("""INSERT INTO academy_documents
                   (id,title,source_path,source_sha256,priority,status,
-                   original_text,display_text,created_at)
-                  VALUES (:id,:title,:source,:sha,:priority,'draft',:original,:display,:now)
+                   original_text,display_text,raw_bytes_b64,created_at)
+                  VALUES (:id,:title,:source,:sha,:priority,'draft',:original,:display,:raw_b64,:now)
                   ON CONFLICT(source_path,source_sha256) DO NOTHING"""),
                   {**e,'now':utc_now()})
                 created+=max(0,result.rowcount)
