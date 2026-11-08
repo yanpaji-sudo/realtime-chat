@@ -1,0 +1,35 @@
+name: Check live V36 economy tutor (read only)
+on:
+  push:
+    branches: [member-tree-v36-economy-model]
+    paths: ['.github/workflows/v36-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time
+          site='https://member-tree-dashboard-demo.onrender.com'
+          for path,mark in [
+             ('/','data-view="academy"'),
+             ('/static/app.js','function academySendChat(){'),
+             ('/api/health','"status":"ok"')]:
+            st=time.monotonic()
+            req=urllib.request.Request(site+path,headers={'Cache-Control':'no-cache','User-Agent':'V36-Health-Probe/1.0'})
+            with urllib.request.urlopen(req,timeout=75) as res:
+              body=res.read(400000)
+              good=res.status==200 and mark.encode() in body
+              print('CHECK',path,'HTTP',res.status,'MARKER',good,'SECONDS',round(time.monotonic()-st,2),flush=True)
+              if not good:raise SystemExit(1)
+          try:
+             urllib.request.urlopen(site+'/api/academy/stats',timeout=10)
+             raise SystemExit('Sensitive academy API accessible without login')
+          except urllib.error.HTTPError as e:
+             print('AUTH CHECK',e.code,flush=True)
+             if e.code!=401:raise
+          print('V36 deployed service and member database HEALTHY',flush=True)
+          PY
