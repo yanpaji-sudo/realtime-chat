@@ -27,3 +27,5 @@ jobs:
                       print('HTTPS',url,'STATUS',r.status,'SECONDS',round(time.monotonic()-t,1),flush=True)
               except Exception as e:print('HTTPS',url,'FAIL',repr(e),'SECONDS',round(time.monotonic()-t,1),flush=True)
           PY
+
+# Post-restart retest on 2026-11-08
