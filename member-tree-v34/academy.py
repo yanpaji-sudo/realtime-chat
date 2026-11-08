@@ -143,6 +143,26 @@ def register_academy(app,engine,require,utc_now):
             if r.rowcount==0:raise HTTPException(404,'课程不存在')
         return {'ok':True}
 
+    class ReviewBatchIn(BaseModel):
+        scope: str = Field(default='core',max_length=20)
+        acknowledge: bool = False
+
+    @router.post('/approve-batch')
+    def approve_batch(req:Request,body:ReviewBatchIn):
+        user=require(req,'admin',True)
+        if not body.acknowledge:
+            raise HTTPException(400,'请先确认课程内容和个人信息已经人工审核')
+        if body.scope not in ('core','supplement','all'):
+            raise HTTPException(400,'审核范围不正确')
+        where={'core':" AND priority>=100",
+               'supplement':" AND priority<100",'all':''}[body.scope]
+        with engine.begin() as db:
+            result=db.execute(text("""UPDATE academy_documents
+                SET status='approved',reviewed_at=:at,reviewer=:by
+                WHERE status='draft'"""+where),
+                {'at':utc_now(),'by':user.get('username','')})
+        return {'approved':max(0,result.rowcount),'scope':body.scope}
+
     @router.post('/upload')
     async def upload(req:Request,file:UploadFile=File(...),scope:str=Form('auto')):
         user=require(req,'admin',True)
