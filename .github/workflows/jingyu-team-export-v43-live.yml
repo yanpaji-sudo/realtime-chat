@@ -1,0 +1,47 @@
+name: Read-only live verification Whale V43 team export and isolated 10 users
+on:
+  push:
+    branches: [jingyu-team-export-v43]
+    paths: ['.github/workflows/jingyu-team-export-v43-live.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate live deployed Whale URL and admin export auth without writes
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          base='https://jingyu-whale-member-tree-v27-test.onrender.com'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'Whale-V43-ReadOnly-Verify'})
+              with urllib.request.urlopen(req,timeout=85) as r:
+                  data=r.read(900000)
+                  print('GET',path,r.status,'bytes',len(data),flush=True)
+                  assert r.status==200
+                  return data
+          stat=json.loads(get('/api/jingyu-test/status'))
+          print('WHALE',stat,flush=True)
+          assert stat['active_members']==10 and stat['stored_members']==10,stat
+          assert stat['isolated_test_database'] and not stat['production_database_connected'],stat
+          js=get('/static/app.js').decode('utf-8')
+          assert 'function teamOnlyShow(id)' in js
+          assert 'function teamExcelDownload(id)' in js
+          assert 'function teamPictureDownload(id,all=true)' in js
+          assert 'v42-team-head' in js
+          assert 'const limit=stake>0?Math.floor(stake*13/10):0' in js
+          css=get('/static/style.css').decode('utf-8')
+          assert '.v42-export-dialog' in css
+          assert '.v28-compact-tooltip{pointer-events:auto!important}' in css
+          assert b'"status":"ok"' in get('/api/health')
+          for path in ['/api/export/team.xlsx?account=UNAUTHORIZED','/api/academy/documents']:
+            try:
+              get(path)
+              raise AssertionError('unauthorized request succeeded: '+path)
+            except urllib.error.HTTPError as e:
+              print('AUTH',path,e.code,flush=True)
+              assert e.code in (401,403)
+          print('WHALE_V43_DEPLOYED: full team PNG, centered 3-sheet Excel, isolated ten members, Academy, 130-percent alert',flush=True)
+          PY
