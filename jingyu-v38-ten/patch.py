@@ -32,7 +32,7 @@ app=app.replace("salt='member-tree-v3'","salt='jingyu-member-tree-test-v1'")
 # JY rows below are generated when the whale database starts empty.
 assert "jingyu_seed_1000" not in app
 before="    db_init()\n    if os.environ.get('ENABLE_MIDNIGHT_WORKER','1')=='1':"
-after="    db_init()\n    jingyu_seed_ten()\n    if os.environ.get('ENABLE_MIDNIGHT_WORKER','1')=='1':"
+after="    db_init()\n    if os.environ.get('JINGYU_TEST_SKIP_SEED')!='1':\n        jingyu_seed_ten()\n    if os.environ.get('ENABLE_MIDNIGHT_WORKER','1')=='1':"
 assert app.count(before)==1,('startup db_init anchor changed',app.count(before))
 app=app.replace(before,after,1)
 
