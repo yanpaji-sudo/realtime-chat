@@ -1,0 +1,42 @@
+name: Read-only verify formal team export live
+on:
+  push:
+    branches: [member-tree-team-export-v1]
+    paths: ['.github/workflows/member-tree-team-export-live.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Test live URLs and access control without login
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          base='https://member-tree-dashboard-demo.onrender.com'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=85) as r:
+                  print('GET',path,r.status,flush=True)
+                  return r.read(1000000).decode('utf-8')
+          html=get('/')
+          assert '会员树状统计系统' in html
+          js=get('/static/app.js')
+          assert 'function teamOnlyShow(id)' in js
+          assert 'function teamExcelDownload(id)' in js
+          assert 'function teamPictureDownload(id,all=true)' in js
+          assert 'const header=mk(' in js and 'v42-team-head' in js
+          css=get('/static/style.css')
+          assert '.v42-export-dialog' in css
+          assert '.v28-compact-tooltip{pointer-events:auto!important}' in css
+          health=get('/api/health')
+          assert json.loads(health)['status']=='ok'
+          try:
+              get('/api/export/team.xlsx?account=UNAUTHORIZEDTEST')
+              raise AssertionError('unauthenticated export was allowed')
+          except urllib.error.HTTPError as e:
+              print('export auth status:',e.code,flush=True)
+              assert e.code in (401,403)
+          print('LIVE_FORMAL_TEAM_EXPORT_VERIFIED',flush=True)
+          PY
