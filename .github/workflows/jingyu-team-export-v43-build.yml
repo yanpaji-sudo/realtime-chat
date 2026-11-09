@@ -1,0 +1,69 @@
+name: Verify isolated Whale V43 centered team Excel and PNG
+on:
+  push:
+    branches: [jingyu-team-export-v43]
+    paths:
+      - 'member-tree-team-export/**'
+      - '.github/workflows/jingyu-team-export-v43-build.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract pinned, independently tested Whale V42 source (no live DB)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin 794cf137efa0d2f3a079b7b34f9285c52f277017
+          test "$(git rev-parse FETCH_HEAD:member-tree-deploy/payload.b64)" = "15a132fb3631ae7ae54e854c0faa15db8b70e99d"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          test -f member-tree/app.py
+          test -f member-tree/tests/test_jingyu_ten.py
+          test -f member-tree/tests/test_v40_alerts.py
+          test -f member-tree/academy.py
+          grep -q 'jingyu_v38_only_ten.sqlite3' member-tree/app.py
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+      - name: Apply exact tested formal export UI/Excel changes on Whale only
+        run: |
+          set -euo pipefail
+          python3 member-tree-team-export/patch.py
+          cp member-tree-team-export/test_export.py member-tree/tests/test_team_export_formal.py
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          grep -q "function teamOnlyShow(id)" member-tree/static/app.js
+          grep -q "function teamPictureDownload(id,all=true)" member-tree/static/app.js
+          grep -q 'member-tree-team-export' member-tree/app.py && exit 1 || true
+          grep -q "limit=(stake\*13)//10" member-tree/app.py
+          grep -q 'jingyu_v38_only_ten.sqlite3' member-tree/app.py
+      - name: Install isolated test dependencies
+        run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Verify exact Excel layout, ten members, V42 130-percent difference and UI regressions
+        run: |
+          set -euo pipefail
+          cd member-tree
+          rm -f /tmp/jingyu_v38_only_ten.sqlite3*
+          python3 -m pytest -q tests/test_team_export_formal.py tests/test_jingyu_ten.py tests/test_v40_alerts.py
+          node tests/test_v40_frontend.cjs
+          node tests/test_v28_compact.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v33_rank_alert.cjs
+          node tests/test_v34_academy.cjs
+      - name: Validate AI Academy and existing backup/permissions without touching customer data
+        run: |
+          set -euo pipefail
+          cd member-tree
+          rm -f /tmp/jingyu_v38_only_ten.sqlite3*
+          python3 -m pytest -q tests/test_v34_academy.py tests/test_v38_strict.py
+      - name: Package tested isolated Whale V43 upgrade
+        run: |
+          set -euo pipefail
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+          tar -czf /tmp/jingyu-v43-team-export.tgz member-tree
+          base64 -w0 /tmp/jingyu-v43-team-export.tgz > member-tree-deploy/payload.b64
+          git config user.name 'Whale Team Export CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          git commit -m 'Whale V43 tested: centered Excel, all-member first sheet, PNG and isolated V42 alerts'
+          git push origin HEAD:jingyu-team-export-v43
