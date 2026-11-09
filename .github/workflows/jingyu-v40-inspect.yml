@@ -54,5 +54,15 @@ jobs:
           for i,line in enumerate(stylesheet):
             if any(x in line for x in ('.v29-alarm','.v29-position','.v33-alarm','.position-alarm','.v29-red','.position-glow')):
               print('CSS',i+1,line[:850])
+          print('===== BACKEND STAKE VALIDATION =====')
+          import re
+          bcode=Path('member-tree/app.py').read_text(encoding='utf8')
+          for needle in ['def validate_member(', 'def validate_stake_for_level(', 'class MemberIn(']:
+            m=re.search(re.escape(needle),bcode)
+            print('STAKEMATCH',needle, bool(m))
+            if m:print('STAKEFUNC',bcode[m.start():m.start()+1400])
+          hcode=Path('member-tree/static/index.html').read_text(encoding='utf8')
+          m=re.search(r'.{0,300}id="editStake".{0,600}',hcode)
+          if m:print('STAKEHTML',m.group())
           print('TEST_FILES',sorted([p.name for p in Path('member-tree/tests').glob('*stake*')]))
           PY
