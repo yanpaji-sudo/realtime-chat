@@ -40,7 +40,7 @@ for(const marker of [
  'function openEdit(m=null)',
  "el('editStake').value=m?String(m.stake_cents/100):'10000'",
  "stake:el('editStake').value",
- '所有层级：本人余额≥本人建仓×130%',
+ '全部层级：本人余额≥本人建仓×130%',
  'suggest+=warn.cents',
  '130%线',
  'function academySendChat',
