@@ -1,4 +1,4 @@
-name: Verify Whale V41 self-stake strict 150pct minimum release without production changes
+name: Verify Whale V42 self-stake strict 130pct minimum release without production changes
 on:
   push:
     branches: [jingyu-v40-stake130-alerts]
@@ -39,7 +39,7 @@ jobs:
           grep -q 'production_database_connected' member-tree/app.py
       - name: Install safe test dependencies
         run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
-      - name: Check isolated 10 members and strict over-150pct minimum excess release logic
+      - name: Check isolated 10 members and strict over-130pct minimum excess release logic
         run: |
           set -euo pipefail
           cd member-tree
@@ -66,10 +66,10 @@ jobs:
       - name: Package only tested Whale upgrade on the isolated candidate branch
         run: |
           set -euo pipefail
-          tar -czf /tmp/jingyu-v40.tgz member-tree
-          base64 -w0 /tmp/jingyu-v40.tgz > member-tree-deploy/payload.b64
+          tar -czf /tmp/jingyu-v42.tgz member-tree
+          base64 -w0 /tmp/jingyu-v42.tgz > member-tree-deploy/payload.b64
           git config user.name "Whale V40 Test CI"
           git config user.email "actions@users.noreply.github.com"
           git add member-tree-deploy/payload.b64
-          git commit -m "Whale V41 tested: every level over 150% yellow alerts and minimum excess release"
+          git commit -m "Whale V42 tested: every level over 130% yellow alerts and minimum excess release"
           git push origin HEAD:jingyu-v40-stake130-alerts

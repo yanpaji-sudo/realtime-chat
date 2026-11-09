@@ -1,4 +1,4 @@
-name: Verify live Whale V41 strict 150-percent warning, min release, 10 members and Academy
+name: Verify live Whale V42 strict 130-percent warning, min release, 10 members and Academy
 on:
   push:
     branches: [jingyu-v40-stake130-alerts]
@@ -16,7 +16,7 @@ jobs:
           import urllib.request,urllib.error,json
           base='https://jingyu-whale-member-tree-v27-test.onrender.com'
           def get(path):
-              request=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'Whale-V40-ReadOnly-Live-Check'})
+              request=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'Whale-V42-ReadOnly-Live-Check'})
               with urllib.request.urlopen(request,timeout=85) as response:
                   data=response.read(700000)
                   print('GET',path,response.status,'bytes',len(data),flush=True)
@@ -28,14 +28,14 @@ jobs:
           assert status['stored_members']==10,status
           assert status['isolated_test_database'] and not status['production_database_connected'],status
           html=get('/').decode('utf8')
-          assert '所有层级余额超过本人建仓×150%黄色报警' in html
+          assert '所有层级余额超过本人建仓×130%黄色报警' in html
           assert 'data-view="academy"' in html
           js=get('/static/app.js').decode('utf8')
-          assert '全部层级：本人余额超过建仓×150%' in js
+          assert '全部层级：本人余额超过建仓×130%' in js
           assert 'const cents=active?balance-limit:0' in js
           assert 'v33AlertPanel' in js and 'function academySendChat' in js
           css=get('/static/style.css').decode('utf8')
-          assert '/* Whale-only V41: YELLOW warning' in css
+          assert '/* Whale-only V42: YELLOW warning' in css
           assert 'stroke:#facc15!important' in css
           assert b'"status":"ok"' in get('/api/health')
           try:
@@ -44,5 +44,5 @@ jobs:
           except urllib.error.HTTPError as e:
               print('ACADEMY_AUTH',e.code,flush=True)
               assert e.code==401
-          print('WHALE_V41_LIVE_VERIFIED: ten fake members, >150%, minimum release, AI Academy and isolated database',flush=True)
+          print('WHALE_V42_LIVE_VERIFIED: ten fake members, >130%, minimum release, AI Academy and isolated database',flush=True)
           PY
