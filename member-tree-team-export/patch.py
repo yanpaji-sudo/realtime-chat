@@ -21,7 +21,7 @@ replace_once('let branchViewportControls=null;',
 replace_once('function compactInfo(m){',
     Path('member-tree-team-export/frontend.jsfrag').read_text(encoding='utf-8')+'\nfunction compactInfo(m){')
 replace_once("wrap.append(mk('h3','v28-pop-title',m.account+' · 个人与团队数据'));",
-"""const header=mk('div','v42-team-head'),heading=mk('h3','v28-pop-title',m.account+' · 个人与团队数据'),buttons=mk('div','v42-team-buttons');
+"""const header=mk('div','v42-team-head'),headTitle=mk('h3','v28-pop-title',m.account+' · 个人与团队数据'),buttons=mk('div','v42-team-buttons');
  const only=mk('button','v42-team-button','▤');only.type='button';only.title='仅看本团队架构';only.setAttribute('aria-label','仅看本团队架构');
  only.onclick=e=>{e.stopPropagation();e.preventDefault();teamOnlyShow(m.id)};
  buttons.append(only);
@@ -30,7 +30,7 @@ replace_once("wrap.append(mk('h3','v28-pop-title',m.account+' · 个人与团队
   down.onclick=e=>{e.stopPropagation();e.preventDefault();teamExportDialog(m.id)};
   buttons.append(down);
  }
- header.append(heading,buttons);wrap.append(header);""")
+ header.append(headTitle,buttons);wrap.append(header);""")
 replace_once("node.addEventListener('mouseleave',hideCompactTooltip);\n node.addEventListener('focus',()=>show(null));\n node.addEventListener('blur',hideCompactTooltip);",
 """node.addEventListener('mouseleave',()=>setTimeout(()=>{if(compactTooltipEl&&!compactTooltipEl.matches(':hover'))hideCompactTooltip()},260));
  node.addEventListener('focus',()=>show(null));
