@@ -29,11 +29,19 @@ jobs:
           print('JS_FUNCTIONS',[(i+1,line[:220]) for i,line in enumerate(js) if re.search(r'(function .*?(export|detail|modal|tree|render|branch|member|csv|excel|download|capture|summary)|个人与团队数据|团队指标|团队架构|导出|加入日期|joined_on)',line,re.I)][:125],flush=True)
           print('HTML_MATCHES',[(i+1,line[:350]) for i,line in enumerate(html) if any(x in line for x in ['详情','会员','modal','导出','script','个人与团队','团队'])][:90],flush=True)
           print('BACKEND_ROUTES',[(i+1,line[:250]) for i,line in enumerate(py) if re.search(r'@app\.(get|post|put|delete)|DATABASE_URL|sqlite|def team|def export|class Member',line,re.I) and not re.search(r'(password|secret|token|api_key|credential)',line,re.I)][:100],flush=True)
-          for key in ['个人与团队数据','团队指标','团队风险','团队总人数','下级平均余额','function openDetail','function showDetail','function showMember','function export','function renderBranch','function renderTree','function openEdit','function renderMember','joined_on','exportMembers','下载']:
-              inds=[i for i,line in enumerate(js) if key in line][:4]
-              for i in inds:
-                  print('JS_CONTEXT',key,'LINE',i+1,flush=True)
-                  for n in range(max(0,i-5),min(len(js),i+16)):
-                      print('J',n+1,js[n][:350],flush=True)
+          for name,source,a,b in [
+            ('JS_HOVER',js,240,347),('JS_BRANCH',js,630,670),
+            ('JS_RENDER_BRANCH',js,720,815),('JS_RENDER',js,1303,1345),
+            ('JS_MODAL',js,1418,1427),('PY_XLSX',py,1120,1300),
+            ('JS_GLOBALS',js,1,110)]:
+              print('RANGE_START',name,flush=True)
+              for n in range(a-1,min(b,len(source))):
+                text=source[n]
+                if any(t in text.lower() for t in ['password','secret','token','authorization']):
+                  text='[redacted]'
+                print('S',name,n+1,text[:1100],flush=True)
+          css=(root/'static/style.css').read_text(encoding='utf-8').splitlines()
+          print('CSS_TOOLTIP',[(i+1,line[:500]) for i,line in enumerate(css) if re.search(r'(v28-pop|compact-tooltip)',line,re.I)][:70],flush=True)
+          print('DB_MODE',[(i+1,line[:260]) for i,line in enumerate(py) if re.search(r'(DATABASE_URL|sqlite|DB_PATH|db_path|create_engine|database_url)',line) and not re.search(r'(password|secret|token|credential)',line,re.I)][:36],flush=True)
           print('CSS_HITS',[(i+1,line[:180]) for i,line in enumerate((root/'static/style.css').read_text(encoding='utf-8').splitlines()) if any(x in line for x in ['member-detail','member-modal','detail-modal','modal-title','detail-title','v29-','detail-card'])][:100],flush=True)
           PY
