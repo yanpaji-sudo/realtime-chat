@@ -1,0 +1,39 @@
+name: Inspect Whale V38 stake editor and position alert anchors
+on:
+  push:
+    branches: [jingyu-v40-stake130-alerts]
+    paths: [.github/workflows/jingyu-v40-inspect.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only inspect bundled test code without credentials
+        run: |
+          git show HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          for filename,terms,maxn in [
+              ('member-tree/app.py',['def v33_position_limits','def v33_sync_position_alerts','stake_cents','/api/members'],75),
+              ('member-tree/static/app.js',['function v29Position','stake_cents','建仓','v33-alarm','黄色','yellow'],105),
+              ('member-tree/static/style.css',['v33-alarm','v29-position','position-alarm','v29-red'],55)]:
+              lines=Path(filename).read_text(encoding='utf8').splitlines()
+              print('FILE',filename,'COUNT',len(lines))
+              hits=[i for i,v in enumerate(lines) if any(t in v for t in terms)]
+              if filename.endswith('app.py'):
+                for needle in ['def v33_position_limits','def v33_sync_position_alerts']:
+                  inds=[i for i,v in enumerate(lines) if needle in v]
+                  for hit in inds:
+                    for j in range(hit,min(hit+75,len(lines))):
+                      print('A',j+1,lines[j][:270])
+              print('INDEX',[(i+1,lines[i][:220]) for i in hits[:maxn] if not any(t in lines[i].lower() for t in ['password','secret','token','session'])])
+              if filename.endswith('app.js'):
+                for needle in ['function v29Position(m){','function editMember','function renderMember','function v33AlertPanel']:
+                  for hit in [i for i,v in enumerate(lines) if needle in v][:1]:
+                    print('JS_CONTEXT',needle,hit+1)
+                    for j in range(max(0,hit-5),min(hit+55,len(lines))):
+                      print('J',j+1,lines[j][:270])
+          print('TEST_FILES',sorted([p.name for p in Path('member-tree/tests').glob('*stake*')]))
+          PY
