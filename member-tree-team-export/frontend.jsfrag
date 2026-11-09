@@ -1,0 +1,144 @@
+
+/* Formal branch: team-only lens and two-format exports. Uses existing member array; no state writes. */
+function teamExportRows(id){
+ const root=members.find(m=>m.id===id);
+ if(!root)return [];
+ const ids=tableNodeIds(root.account);
+ return members.filter(m=>ids&&ids.has(m.id));
+}
+function teamOnlyShow(id){
+ const root=members.find(m=>m.id===id);
+ if(!root){showToast('会员不存在');return}
+ hideCompactTooltip();
+ teamFocusRestoreGroup=selectedTreeGroup;
+ teamFocusId=id;
+ selectedTreeGroup='';
+ view='branch';
+ query='';el('search').value='';
+ branchSelectedAccount='';
+ branchClosed.clear();
+ branchViewportReady=false;branchResetRequested=true;
+ render();
+ showToast('当前仅查看 '+root.account+' 及全部下级，点击返回完整架构即可恢复');
+}
+function teamOnlyClear(){
+ teamFocusId=null;
+ selectedTreeGroup=teamFocusRestoreGroup;
+ teamFocusRestoreGroup='';
+ branchSelectedAccount='';
+ branchViewportReady=false;branchResetRequested=true;
+ view='branch';render();
+}
+function teamExportFilename(account,label,ext){
+ return String(account).replace(/[^A-Za-z0-9_\u4e00-\u9fa5-]/g,'_')+'_'+label+'_'+dateNow()+'.'+ext;
+}
+async function teamExcelDownload(id){
+ if(role!=='admin')throw Error('只有管理员能导出团队数据');
+ const root=members.find(m=>m.id===id);
+ if(!root)throw Error('会员不存在');
+ const res=await fetch('/api/export/team.xlsx?account='+encodeURIComponent(root.account),{credentials:'same-origin'});
+ if(!res.ok)throw Error('Excel导出失败：HTTP '+res.status);
+ const blob=await res.blob();
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=teamExportFilename(root.account,'团队数据','xlsx');
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),45000);
+}
+async function teamPictureDownload(id,all=true){
+ if(role!=='admin')throw Error('只有管理员能导出团队数据');
+ const root=members.find(m=>m.id===id);
+ if(!root)throw Error('会员不存在');
+ const rows=teamExportRows(id);
+ if(!rows.length)throw Error('本团队暂无会员');
+ // Compute a full, independent tree layout; never change the visible page.
+ const priorCompact=compactMode;
+ let layout;
+ try{compactMode=false;layout=branchLayout(rows,all?new Set():branchClosed)}
+ finally{compactMode=priorCompact}
+ const paperW=2600,paperH=2250,canvasScale=2,cardW=290,cardH=112;
+ const wholeW=Math.ceil(layout.width+80),wholeH=Math.ceil(layout.height+120);
+ const nx=Math.ceil(wholeW/paperW),ny=Math.ceil(wholeH/paperH),pages=nx*ny;
+ if(pages>100)throw Error('该团队结构过大，高清图片超过100张，请选择较小的节点或使用Excel');
+ function label(s,max){const v=String(s??'');return v.length>max?v.slice(0,max-1)+'…':v}
+ for(let ty=0;ty<ny;ty++){
+  for(let tx=0;tx<nx;tx++){
+   const bx=tx*paperW,by=ty*paperH,w=Math.min(paperW,wholeW-bx),h=Math.min(paperH,wholeH-by);
+   const canvas=document.createElement('canvas');canvas.width=w*canvasScale;canvas.height=(h+90)*canvasScale;
+   const c=canvas.getContext('2d');
+   if(!c)throw Error('浏览器不支持图片导出');
+   c.scale(canvasScale,canvasScale);
+   c.fillStyle='#fff';c.fillRect(0,0,w,h+90);
+   c.fillStyle='#17375e';c.fillRect(0,0,w,78);
+   c.font='bold 22px Microsoft YaHei, sans-serif';c.fillStyle='white';
+   c.fillText(label(root.account,35)+' · 团队树状架构',22,32);
+   c.font='13px Microsoft YaHei, sans-serif';c.fillStyle='#dbeafa';
+   c.fillText('团队人数 '+rows.length+' | '+dateNow()+' | 高清分片 '+(ty*nx+tx+1)+'/'+pages,22,56);
+   c.save();
+   c.beginPath();c.rect(0,78,w,h+12);c.clip();
+   c.translate(28-bx,104-by);
+   c.lineWidth=2;c.strokeStyle='#9bb5d3';
+   for(const edge of layout.edges){
+    const a=layout.positions.get(edge[0]),b=layout.positions.get(edge[1]);if(!a||!b)continue;
+    const x1=a.x+cardW,x2=b.x,y1=a.y,y2=b.y;
+    if(Math.max(x1,x2)<bx-330||Math.min(x1,x2)>bx+w+330||
+       Math.max(y1,y2)<by-160||Math.min(y1,y2)>by+h+160)continue;
+    c.beginPath();c.moveTo(x1,y1);c.bezierCurveTo(x1+30,y1,x2-30,y2,x2,y2);c.stroke();
+   }
+   for(const member of rows){
+    const loc=layout.positions.get(member.id);if(!loc)continue;
+    const x=loc.x,y=loc.y-cardH/2;
+    if(x+cardW<bx-30||x>bx+w||y+cardH<by-45||y>by+h+45)continue;
+    c.fillStyle='#f2f7fc';c.strokeStyle='#5c88b6';c.lineWidth=1.6;
+    c.beginPath();c.roundRect(x,y,cardW,cardH,8);c.fill();c.stroke();
+    c.font='bold 14px Microsoft YaHei, sans-serif';c.fillStyle='#164371';
+    c.fillText(label(member.account,25),x+10,y+20);
+    c.font='12px Microsoft YaHei, sans-serif';c.fillStyle='#526782';
+    c.fillText('加入日期 '+String(member.joined_on||'—'),x+10,y+38);
+    c.fillStyle='#087c46';c.fillText('充值 '+money(member.stake_cents,true),x+10,y+59);
+    c.fillStyle='#c62828';c.fillText('提现 '+money(member.total_withdraw_cents,true),x+148,y+59);
+    c.fillStyle='#364c66';c.fillText('余额 '+money(member.balance_cents,true),x+10,y+79);
+    const profit=Number(member.profit_cents||0);
+    c.fillStyle=profit>0?'#087c46':profit<0?'#c62828':'#364c66';
+    c.fillText('输赢 '+money(profit,true),x+148,y+79);
+    c.fillStyle='#526782';c.fillText('备注 '+label(member.remark||'—',24),x+10,y+98);
+   }
+   c.restore();
+   const file=teamExportFilename(root.account,all?'完整团队架构':'当前团队架构','png')
+     .replace(/\.png$/, (pages>1?'_'+(ty*nx+tx+1)+'of'+pages:'')+'.png');
+   const blob=await new Promise((resolve,reject)=>canvas.toBlob(x=>x?resolve(x):reject(new Error('无法编码PNG图片')),'image/png'));
+   const url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=file;document.body.append(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),45000);
+   if(pages>1)await new Promise(resolve=>setTimeout(resolve,180));
+  }
+ }
+}
+function teamExportDialog(id){
+ if(role!=='admin'){showToast('只有管理员允许导出团队');return}
+ const root=members.find(m=>m.id===id);
+ if(!root){showToast('会员不存在');return}
+ hideCompactTooltip();
+ const dialog=mk('dialog','v42-export-dialog');
+ dialog.append(mk('h3','','导出 '+root.account+' 的团队数据'));
+ dialog.append(mk('p','','范围包含该会员及所有下级。Excel第一张表为团队汇总，明细按加入时间升序。'));
+ async function go(mode){
+  dialog.close();
+  try{
+   if(mode==='excel'||mode==='all')await teamExcelDownload(id);
+   if(mode==='png'||mode==='visible'||mode==='all')await teamPictureDownload(id,mode!=='visible');
+   showToast('团队文件已开始导出，请查看下载列表');
+  }catch(err){showToast('导出失败：'+String(err?.message||err))}
+ }
+ const options=[['▥ 导出完整树状图 · 高清PNG','png'],
+ ['▤ 导出当前展开图 · PNG','visible'],
+ ['▦ 导出团队Excel · 汇总/明细/层级','excel'],
+ ['↓ 同时导出PNG和Excel','all']];
+ for(const pair of options){
+  const b=mk('button','v42-export-choice',pair[0]);
+  b.type='button';b.onclick=()=>go(pair[1]);dialog.append(b);
+ }
+ const cancel=mk('button','v42-export-cancel','取消');
+ cancel.type='button';cancel.onclick=()=>dialog.close();dialog.append(cancel);
+ dialog.addEventListener('close',()=>dialog.remove());
+ document.body.append(dialog);dialog.showModal();
+}
