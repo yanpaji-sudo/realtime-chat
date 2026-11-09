@@ -32,9 +32,9 @@ replace_once("wrap.append(mk('h3','v28-pop-title',m.account+' · 个人与团队
  }
  header.append(headTitle,buttons);wrap.append(header);""")
 replace_once("node.addEventListener('mouseleave',hideCompactTooltip);\n node.addEventListener('focus',()=>show(null));\n node.addEventListener('blur',hideCompactTooltip);",
-"""node.addEventListener('mouseleave',()=>setTimeout(()=>{if(compactTooltipEl&&!compactTooltipEl.matches(':hover'))hideCompactTooltip()},260));
+"""node.addEventListener('mouseleave',()=>{if(typeof setTimeout==='function'&&compactTooltipEl?.querySelector?.('.v42-team-buttons'))setTimeout(()=>{if(compactTooltipEl&&!compactTooltipEl.matches(':hover'))hideCompactTooltip()},260);else hideCompactTooltip()});
  node.addEventListener('focus',()=>show(null));
- node.addEventListener('blur',()=>setTimeout(()=>{if(compactTooltipEl&&!compactTooltipEl.matches(':hover'))hideCompactTooltip()},260));""")
+ node.addEventListener('blur',()=>{if(typeof setTimeout==='function'&&compactTooltipEl?.querySelector?.('.v42-team-buttons'))setTimeout(()=>{if(compactTooltipEl&&!compactTooltipEl.matches(':hover'))hideCompactTooltip()},260);else hideCompactTooltip()});""")
 replace_once("const shownRows=shownTreeMembers();\n if(positionAlarmOn)host.append(v33AlertPanel(shownRows));",
 """const shownRows=teamFocusId?teamExportRows(teamFocusId):shownTreeMembers();
  if(teamFocusId){
