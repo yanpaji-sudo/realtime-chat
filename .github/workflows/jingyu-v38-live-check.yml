@@ -1,0 +1,46 @@
+name: Independently verify live Whale V38 and 10 fake members
+on:
+  push:
+    branches: [jingyu-v38-tenmembers-20261109]
+    paths: ['.github/workflows/jingyu-v38-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          base='https://jingyu-whale-member-tree-v27-test.onrender.com'
+          def get(path):
+            req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'Whale-V38-External-Live-Verification'})
+            with urllib.request.urlopen(req,timeout=90) as r:
+              body=r.read(800000)
+              print('GET',path,'HTTP',r.status,'LEN',len(body),flush=True)
+              if r.status!=200:raise SystemExit('HTTP not 200')
+              return body
+          status=json.loads(get('/api/jingyu-test/status'))
+          print('WHALERELEASE',status['site'],flush=True)
+          print('WHALEMEMBERS',status['active_members'],flush=True)
+          assert status['active_members']==10,status
+          assert status['stored_members']==10,status
+          assert status['synthetic_seed_size']==10,status
+          assert status['isolated_test_database'] is True,status
+          assert status['production_database_connected'] is False,status
+          assert status['academy_enabled'] and status['position_alert_enabled']
+          assert b'data-view="academy"' in get('/')
+          js=get('/static/app.js').decode('utf8')
+          assert '严格课程模式' in js
+          assert 'v33AlertPanel' in js
+          assert 'function academySendChat' in js
+          assert b'"status":"ok"' in get('/api/health')
+          try:
+            get('/api/academy/documents')
+            raise SystemExit('SECURITY FAILED: Academy was accessible without login')
+          except urllib.error.HTTPError as e:
+            print('ACADEMY_AUTH_GUARD_HTTP',e.code,flush=True)
+            assert e.code==401
+          print('WHALE V38 PUBLIC SITE VERIFIED: 10 TEST MEMBERS + ALERTS + AI ACADEMY',flush=True)
+          PY
