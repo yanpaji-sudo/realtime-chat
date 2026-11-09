@@ -35,5 +35,24 @@ jobs:
                     print('JS_CONTEXT',needle,hit+1)
                     for j in range(max(0,hit-5),min(hit+55,len(lines))):
                       print('J',j+1,lines[j][:270])
+          print('===== MEMBER EDITOR =====')
+          code=Path('member-tree/static/app.js').read_text(encoding='utf8').splitlines()
+          for i in range(1411,min(1424,len(code))):
+            print('EDITOR',i+1,code[i][:2500])
+          print('===== HTML INPUTS =====')
+          for i,line in enumerate(Path('member-tree/static/index.html').read_text(encoding='utf8').splitlines()):
+            if any(x in line.lower() for x in ('stake','editstake','建仓','editform','positionalarm')):
+              print('HTML',i+1,line[:1400])
+          print('===== BACKEND INPUTS =====')
+          backend=Path('member-tree/app.py').read_text(encoding='utf8').splitlines()
+          for i in range(795,895):
+            line=backend[i]
+            if any(x in line.lower() for x in ('password','secret','session','token')):continue
+            print('BACKEND',i+1,line[:600])
+          print('===== WARNING CSS =====')
+          stylesheet=Path('member-tree/static/style.css').read_text(encoding='utf8').splitlines()
+          for i,line in enumerate(stylesheet):
+            if any(x in line for x in ('.v29-alarm','.v29-position','.v33-alarm','.position-alarm','.v29-red','.position-glow')):
+              print('CSS',i+1,line[:850])
           print('TEST_FILES',sorted([p.name for p in Path('member-tree/tests').glob('*stake*')]))
           PY
