@@ -1,0 +1,4 @@
+Formal member-tree team export V42
+Tested candidate branch: member-tree-team-export-v1
+Scope: team-only tree, PNG and joined-date-sorted Excel summary/detail/levels.
+Database migrations: none.
