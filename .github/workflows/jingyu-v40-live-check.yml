@@ -1,0 +1,48 @@
+name: Verify live Whale V40 130-percent warning, 10 members and Academy safely
+on:
+  push:
+    branches: [jingyu-v40-stake130-alerts]
+    paths: ['.github/workflows/jingyu-v40-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read-only live public checks and auth guard
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          base='https://jingyu-whale-member-tree-v27-test.onrender.com'
+          def get(path):
+              request=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'Whale-V40-ReadOnly-Live-Check'})
+              with urllib.request.urlopen(request,timeout=85) as response:
+                  data=response.read(700000)
+                  print('GET',path,response.status,'bytes',len(data),flush=True)
+                  assert response.status==200
+                  return data
+          status=json.loads(get('/api/jingyu-test/status'))
+          print('WHALE_TEST_MEMBERS',status.get('active_members'),flush=True)
+          assert status['active_members']==10,status
+          assert status['stored_members']==10,status
+          assert status['isolated_test_database'] and not status['production_database_connected'],status
+          html=get('/').decode('utf8')
+          assert '所有层级按本人建仓金额×130%黄色报警' in html
+          assert 'data-view="academy"' in html
+          js=get('/static/app.js').decode('utf8')
+          assert '全部层级：本人余额≥本人建仓×130%' in js
+          assert 'const cents=active?stake:0' in js
+          assert 'v33AlertPanel' in js and 'function academySendChat' in js
+          css=get('/static/style.css').decode('utf8')
+          assert '/* Whale-only V40: YELLOW warning' in css
+          assert 'stroke:#facc15!important' in css
+          assert b'"status":"ok"' in get('/api/health')
+          try:
+              get('/api/academy/documents')
+              raise SystemExit('SECURITY FAIL: Academy was readable without login')
+          except urllib.error.HTTPError as e:
+              print('ACADEMY_AUTH',e.code,flush=True)
+              assert e.code==401
+          print('WHALE_V40_LIVE_VERIFIED: ten fake members, 130%, yellow alert, AI Academy and isolated database',flush=True)
+          PY
