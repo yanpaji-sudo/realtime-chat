@@ -45,7 +45,7 @@ def test_worksheet_order_colors_and_team_scope(monkeypatch):
     assert detail['K5'].font.color.rgb[-6:]=='C62828'
     assert detail['K6'].font.color.rgb[-6:]=='087C46'
     assert len(levels['A'])>=6
-    assert 'xlsx' in result.media_type
+    assert result.media_type=='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 def test_source_contains_only_read_only_routes():
     from pathlib import Path
