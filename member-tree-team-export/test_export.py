@@ -40,6 +40,27 @@ def test_worksheet_order_colors_and_team_scope(monkeypatch):
     assert detail['C5'].value=='002CHILD'
     assert detail['C6'].value=='001ROOT'
     assert detail['C7'].value is None
+    # First tab now immediately shows *all* own-team members beneath the summary.
+    assert summary['A12'].value.startswith('团队成员明细')
+    assert [summary['A14'].value, summary['A15'].value]==['002CHILD','001ROOT']
+    assert [summary['B14'].value, summary['B15'].value]==['2026-06-19','2026-07-20']
+    assert summary['C14'].value==5000
+    assert summary['D14'].value==6000
+    assert summary['E14'].value==2000
+    assert summary['F14'].value==-1000
+    assert summary['F15'].value==8000
+    assert summary['A16'].value is None
+    assert summary['C14'].font.color.rgb[-6:]=='087C46'
+    assert summary['D14'].font.color.rgb[-6:]=='C62828'
+    assert summary['F14'].font.color.rgb[-6:]=='C62828'
+    # No numeric cells are right aligned anymore: summary, members and levels.
+    for sheet, locations in [
+        (summary,['D5','F5','D6','B7','D7','F7','C14','D14','E14','F14']),
+        (detail,['A5','F5','G5','H5','J5','K5','M5']),
+        (levels,['B5','C5','D5','E5','G5','H5'])
+    ]:
+        for addr in locations:
+            assert sheet[addr].alignment.horizontal=='center',(sheet.title,addr)
     assert detail['G5'].font.color.rgb[-6:]=='087C46'
     assert detail['H5'].font.color.rgb[-6:]=='C62828'
     assert detail['K5'].font.color.rgb[-6:]=='C62828'
