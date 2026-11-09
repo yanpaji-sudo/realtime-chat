@@ -1,4 +1,4 @@
-name: Verify Whale V40 self-stake 130pct yellow alerts without production changes
+name: Verify Whale V41 self-stake strict 150pct minimum release without production changes
 on:
   push:
     branches: [jingyu-v40-stake130-alerts]
@@ -39,7 +39,7 @@ jobs:
           grep -q 'production_database_connected' member-tree/app.py
       - name: Install safe test dependencies
         run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
-      - name: Check current original isolated 10 test members and exact 130 percent logic
+      - name: Check isolated 10 members and strict over-150pct minimum excess release logic
         run: |
           set -euo pipefail
           cd member-tree
@@ -71,5 +71,5 @@ jobs:
           git config user.name "Whale V40 Test CI"
           git config user.email "actions@users.noreply.github.com"
           git add member-tree-deploy/payload.b64
-          git commit -m "Whale V40 tested: every level self-stake 130% yellow warnings"
+          git commit -m "Whale V41 tested: every level over 150% yellow alerts and minimum excess release"
           git push origin HEAD:jingyu-v40-stake130-alerts
