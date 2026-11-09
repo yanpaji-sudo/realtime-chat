@@ -1,0 +1,75 @@
+name: Verify Whale V40 self-stake 130pct yellow alerts without production changes
+on:
+  push:
+    branches: [jingyu-v40-stake130-alerts]
+    paths:
+      - 'jingyu-v40/patch.py'
+      - 'jingyu-v40/test_alerts.py'
+      - 'jingyu-v40/test_frontend.cjs'
+      - '.github/workflows/jingyu-v40-build.yml'
+permissions:
+  contents: write
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify stable Whale V38 source before patching
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin member-tree-jingyu-isolated-1000
+          test "$(git rev-parse FETCH_HEAD)" = "74936096cef435faec79532cc4c0baa8e4cca685"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          test -f member-tree/app.py
+          test -f member-tree/academy.py
+          test -f member-tree/tests/test_jingyu_ten.py
+          grep -q "jingyu_v38_only_ten.sqlite3" member-tree/app.py
+          grep -q '严格课程模式' member-tree/static/app.js
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+      - name: Apply Whale-only stake and alert changes
+        run: |
+          set -euo pipefail
+          python3 jingyu-v40/patch.py
+          cp jingyu-v40/test_alerts.py member-tree/tests/test_v40_alerts.py
+          cp jingyu-v40/test_frontend.cjs member-tree/tests/test_v40_frontend.cjs
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          grep -q "jingyu_v38_only_ten.sqlite3" member-tree/app.py
+          grep -q 'production_database_connected' member-tree/app.py
+      - name: Install safe test dependencies
+        run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Check current original isolated 10 test members and exact 130 percent logic
+        run: |
+          set -euo pipefail
+          cd member-tree
+          rm -f /tmp/jingyu_v38_only_ten.sqlite3*
+          python3 -m pytest -q tests/test_jingyu_ten.py tests/test_v40_alerts.py
+          node tests/test_v40_frontend.cjs
+          node tests/test_v35_frontend.cjs
+          node tests/test_v34_academy.cjs
+          node tests/test_v33_rank_alert.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v28_compact.cjs
+          node tests/test_v27_red_withdrawal_ui.cjs
+          node tests/test_v24_palette_risk.cjs
+          node tests/test_v23_compact_ai.cjs
+      - name: Verify Academy, member backup and unlimited-depth edits in separate fresh DBs
+        run: |
+          set -euo pipefail
+          cd member-tree
+          python3 -m pytest -q tests/test_v34_academy.py tests/test_v36_economy.py tests/test_v38_strict.py
+          for testfile in tests/test_v26_duplicate_reconcile.py tests/test_v25_all_level_stake.py tests/test_v11_backup.py; do
+             rm -f /tmp/jingyu_v38_only_ten.sqlite3*
+             JINGYU_TEST_SKIP_SEED=1 python3 -m pytest -q "$testfile"
+          done
+      - name: Package only tested Whale upgrade on the isolated candidate branch
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/jingyu-v40.tgz member-tree
+          base64 -w0 /tmp/jingyu-v40.tgz > member-tree-deploy/payload.b64
+          git config user.name "Whale V40 Test CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "Whale V40 tested: every level self-stake 130% yellow warnings"
+          git push origin HEAD:jingyu-v40-stake130-alerts
