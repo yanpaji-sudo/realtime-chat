@@ -16,8 +16,9 @@ jobs:
       - name: Verify pinned formal version and extract safely
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "444782980bdc2d76de0876c9f7af2625c9ac1390"
-          base64 -d member-tree-deploy/payload.b64 | tar xz
+          git fetch --no-tags origin 95f26538813f05dff43ac589591095bb9a529b7d
+          test "$(git rev-parse FETCH_HEAD:member-tree-deploy/payload.b64)" = "444782980bdc2d76de0876c9f7af2625c9ac1390"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
           test -f member-tree/app.py
           test -f member-tree/static/app.js
           find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
