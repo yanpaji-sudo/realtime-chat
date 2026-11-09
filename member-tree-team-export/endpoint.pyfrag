@@ -57,7 +57,7 @@ def export_team_styled(req: Request, account: str):
             ) if kind=='profit' and isinstance(value,(int,float)) else dark
         c.font=Font(name='Microsoft YaHei',size=10,color=color,
                     bold=kind in ('recharge','withdraw','profit'))
-        c.alignment=Alignment(horizontal='right' if isinstance(value,(int,float)) else 'left',
+        c.alignment=Alignment(horizontal='center',
                               vertical='center',wrap_text=True)
         if isinstance(value,(int,float)) and kind not in ('count','level'):
             c.number_format=moneyfmt
@@ -90,6 +90,28 @@ def export_team_styled(req: Request, account: str):
     ws.merge_cells('A10:F10')
     ws['A10']='口径：充值对应系统本人建仓；输赢按系统原公式（建仓－累计提现）；本人及下级每位只汇总一次。'
     ws['A10'].font=Font(name='Microsoft YaHei',size=9,color='637C9D')
+
+    # Keep every member immediately below the first-page overview.
+    # Detailed 13-column data remains in the separate "成员明细" worksheet.
+    ws.merge_cells('A12:F12')
+    ws['A12']='团队成员明细 · 按加入日期从早到晚（负责人及全部下级）'
+    ws['A12'].font=Font(name='Microsoft YaHei',size=12,bold=True,color='FFFFFF')
+    ws['A12'].fill=PatternFill('solid',fgColor=blue)
+    ws['A12'].alignment=Alignment(horizontal='center',vertical='center')
+    ws.row_dimensions[12].height=32
+    headers(ws,13,['会员账号','加入日期','充值/建仓','累计提现','当前余额','输赢'])
+    for idx,member in enumerate(team,14):
+        values=[str(member['account']),str(member.get('joined_on') or ''),
+                int(member['stake_cents'])/100,int(member['total_withdraw_cents'])/100,
+                int(member['balance_cents'])/100,int(member['profit_cents'])/100]
+        for col,value in enumerate(values,1):
+            kind='text' if col in (1,2) else ('recharge' if col==3 else
+                  'withdraw' if col==4 else 'profit' if col==6 else '')
+            cell(ws,idx,col,value,kind,stripe=idx%2==0)
+        ws.row_dimensions[idx].height=26
+    ws.auto_filter.ref=f'A13:F{13+count}'
+    ws.print_title_rows='1:2'
+
     for col in 'ACE': ws.column_dimensions[col].width=21
     for col in 'BDF': ws.column_dimensions[col].width=25
     ws.sheet_properties.pageSetUpPr.fitToPage=True
