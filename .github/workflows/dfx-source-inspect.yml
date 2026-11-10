@@ -39,4 +39,10 @@ jobs:
                           line=lines[i]
                           if re.search(r'(password\s*=|password\s*:|secret\s*=|token\s*=|DATABASE_URL\s*=)',line,re.I):line='[redacted]'
                           print('L',i+1,line[:310],flush=True)
+          print('LOGIN_CONTEXT',flush=True)
+          for i in range(268,396):
+              line=py[i]
+              if re.search(r'(password\s*[:=]|token\s*[:=]|secret\s*[:=])',line,re.I) and not re.search(r'(def |get\()',line):
+                  line='[sensitive runtime value redacted]'
+              print('AUTH',i+1,line[:420],flush=True)
           PY
