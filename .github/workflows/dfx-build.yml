@@ -1,0 +1,69 @@
+name: Build isolated DFX member tree with ten admin UI
+on:
+  push:
+    branches: [dfx-member-tree-v1]
+    paths:
+      - 'dfx-member-tree/**'
+      - '.github/workflows/dfx-build.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract pinned latest formal source, with no member database
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          test "$(git rev-parse FETCH_HEAD:member-tree-deploy/payload.b64)" = "8ec97e1883545d289a75926cc3e1695dfa3cdd1c"
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          find member-tree -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) -delete
+          test -f member-tree/app.py
+          test -f member-tree/tests/test_team_export_formal.py
+      - name: DFX label changes and compile checks
+        run: |
+          set -euo pipefail
+          python3 dfx-member-tree/patch.py
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          grep -q 'DFX数据图' member-tree/static/index.html
+          grep -q '10位管理员独立登录' member-tree/static/index.html
+          grep -q '总存款' member-tree/static/app.js
+          grep -q '总存款' member-tree/app.py
+          grep -q 'stake_cents' member-tree/app.py
+      - name: Install dependencies for source regression
+        run: python3 -m pip install -r member-tree/requirements.txt pytest httpx
+      - name: Confirm core financial calculations, secure admin auth and exports remain
+        run: |
+          set -euo pipefail
+          cd member-tree
+          python3 -m pytest -q tests/test_layer_export.py tests/test_no_data_modification.py
+          node tests/test_v28_compact.cjs
+          node tests/test_v32_fullscreen_hover.cjs
+          node tests/test_v33_rank_alert.cjs
+          python3 - <<'PY'
+          import os,json
+          os.environ['SESSION_SECRET']='DFXtest-secret-local-only'
+          os.environ['VIEWER_PASSWORD_HASH']='test'
+          import app
+          assert app.dfx_public_status()=={'site':'DFX数据图','separate_instance':True,'admin_count':10,'storage_persistent':False}
+          assert app.v33_position_limits(500000,0)==(750000,700000,750000)
+          assert app.v33_position_limits(1000000,0)==(1500000,1300000,1300000)
+          assert app.hash_pw('Unique_test_456') != app.hash_pw('Unique_test_456')
+          assert app.verify_pw('Unique_test_456',app.hash_pw('Unique_test_456'))
+          assert '/api/export/team.xlsx' in app.app.openapi()['paths'] if app.app.openapi_url else True
+          print('DFX_LABEL_AND_AUTH_SMOKE_TEST_PASS')
+          PY
+      - name: Archive only validated DFX code, never a database file
+        run: |
+          set -euo pipefail
+          find member-tree -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) -delete
+          tar -czf /tmp/dfx-tree.tgz member-tree
+          base64 -w0 /tmp/dfx-tree.tgz > member-tree-deploy/payload.b64
+          git config user.name 'DFX Deployment CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          git commit -m 'Build DFX independent data graph: ten admin title and total deposit label'
+          git push origin HEAD:dfx-member-tree-v1
