@@ -15,8 +15,9 @@ def member(mid,account,joined,stake,withdraw,balance,parent=None,profit=None):
     }
 
 def test_worksheet_order_colors_and_team_scope(monkeypatch):
-    root=member('root','001ROOT','2026-07-20',1000000,200000,3000000)
-    child=member('child','002CHILD','2026-06-19',500000,600000,200000,'root')
+    root=member('root','001ROOT','2026-07-20',1000000,200000,1500000)
+    child=member('child','002CHILD','2026-06-19',500000,600000,800000,'root')
+    root['remark']='负责人姓名';child['remark']='张三'
     unrelated=member('other','999OTHER','2026-01-01',80000000,0,80000000)
     all_rows=[root,child,unrelated]
     # The route must not mutate the database: fake DB connection only.
@@ -42,20 +43,31 @@ def test_worksheet_order_colors_and_team_scope(monkeypatch):
     assert detail['C7'].value is None
     # First tab now immediately shows *all* own-team members beneath the summary.
     assert summary['A12'].value.startswith('团队成员明细')
-    assert [summary['A14'].value, summary['A15'].value]==['002CHILD','001ROOT']
-    assert [summary['B14'].value, summary['B15'].value]==['2026-06-19','2026-07-20']
-    assert summary['C14'].value==5000
-    assert summary['D14'].value==6000
-    assert summary['E14'].value==2000
-    assert summary['F14'].value==-1000
-    assert summary['F15'].value==8000
+    assert [summary['A14'].value, summary['A15'].value]==['张三','负责人姓名']
+    assert [summary['B14'].value,summary['B15'].value]==['002CHILD','001ROOT']
+    assert [summary['C14'].value,summary['C15'].value]==['2026-06-19','2026-07-20']
+    assert [summary.cell(13,c).value for c in range(1,9)]==[
+      '姓名','会员账号','加入日期','充值/建仓','累计提现','当前余额','输赢','直推人数']
+    assert summary['D14'].value==5000
+    assert summary['E14'].value==6000
+    assert summary['F14'].value==8000
+    assert summary['G14'].value==-1000
+    assert summary['G15'].value==8000
+    assert summary['H14'].value==0 and summary['H15'].value==1
     assert summary['A16'].value is None
-    assert summary['C14'].font.color.rgb[-6:]=='087C46'
-    assert summary['D14'].font.color.rgb[-6:]=='C62828'
-    assert summary['F14'].font.color.rgb[-6:]=='C62828'
+    assert summary['D14'].font.color.rgb[-6:]=='087C46'
+    assert summary['E14'].font.color.rgb[-6:]=='C62828'
+    assert summary['G14'].font.color.rgb[-6:]=='C62828'
+    assert summary['F14'].font.color.rgb[-6:]=='C58A00'  # 5000 stake, 8000 > 7500
+    assert summary['F14'].fill.fgColor.rgb[-6:]=='FFF5BF'
+    assert summary['F15'].font.color.rgb[-6:]=='23364F'  # exactly 15000 is NOT > 15000
+    assert detail['J5'].font.color.rgb[-6:]=='C58A00'
+    assert detail['J6'].font.color.rgb[-6:]=='23364F'
+    assert len(summary.conditional_formatting)==1
+    assert len(detail.conditional_formatting)==1
     # No numeric cells are right aligned anymore: summary, members and levels.
     for sheet, locations in [
-        (summary,['D5','F5','D6','B7','D7','F7','C14','D14','E14','F14']),
+        (summary,['D5','F5','D6','B7','D7','F7','D14','E14','F14','G14','H14']),
         (detail,['A5','F5','G5','H5','J5','K5','M5']),
         (levels,['B5','C5','D5','E5','G5','H5'])
     ]:
@@ -75,6 +87,8 @@ def test_source_contains_only_read_only_routes():
     assert "require(req, 'admin')" in excerpt
     assert "with engine.connect()" in excerpt
     assert "filter_export_rows" in excerpt
+    assert "v33_position_limits" in excerpt
+    assert "FormulaRule" in excerpt
     assert "team.sort" in excerpt
     assert '.execute(' not in excerpt
     js=Path('static/app.js').read_text(encoding='utf-8')

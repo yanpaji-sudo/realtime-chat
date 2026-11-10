@@ -8,6 +8,7 @@ def export_team_styled(req: Request, account: str):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
+    from openpyxl.formatting.rule import FormulaRule
 
     with engine.connect() as db:
         all_members, _ = sums(active_rows(db))
@@ -29,10 +30,15 @@ def export_team_styled(req: Request, account: str):
     if len(depths) != len(team):
         raise HTTPException(400, '成员关系存在异常，请先核查')
 
-    blue='17375E'; green='087C46'; red='C62828'; dark='23364F'
+    blue='17375E'; green='087C46'; red='C62828'; dark='23364F'; yellow='C58A00'
     border=Border(bottom=Side(style='hair',color='D6E0ED'),
                   right=Side(style='hair',color='D6E0ED'))
     moneyfmt='#,##0;[Red]-#,##0;0'
+    def crosses_position_line(r):
+        # Use the formal production V33 alert TRIGGER, not Whale's independent 130% limit.
+        trigger,_,_=v33_position_limits(int(r.get('stake_cents') or 0),int(r.get('direct_count') or 0))
+        return int(r.get('balance_cents') or 0)>trigger
+
     wb=Workbook()
     def title(ws,label,n):
         ws.merge_cells(start_row=1,start_column=1,end_row=1,end_column=n)
@@ -51,12 +57,12 @@ def export_team_styled(req: Request, account: str):
         ws.row_dimensions[row].height=30
     def cell(ws,row,col,value,kind='',stripe=False):
         c=ws.cell(row,col,value);c.border=border
-        c.fill=PatternFill('solid',fgColor='F3F7FC' if stripe else 'FFFFFF')
-        color=green if kind=='recharge' else red if kind=='withdraw' else (
+        c.fill=PatternFill('solid',fgColor='FFF5BF' if kind=='alert_balance' else ('F3F7FC' if stripe else 'FFFFFF'))
+        color=yellow if kind=='alert_balance' else green if kind=='recharge' else red if kind=='withdraw' else (
             green if value>0 else red if value<0 else dark
             ) if kind=='profit' and isinstance(value,(int,float)) else dark
         c.font=Font(name='Microsoft YaHei',size=10,color=color,
-                    bold=kind in ('recharge','withdraw','profit'))
+                    bold=kind in ('recharge','withdraw','profit','alert_balance'))
         c.alignment=Alignment(horizontal='center',
                               vertical='center',wrap_text=True)
         if isinstance(value,(int,float)) and kind not in ('count','level'):
@@ -67,8 +73,8 @@ def export_team_styled(req: Request, account: str):
         return c
 
     ws=wb.active;ws.title='团队汇总'
-    title(ws,'团队数据汇总 · '+root['account'],6)
-    ws.merge_cells('A2:F2')
+    title(ws,'团队数据汇总 · '+root['account'],8)
+    ws.merge_cells('A2:H2')
     ws['A2']='范围：负责人及全部下级  |  导出时间：'+datetime.now().strftime('%Y-%m-%d %H:%M')
     ws['A2'].font=Font(name='Microsoft YaHei',size=10,color='637C9D')
     ws.row_dimensions[2].height=27
@@ -87,33 +93,42 @@ def export_team_styled(req: Request, account: str):
         for k,(name,value,kind) in enumerate(groups):
             cell(ws,rn,k*2+1,name,stripe=rn%2==0)
             cell(ws,rn,k*2+2,value,kind,stripe=rn%2==0)
-    ws.merge_cells('A10:F10')
+    ws.merge_cells('A10:H10')
     ws['A10']='口径：充值对应系统本人建仓；输赢按系统原公式（建仓－累计提现）；本人及下级每位只汇总一次。'
     ws['A10'].font=Font(name='Microsoft YaHei',size=9,color='637C9D')
 
-    # Keep every member immediately below the first-page overview.
-    # Detailed 13-column data remains in the separate "成员明细" worksheet.
-    ws.merge_cells('A12:F12')
+    ws.merge_cells('A11:H11')
+    ws['A11']='黄色余额：本人当前余额严格超过正式版原压仓告警触发线（按本人建仓及直属人数计算）。'
+    ws['A11'].font=Font(name='Microsoft YaHei',size=9,color=yellow,bold=True)
+    # Show all members beneath the overview, including the stored remark as name.
+    ws.merge_cells('A12:H12')
     ws['A12']='团队成员明细 · 按加入日期从早到晚（负责人及全部下级）'
     ws['A12'].font=Font(name='Microsoft YaHei',size=12,bold=True,color='FFFFFF')
     ws['A12'].fill=PatternFill('solid',fgColor=blue)
     ws['A12'].alignment=Alignment(horizontal='center',vertical='center')
     ws.row_dimensions[12].height=32
-    headers(ws,13,['会员账号','加入日期','充值/建仓','累计提现','当前余额','输赢'])
+    headers(ws,13,['姓名','会员账号','加入日期','充值/建仓','累计提现','当前余额','输赢','直推人数'])
     for idx,member in enumerate(team,14):
-        values=[str(member['account']),str(member.get('joined_on') or ''),
+        values=[str(member.get('remark') or ''),str(member['account']),
+                str(member.get('joined_on') or ''),
                 int(member['stake_cents'])/100,int(member['total_withdraw_cents'])/100,
-                int(member['balance_cents'])/100,int(member['profit_cents'])/100]
+                int(member['balance_cents'])/100,int(member['profit_cents'])/100,
+                int(member.get('direct_count') or 0)]
+        danger=crosses_position_line(member)
         for col,value in enumerate(values,1):
-            kind='text' if col in (1,2) else ('recharge' if col==3 else
-                  'withdraw' if col==4 else 'profit' if col==6 else '')
+            kind='text' if col in (1,2,3) else ('recharge' if col==4 else
+                'withdraw' if col==5 else 'alert_balance' if col==6 and danger else
+                'profit' if col==7 else 'count' if col==8 else '')
             cell(ws,idx,col,value,kind,stripe=idx%2==0)
         ws.row_dimensions[idx].height=26
-    ws.auto_filter.ref=f'A13:F{13+count}'
+    ws.auto_filter.ref=f'A13:H{13+count}'
     ws.print_title_rows='1:2'
-
-    for col in 'ACE': ws.column_dimensions[col].width=21
-    for col in 'BDF': ws.column_dimensions[col].width=25
+    ws.conditional_formatting.add(f'F14:F{13+count}',
+        FormulaRule(formula=['F14>IF(D14=5000,7500,IF(D14<=10000,15000,IF(H14>=5,20000,13000)))'],
+                    font=Font(name='Microsoft YaHei',bold=True,color=yellow),
+                    fill=PatternFill('solid',fgColor='FFF5BF')))
+    for col,width in zip('ABCDEFGH',[24,23,17,22,22,22,22,15]):
+        ws.column_dimensions[col].width=width
     ws.sheet_properties.pageSetUpPr.fitToPage=True
     ws.page_setup.fitToWidth=1
 
@@ -134,13 +149,19 @@ def export_team_styled(req: Request, account: str):
                 int(r['profit_cents'])/100,int(r['direct_count']),int(r['descendant_count'])]
         for col,value in enumerate(values,1):
             kind='text' if col in (2,3,4,5) else 'count' if col in (1,6,12,13) else (
-                'recharge' if col==7 else 'withdraw' if col in (8,9) else 'profit' if col==11 else '')
+                'recharge' if col==7 else 'withdraw' if col in (8,9) else
+                'alert_balance' if col==10 and crosses_position_line(r) else
+                'profit' if col==11 else '')
             cell(detail,rn,col,value,kind,stripe=rn%2==0)
         detail.row_dimensions[rn].height=25
     for col,width in enumerate([9,16,23,26,23,13,20,20,19,20,20,13,13],1):
         detail.column_dimensions[get_column_letter(col)].width=width
     detail.freeze_panes='D5'
     detail.auto_filter.ref=f'A4:M{max(5,4+count)}'
+    detail.conditional_formatting.add(f'J5:J{4+count}',
+        FormulaRule(formula=['J5>IF(G5=5000,7500,IF(G5<=10000,15000,IF(L5>=5,20000,13000)))'],
+                    font=Font(name='Microsoft YaHei',bold=True,color=yellow),
+                    fill=PatternFill('solid',fgColor='FFF5BF')))
     detail.print_title_rows='1:4'
     detail.sheet_properties.pageSetUpPr.fitToPage=True
     detail.page_setup.fitToWidth=1
