@@ -1,0 +1,33 @@
+name: Inspect DFX group selectors and validations read only
+on:
+  push:
+    branches: [dfx-add-groups-05-09-v2]
+    paths: ['.github/workflows/dfx-groups-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect packaged DFX for team group controls
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for name in ['app.py','static/app.js','static/index.html']:
+            lines=(Path('member-tree')/name).read_text(encoding='utf-8').splitlines()
+            selected=[]
+            for i,line in enumerate(lines):
+              if re.search(r'01组|02组|03组|06组|08组|01小组|02小组|03小组|06小组|08小组|groupAccount|group_account|GROUPS|groupOptions|groupFilter|selectedTreeGroup|teamGroups|小组切换|选择小组|小组筛选',line,re.I):
+                selected.append(i)
+            print('FILE',name,'LINES',len(lines),'MATCHES',len(selected),flush=True)
+            for i in selected[:150]:
+              print('M',name,i+1,lines[i][:550],flush=True)
+            for i in selected[:28]:
+              print('CTX',name,i+1,flush=True)
+              for j in range(max(0,i-3),min(len(lines),i+4)):
+                print('C',name,j+1,lines[j][:420],flush=True)
+          PY
