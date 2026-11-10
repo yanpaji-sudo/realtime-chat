@@ -1,0 +1,42 @@
+name: DFX read-only source review
+on:
+  push:
+    branches: [dfx-member-tree-v1]
+    paths: ['.github/workflows/dfx-source-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract compiled project and inspect security hooks without credentials
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          py=Path('member-tree/app.py').read_text(encoding='utf-8').splitlines()
+          js=Path('member-tree/static/app.js').read_text(encoding='utf-8').splitlines()
+          html=Path('member-tree/static/index.html').read_text(encoding='utf-8').splitlines()
+          for name,src in [('PY',py),('JS',js),('HTML',html)]:
+              print('FILE',name,'LINES',len(src),flush=True)
+              for i,line in enumerate(src):
+                  if name=='PY':
+                      pat=r'(def (init|bootstrap|seed|require|auth|login|verify)|@app\.(post|get)\(.(?:/api/)?(?:login|me|health)|CREATE TABLE.*users|INSERT INTO users|admin0|password_hash|ADMIN_|DEFAULT_|def (hash|generate)_password|DB_URL|ROOT =|def setup)'
+                  elif name=='JS':pat=r'(建仓资金|本人建仓|团队建仓|充值/建仓|建仓金额|系统名称|系统标题|磐石|<title>|totalMembers)'
+                  else:pat=r'(建仓资金|本人建仓|团队建仓|充值/建仓|建仓金额|磐石|<title>|会员树状|登录|logo)'
+                  if re.search(pat,line,re.I):
+                      print(name, i+1, line[:270] if not re.search(r'(password\s*[:=]|token\s*[:=]|secret\s*[:=])',line,re.I) else '[sensitive configuration line redacted]',flush=True)
+          print('REQUIREMENTS',Path('member-tree/requirements.txt').read_text()[:900],flush=True)
+          for path in [Path('member-tree/app.py'),Path('member-tree/static/index.html')]:
+              lines=path.read_text(encoding='utf-8').splitlines()
+              if path.name=='app.py':
+                  for a,b in [(1,100),(160,260),(400,520)]:
+                      print('PY_CONTEXT',a,b,flush=True)
+                      for i in range(a-1,min(b,len(lines))):
+                          line=lines[i]
+                          if re.search(r'(password\s*=|password\s*:|secret\s*=|token\s*=|DATABASE_URL\s*=)',line,re.I):line='[redacted]'
+                          print('L',i+1,line[:310],flush=True)
+          PY
