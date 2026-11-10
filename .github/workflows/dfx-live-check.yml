@@ -1,0 +1,52 @@
+name: Verify DFX temporary member-tree service without credentials
+on:
+  push:
+    branches: [dfx-member-tree-v1]
+    paths: ['.github/workflows/dfx-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read-only public health, DFX branding and auth enforcement
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time,json
+          base='https://dfx-member-tree-test.onrender.com'
+          def request(path,method='GET',payload=None):
+            req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','Content-Type':'application/json','User-Agent':'DFX-v1-readonly-check'},data=payload,method=method)
+            with urllib.request.urlopen(req,timeout=100) as rsp:
+              return rsp.status,rsp.read(1024*1024)
+          for turn in range(8):
+            try:
+              status,body=request('/api/health')
+              if status==200 and json.loads(body).get('status')=='ok':break
+            except Exception as ex:print('health attempt',turn,str(ex)[:100],flush=True);time.sleep(6)
+          else:raise AssertionError('DFX website health not ready')
+          status,body=request('/api/dfx-status')
+          result=json.loads(body)
+          print('DFX_STATUS',result,flush=True)
+          assert result['site']=='DFX数据图'
+          assert result['separate_instance'] and result['admin_count']==10
+          assert result['storage_persistent'] is False
+          html=request('/')[1].decode('utf-8')
+          assert 'DFX数据图' in html
+          assert '10位管理员独立登录' in html
+          assert '数据图' in html
+          js=request('/static/app.js')[1].decode('utf-8')
+          assert '总存款' in js and 'function teamExcelDownload(id)' in js
+          for path in ['/api/tree','/api/export/team.xlsx?account=x']:
+            try:request(path)
+            except urllib.error.HTTPError as exc:
+              print('PROTECTED',path,exc.code,flush=True)
+              assert exc.code in (401,403)
+            else:raise AssertionError(path+' not protected')
+          try:request('/api/login','POST',b'{"role":"admin","username":"dfxadmin01","password":"incorrect"}')
+          except urllib.error.HTTPError as exc:
+              print('ADMIN_AUTH_CONFIGURED',exc.code,flush=True)
+              assert exc.code==401, 'admin credentials should be configured; 503 means missing environment'
+          else:raise AssertionError('bad password unexpectedly accepted')
+          print('DFX_TEMPORARY_SERVICE_LIVE_VERIFIED; source isolated, 10 administrators, deposits relabeled; storage ephemeral',flush=True)
+          PY
