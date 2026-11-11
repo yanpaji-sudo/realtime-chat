@@ -1,0 +1,42 @@
+name: Audit formal member tree storage
+on:
+  push:
+    branches: [formal-storage-audit-20261111]
+    paths: ['.github/workflows/formal-storage-audit.yml']
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect packaged app storage implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('member-tree/app.py')
+          s=p.read_text(encoding='utf-8')
+          print('APP_PRESENT',p.exists(),'APP_LINES',len(s.splitlines()))
+          patterns=['DATABASE_URL','sqlite','postgres','create_engine','sqlite3','storage_persistent','/api/health','/api/status','/api/dfx-status']
+          lines=s.splitlines()
+          for pat in patterns:
+              hits=[(i+1,l.strip()[:220]) for i,l in enumerate(lines) if pat.lower() in l.lower()]
+              print('PATTERN',pat,'COUNT',len(hits))
+              for n,line in hits[:8]: print(f'LINE {n}: {line}')
+          PY
+      - name: Probe current formal site endpoints
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          base='https://member-tree-dashboard-demo.onrender.com'
+          for path in ['/api/health','/api/status','/api/dfx-status','/api/tree','/api/reports?month=2026-11&group=all']:
+            try:
+              req=urllib.request.Request(base+path,headers={'User-Agent':'formal-storage-audit/1.0'})
+              with urllib.request.urlopen(req,timeout=25) as r:
+                body=r.read(1600).decode('utf-8','replace')
+                print('HTTP',r.status,path,'BODY',body[:650].replace('\\n',' '))
+            except Exception as e: print('PROBE',path,type(e).__name__,str(e)[:200])
+          PY
