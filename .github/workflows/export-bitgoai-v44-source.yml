@@ -1,0 +1,86 @@
+name: Export BitgoAI V44 source archive
+on:
+  push:
+    branches:
+      - bitgoai-v44-release-20261111
+    paths:
+      - .github/workflows/export-bitgoai-v44-source.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workflow branch
+        uses: actions/checkout@v4
+
+      - name: Checkout deployed Whale V44 payload
+        uses: actions/checkout@v4
+        with:
+          ref: member-tree-jingyu-isolated-1000
+          path: whale-source
+
+      - name: Extract and sanitize source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bitgoai-export
+          base64 -d whale-source/member-tree-deploy/payload.b64 | tar -xz -C /tmp/bitgoai-export
+          test -d /tmp/bitgoai-export/member-tree
+          cd /tmp/bitgoai-export/member-tree
+
+          # Remove generated/runtime files and any local data or credential files.
+          find . -type d \( -name .git -o -name __pycache__ -o -name .pytest_cache -o -name node_modules -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +
+          find . -type f \( -name '*.pyc' -o -name '*.pyo' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' -o -name '*.db-wal' -o -name '*.db-shm' -o -name '*.log' -o -name '.DS_Store' \) -delete
+          find . -type f \( -name '.env' -o -name '.env.*' -o -iname '*credential*' -o -iname '*secret*' \) -delete
+
+          cat > README_BITGOAI_V44.md <<'EOF'
+          # BitgoAI V44 - Whale isolated test source
+
+          This archive contains the application source used by the isolated Whale test deployment of BitgoAI V44.
+
+          ## Contents
+          - Python backend and API
+          - Frontend HTML, JavaScript, and CSS
+          - BitgoAI Academy and reporting modules
+          - Regression tests and release notes
+          - Python dependency manifest
+
+          ## Local setup
+          1. Use Python 3.11 or a compatible version supported by the dependency manifest.
+          2. Create and activate a virtual environment.
+          3. Install dependencies with: `pip install -r requirements.txt`
+          4. Start the application with: `uvicorn app:app --host 127.0.0.1 --port 8000`
+          5. Open `http://127.0.0.1:8000`.
+
+          ## Data and security
+          This source archive intentionally excludes runtime databases, member records, local environment files, credentials, logs, and generated caches. Configure your own database and secrets before using it outside a local test environment. Do not connect a test copy to the formal production database.
+
+          ## V44 business-field behavior
+          - Uploaded withdrawal amounts are treated as the actual withdrawal amounts; the system does not subtract a fee again.
+          - Cash difference is calculated as deposits minus actual withdrawals.
+          - The visible Whale branding and report labels are renamed to BitgoAI.
+          EOF
+
+          # Fail the export if obvious hard-coded credentials or private keys are present.
+          if grep -RIlE '-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|postgres(ql)?://[^[:space:]]+:[^@[:space:]]+@' .; then
+            echo "Potential secret material detected in source archive."
+            exit 1
+          fi
+
+          python -m py_compile app.py academy.py
+          node --check static/app.js
+
+          cd /tmp/bitgoai-export
+          zip -qr /tmp/BitgoAI_V44_Whale_Test_Source.zip member-tree
+          test -s /tmp/BitgoAI_V44_Whale_Test_Source.zip
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitgoAI-V44-Whale-Test-Source
+          path: /tmp/BitgoAI_V44_Whale_Test_Source.zip
+          if-no-files-found: error
+          retention-days: 30
