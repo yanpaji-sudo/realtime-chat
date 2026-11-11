@@ -1,0 +1,29 @@
+name: Inspect Whale test source for BitgoAI update
+on:
+  push:
+    branches: [bitgoai-v44-inspect-20261111]
+    paths:
+      - '.github/workflows/bitgoai-inspect.yml'
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract exact deployed Whale package
+        run: |
+          set -euo pipefail
+          git show HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xzf -
+          test -f member-tree/app.py
+          test -f member-tree/static/app.js
+          tar -czf /tmp/whale-member-tree-source.tgz member-tree
+          echo "SOURCE_FILES=$(find member-tree -type f | wc -l)"
+          echo "APP_LINES=$(wc -l < member-tree/app.py)"
+          echo "JS_LINES=$(wc -l < member-tree/static/app.js)"
+          echo "ACADEMY=$(test -f member-tree/academy.py && echo yes || echo no)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whale-member-tree-source
+          path: /tmp/whale-member-tree-source.tgz
+          if-no-files-found: error
