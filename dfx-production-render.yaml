@@ -1,0 +1,19 @@
+# Safely adopt existing DFX web service. No new web service or database.
+# All existing auth environment variables remain untouched.
+services:
+  - type: web
+    name: dfx-member-tree-test
+    runtime: python
+    repo: https://github.com/yanpaji-sudo/realtime-chat
+    branch: dfx-postgres-production-v1
+    plan: free
+    region: singapore
+    numInstances: 1
+    buildCommand: base64 -d member-tree-deploy/payload.b64 | tar xz && pip install -r member-tree/requirements.txt
+    startCommand: cd member-tree && uvicorn app:app --host 0.0.0.0 --port $PORT
+    autoDeployTrigger: off
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dfx-member-tree-persistent-db
+          property: connectionString
