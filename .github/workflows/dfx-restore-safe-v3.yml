@@ -1,0 +1,36 @@
+name: Test DFX daily fission restore-only repair safely
+on:
+  push:
+    branches: [dfx-restore-safe-v3]
+    paths: ['dfx-restore-safe/**','.github/workflows/dfx-restore-safe-v3.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract immutable DFX deployment and discard SQLite data
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin b5b51f71b1c491b1af16f47a49a883cf5e099578
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+          test -f member-tree/app.py
+      - name: Apply patch and compile without modifying any running site
+        run: |
+          set -euo pipefail
+          python3 dfx-restore-safe/patch.py
+          cp dfx-restore-safe/test_reconcile.py member-tree/tests/test_dfx_reconcile_v3.py
+          python3 -m py_compile member-tree/app.py
+          grep -q 'fission_conflicts_reconciled' member-tree/app.py
+          grep -q 'DFX数据图' member-tree/static/index.html
+      - name: Install dependencies and run finance-protection tests
+        run: |
+          python3 -m pip install -r member-tree/requirements.txt pytest httpx
+          cd member-tree
+          python3 -m pytest -q tests/test_dfx_reconcile_v3.py tests/test_v26_duplicate_reconcile.py tests/test_no_data_modification.py
+      - name: Stage safe patch only; intentionally do NOT deploy DFX ephemeral service
+        run: |
+          echo 'Restore correction tests passed. Production DFX remains untouched pending persistent database configuration.'
