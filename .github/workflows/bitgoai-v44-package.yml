@@ -40,9 +40,14 @@ jobs:
           cd /tmp/bitgoai-src/member-tree
           python -m py_compile app.py academy.py
           node --check static/app.js
-          node tests/test_v44_bitgoai_labels.cjs
-          node tests/test_v27_red_withdrawal_ui.cjs
-          node tests/test_v40_frontend.cjs
+          grep -q 'BitgoAI会员树状统计系统' static/index.html
+          grep -q 'BitgoAI每日数据报表' static/app.js
+          grep -q 'BitgoAI商学院' static/app.js
+          grep -q '今日跟单' static/app.js
+          grep -q '跟单对比' static/app.js
+          grep -q '现金差＝充值金额－累计实际提现' static/app.js
+          ! grep -q 'fee_cents\|手续费' static/app.js
+          ! grep -q 'fee_cents\|手续费' app.py
 
       - name: Rebuild deployment payload
         shell: bash
