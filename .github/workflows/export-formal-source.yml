@@ -1,0 +1,54 @@
+name: Export Formal Member Tree Source Package
+on:
+  push:
+    branches: [formal-source-export-20261111]
+    paths: ['.github/workflows/export-formal-source.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout formal production source branch snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: member-tree-render
+      - name: Extract production source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s member-tree-deploy/payload.b64
+          base64 -d member-tree-deploy/payload.b64 | tar -xz
+          test -f member-tree/app.py
+          test -f member-tree/requirements.txt
+          mkdir -p formal-member-tree-source
+          cp -a member-tree formal-member-tree-source/
+          # Remove any runtime/local data and deployment secrets from the source bundle.
+          find formal-member-tree-source -type d \( -name .git -o -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache \) -prune -exec rm -rf {} +
+          find formal-member-tree-source -type f \( -name '*.pyc' -o -name '*.pyo' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.mtbackup' -o -name '*.log' -o -name '.env' -o -name '.env.*' \) -delete
+          cat > formal-member-tree-source/README_SOURCE_PACKAGE.txt <<'EOF'
+          Formal Member Tree — Source Package
+          Source repository: yanpaji-sudo/realtime-chat
+          Production source branch: member-tree-render
+          Package contains the extracted application source under member-tree/
+          Runtime databases, local SQLite files, backups, logs, .env files and credentials are intentionally excluded.
+          To deploy on Render, configure the service environment variables and a persistent PostgreSQL DATABASE_URL first.
+          Install dependencies from member-tree/requirements.txt.
+          Typical start command: cd member-tree && uvicorn app:app --host 0.0.0.0 --port $PORT
+          This is source code only; it does not include member records or production database contents.
+          EOF
+          (cd formal-member-tree-source && zip -qr ../formal-member-tree-source.zip .)
+          sha256sum formal-member-tree-source.zip > formal-member-tree-source.sha256
+          unzip -l formal-member-tree-source.zip | head -80
+      - name: Upload downloadable source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-member-tree-source
+          path: |
+            formal-member-tree-source.zip
+            formal-member-tree-source.sha256
+          if-no-files-found: error
+          retention-days: 30
