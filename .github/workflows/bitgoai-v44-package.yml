@@ -1,0 +1,62 @@
+name: Package BitgoAI V44 isolated test release
+on:
+  push:
+    branches:
+      - bitgoai-v44-release-20261111
+    paths:
+      - .github/workflows/bitgoai-v44-package.yml
+      - member-tree-deploy/patch_v44.py.gz.b64
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: bitgoai-v44-release-20261111
+
+      - name: Prepare source and apply V44 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bitgoai-src
+          base64 -d member-tree-deploy/payload.b64 | tar -xz -C /tmp/bitgoai-src
+          python - <<'PY'
+          import base64, gzip
+          from pathlib import Path
+          data = Path("member-tree-deploy/patch_v44.py.gz.b64").read_bytes()
+          Path("/tmp/patch_v44.py").write_bytes(gzip.decompress(base64.b64decode(data)))
+          PY
+          python /tmp/patch_v44.py /tmp/bitgoai-src/member-tree
+
+      - name: Validate V44 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/bitgoai-src/member-tree
+          python -m py_compile app.py academy.py
+          node --check static/app.js
+          node tests/test_v44_bitgoai_labels.cjs
+          node tests/test_v27_red_withdrawal_ui.cjs
+          node tests/test_v40_frontend.cjs
+
+      - name: Rebuild deployment payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/bitgoai-v44.tar.gz -C /tmp/bitgoai-src member-tree
+          base64 -w0 /tmp/bitgoai-v44.tar.gz > member-tree-deploy/payload.b64
+
+      - name: Commit candidate payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "Package BitgoAI V44 for isolated whale test"
+          git push origin HEAD:bitgoai-v44-release-20261111
