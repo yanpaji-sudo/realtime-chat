@@ -1,0 +1,37 @@
+name: Read-only inspect encrypted backup restoration conflict source
+on:
+  push:
+    branches: [dfx-restore-audit-v1]
+    paths: ['.github/workflows/dfx-restore-audit.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect source snippets only, no live DB nor encrypted user archive
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('member-tree/app.py').read_text(encoding='utf-8').splitlines()
+          j=Path('member-tree/static/app.js').read_text(encoding='utf-8').splitlines()
+          for name,src,needles in [
+            ('PY',p,['daily_fission','normalize','duplicate','冲突','validate_restored','restore','daily_member_fission']),
+            ('JS',j,['mtbackup','AES-GCM','PBKDF2','decrypt','encrypt','backupFile','validateRestoredState','restoreBackup'])]:
+            matches=[i for i,l in enumerate(src) if any(n.lower() in l.lower() for n in needles)]
+            print('MATCHES',name,[(i+1,src[i][:180]) for i in matches][:180],flush=True)
+          for name,src,ranges in [('PY',p,[(1560,1800),(1840,1930)]),
+                                  ('JS',j,[(1570,1610),(1510,1570)])]:
+            for a,b in ranges:
+              print('RANGE',name,a,b,flush=True)
+              for i in range(a-1,min(b,len(src))):
+                line=src[i]
+                if re.search(r'(password\s*=|password\s*:|session_secret|admin_users_json|database_url)',line,re.I):
+                  line='[redacted]'
+                print('SRC',name,i+1,line[:1150],flush=True)
+          PY
