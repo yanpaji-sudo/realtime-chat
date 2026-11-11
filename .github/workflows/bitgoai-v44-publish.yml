@@ -1,0 +1,35 @@
+name: Publish BitgoAI V44 to isolated whale test
+on:
+  push:
+    branches:
+      - bitgoai-v44-release-20261111
+    paths:
+      - member-tree-deploy/payload.b64
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout packaged candidate
+        uses: actions/checkout@v4
+        with:
+          ref: bitgoai-v44-release-20261111
+
+      - name: Push packaged payload to Whale test branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp member-tree-deploy/payload.b64 /tmp/bitgoai-v44-payload.b64
+          git fetch origin member-tree-jingyu-isolated-1000
+          git checkout -B member-tree-jingyu-isolated-1000 origin/member-tree-jingyu-isolated-1000
+          cp /tmp/bitgoai-v44-payload.b64 member-tree-deploy/payload.b64
+          # Whitespace is ignored by base64 -d; it ensures a real push event even if the payload was pre-copied by API.
+          printf '\n' >> member-tree-deploy/payload.b64
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "Publish BitgoAI V44 to isolated whale test"
+          git push origin HEAD:member-tree-jingyu-isolated-1000
