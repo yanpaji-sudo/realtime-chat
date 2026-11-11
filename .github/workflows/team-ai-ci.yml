@@ -1,0 +1,33 @@
+name: Team AI CI
+on:
+  push:
+    branches: [team-ai-shared-memory-v1]
+    paths:
+      - 'team-ai/**'
+      - '.github/workflows/team-ai-ci.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        run: cd team-ai && npm install --no-audit --no-fund
+      - name: Syntax tests
+        run: |
+          node --check team-ai/server.js
+          node team-ai/verify.js
+      - name: Offline startup and HTTP smoke test
+        run: |
+          cd team-ai
+          PORT=3200 node server.js > /tmp/team-ai-smoke.log 2>&1 &
+          echo $! > /tmp/team-ai-pid
+          sleep 3
+          curl -fsS http://localhost:3200/api/status > /tmp/team-ai-status.json
+          grep -q '"databaseReady":false' /tmp/team-ai-status.json
+          curl -fsS http://localhost:3200/ > /tmp/team-ai-page.html
+          grep -q '共学 AI' /tmp/team-ai-page.html
+          kill $(cat /tmp/team-ai-pid)
