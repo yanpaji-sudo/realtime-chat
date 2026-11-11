@@ -1,0 +1,48 @@
+name: Remove obsolete DFX temporary-storage banner from production archive
+on:
+  push:
+    branches: [dfx-postgres-production-v1]
+    paths:
+      - '.github/workflows/dfx-prod-banner.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch-banner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack currently running DFX code (not user database)
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          test -f member-tree/static/index.html
+      - name: Remove obsolete pre-migration warning; preserve program and financial fields
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('member-tree/static/index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<div class="dfx-demo-warning" role="note">DFX临时测试站 · 数据库尚未配置持久化，请勿录入正式会员数据</div>'
+          assert s.count(old)==1, 'Unexpected DFX markup, refusing to repackage'
+          p.write_text(s.replace(old,''),encoding='utf-8')
+          assert 'DFX数据图' in p.read_text(encoding='utf-8')
+          assert '10位管理员独立登录' in p.read_text(encoding='utf-8')
+          app=Path('member-tree/app.py').read_text(encoding='utf-8')
+          assert 'stake_cents' in app and 'storage_persistent' in app
+          print('Static warning cleared; code untouched')
+          PY
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+      - name: Repackage source and commit only updated archive
+        run: |
+          set -euo pipefail
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+          tar -czf /tmp/dfx-production.tgz member-tree
+          base64 -w0 /tmp/dfx-production.tgz > member-tree-deploy/payload.b64
+          git config user.name 'DFX Production CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          git commit -m 'Remove outdated temporary database warning from DFX production'
+          git push origin HEAD:dfx-postgres-production-v1
