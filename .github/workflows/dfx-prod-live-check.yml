@@ -1,0 +1,33 @@
+name: Validate DFX persistent deployment
+on:
+  push:
+    branches: [dfx-postgres-production-v1]
+    paths: ['.github/workflows/dfx-prod-live-check.yml']
+  workflow_dispatch:
+jobs:
+  check-production:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify existing DFX URL reports persistent database
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request
+          url='https://dfx-member-tree-test.onrender.com/api/dfx-status'
+          last=None
+          for attempt in range(5):
+              try:
+                  with urllib.request.urlopen(url,timeout=25) as r:
+                      assert r.status==200, r.status
+                      data=json.load(r)
+                  print('DFX status:', {key:data.get(key) for key in ('site','separate_instance','admin_count','storage_persistent')},flush=True)
+                  assert data.get('storage_persistent') is True, 'PostgreSQL not configured; do not call deployment complete'
+                  assert data.get('separate_instance') is True
+                  assert data.get('admin_count')==10
+                  print('PASS: Existing DFX site responds and reports persistent database')
+                  break
+              except Exception as e:
+                  last=e
+                  print('Attempt failed:',str(e)[:250],flush=True)
+                  if attempt<4:time.sleep(6)
+          else:raise SystemExit('FAILED after retries: '+str(last))
+          PY
