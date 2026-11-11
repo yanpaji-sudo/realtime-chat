@@ -1,0 +1,1 @@
+const fs=require('fs'),vm=require('vm');const html=fs.readFileSync(__dirname+'/public/index.html','utf8');const x=html.match(/<script>([\s\S]*?)<\/script>/);if(!x)throw Error('Missing client script');new vm.Script(x[1]);if(!html.includes('自动学习')||!html.includes('新成员账号'))throw Error('Missing UI');console.log('Client script and UI validated');
