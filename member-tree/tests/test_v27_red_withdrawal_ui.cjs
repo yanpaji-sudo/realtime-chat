@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const js=fs.readFileSync('static/app.js','utf-8');
+const css=fs.readFileSync('static/style.css','utf-8');
+assert(js.includes("class:'withdraw-red-outer'"));
+assert(js.includes("class:'withdraw-red-inner'"));
+assert(js.includes("if(withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0)"));
+assert(js.includes("🔴 今日提现："));
+assert(js.includes("🔴 显示当日提现"));
+assert(css.includes('V27 VIVID RED WITHDRAWAL RINGS'));
+assert(css.includes('ellipse.withdraw-red-outer'));
+assert(css.includes('stroke:#ff002f!important'));
+assert(css.includes('fill:#ec0025!important'));
+console.log('V27 red withdrawal SVG, visual style and nonzero gating passed');

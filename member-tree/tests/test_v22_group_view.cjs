@@ -1,0 +1,20 @@
+'use strict';
+const fs=require('fs'),assert=require('assert'),vm=require('vm');
+const js=fs.readFileSync(__dirname+'/../static/app.js','utf8');
+const html=fs.readFileSync(__dirname+'/../static/index.html','utf8');
+const css=fs.readFileSync(__dirname+'/../static/style.css','utf8');
+assert(js.includes("sessionStorage.setItem(VIEW_STATE_KEY"),'Per-tab view state must be in sessionStorage');
+assert(!js.includes('localStorage.setItem(VIEW_STATE_KEY'),'Visual preferences must not be shared via localStorage');
+for(const v of ['01','02','03','06','08'])assert(html.includes(`<option value="${v}">${v}小组</option>`));
+for(const token of ['branch-withdraw-glow','branch-withdraw-badge','branch-risk-focus','openAIEvaluation','toggleWithdrawalTree','branchViewportControls',"view==='branch'"]){assert(js.includes(token),token)}
+assert(!html.includes('id="treeDirectionBtn"'),'Vertical toggle removed');
+for(const token of ['.branch-withdraw-glow','.branch-withdraw-badge','.branch-risk-focus','.tree-group-filter'])assert(css.includes(token),token);
+const start=js.indexOf('const TREE_GROUPS='),end=js.indexOf('let role=null,');
+const storage=new Map();const context={sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},members:[],branchTransform:{scale:1,dx:0,dy:0},branchClosed:new Set(),collapsed:new Set(),el:()=>({value:''}),render:()=>{},showToast:()=>{}};
+vm.createContext(context);
+vm.runInContext(js.slice(start,end).replace(/^let selectedTreeGroup=/,'var selectedTreeGroup='),context);
+assert.equal(context.shownTreeMembers([{account:'01',group_account:'01'},{account:'02',group_account:'02'}]).length,2);
+context.selectTreeGroup('02');assert.equal(context.shownTreeMembers([{account:'01',group_account:'01'},{account:'02',group_account:'02'}]).length,1);
+assert.equal(context.shownTreeMembers([{account:'01',group_account:'01'},{account:'02',group_account:'02'}])[0].account,'02');
+assert.equal(JSON.parse(storage.get('member-tree-v22-tab-viewport')).group,'02');
+console.log('V22: five-group filtering and isolated session view state passed');

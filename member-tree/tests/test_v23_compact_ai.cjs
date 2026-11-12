@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs'),assert=require('assert'),vm=require('vm');
+const js=fs.readFileSync(__dirname+'/../static/app.js','utf8'),html=fs.readFileSync(__dirname+'/../static/index.html','utf8'),css=fs.readFileSync(__dirname+'/../static/style.css','utf8');
+for(const id of ['aiTreeBtn','branchZoomIn','branchZoomOut','branchFit','branchExpand'])assert(html.includes(`id="${id}"`));
+assert(!html.includes('id="treeDirectionBtn"'));
+assert(!js.includes('function toggleTreeDirection('));
+assert(!js.includes("outer.append(branchAgeLegend());"),'no separate map legend row');
+assert(!js.includes("outer.append(mk('div','branch-caption'"),'no map caption row');
+assert(js.includes('function openAIEvaluation(')&&js.includes('function evaluateAllGroups('));
+assert(js.includes("if(riskMode)host.append(riskBanner())"),'risk is overlay inside canvas');
+assert(css.includes('.panel.branch-compact .actions')&&css.includes('flex-wrap:nowrap!important'));
+const from=js.indexOf('function evaluateAllGroups(){'),to=js.indexOf('function openAIEvaluation(){');
+const ctx={TREE_GROUPS:['01','02','03','06','08'],businessDay:'2026-11-06',dateNow:()=> '2026-11-06',membershipMonths:()=>4};vm.createContext(ctx);
+vm.runInContext('var members=[{account:"01",group_account:"01",joined_on:"2026-10-01",stake_cents:10000,balance_cents:50000,daily_withdraw_cents:0},{account:"A",group_account:"01",joined_on:"2026-11-06",stake_cents:1000000,balance_cents:900000,daily_withdraw_cents:250000},{account:"02",group_account:"02",joined_on:"2026-10-01",stake_cents:10000,balance_cents:25000,daily_withdraw_cents:0}];'+js.slice(from,to),ctx);
+const data=ctx.evaluateAllGroups();assert.equal(data.summaries.length,5);assert.equal(data.summaries[0].count,2);assert.equal(data.summaries[0].newCount,1);assert.equal(data.summaries[0].newStake,1000000);assert.equal(data.summaries[0].withdrawal,250000);assert.equal(data.summaries[0].profit,750000);assert.equal(data.summaries[0].balance,950000);
+console.log('V23 compact toolbar, read-only AI group analysis and obsolete-vertical removal passed');

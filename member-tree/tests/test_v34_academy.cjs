@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const js=fs.readFileSync('static/app.js','utf8');
+const html=fs.readFileSync('static/index.html','utf8');
+const app=fs.readFileSync('app.py','utf8');
+const academy=fs.readFileSync('academy.py','utf8');
+assert(js.includes('function renderAcademy(){'));
+assert(js.includes("view==='academy'?renderAcademy()"));
+assert(js.includes("api('/academy/ask','POST'"));
+assert(js.includes("api('/academy/upload','POST',data)"));
+assert(html.includes('data-view="academy"'));
+assert(app.includes('register_academy(app,engine,require,utc_now)'));
+assert(academy.includes("original_text TEXT NOT NULL"));
+assert(academy.includes("source_priority"));
+assert(academy.includes("status='approved'"));
+console.log('V34 Academy UI and additive back-end contract passed');

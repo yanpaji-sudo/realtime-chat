@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('assert'), fs=require('fs'),vm=require('vm');
+const js=fs.readFileSync(__dirname+'/../static/app.js','utf8');
+const css=fs.readFileSync(__dirname+'/../static/style.css','utf8');
+const src=js.slice(0,js.indexOf('function dateNow('));
+const summ=js.slice(js.indexOf('function teamSummaryByNode('),js.indexOf('function summaryTone('));
+const ctx={};vm.createContext(ctx);
+ctx.summaryTone=(value,threshold,zeroBlack=false,inverse=false)=> value===threshold||(zeroBlack&&value===0)?'amount-black':(value>threshold)!==inverse?'amount-green':'amount-red';
+ctx.mk=(tag,cls,txt)=>({tag,cls,txt,children:[],append(...xs){this.children.push(...xs)}});
+vm.runInContext('function money(c){return (Number(c||0)/100).toLocaleString("zh-CN",{maximumFractionDigits:0})}\n'+src.slice(src.indexOf('function amountClass('))+summ,ctx);
+const day='2026-11-06';
+function row(id,parent,joined,stake,withdraw,other={}){return {id,parent_id:parent,joined_on:joined,level:parent?2:1,stake_cents:stake,daily_withdraw_cents:withdraw,balance_cents:0,total_withdraw_cents:0,...other}}
+const rows=[row('A',null,'2026-10-10',100000,10000),row('B','A',day,500000,40000),row('C','A',day,100000,700000),row('D','B','2026-10-11',700000,20000,{level:3})];
+let metrics=ctx.teamSummaryByNode(rows,day);
+assert.equal(metrics.get('A').todayStake,600000);
+assert.equal(metrics.get('A').todayWithdraw,770000);
+assert.equal(metrics.get('B').todayWithdraw,60000);
+assert.equal(metrics.get('D').todayWithdraw,20000);
+let totals=ctx.todaysNewByNode(rows,day);
+function inspect(id){const x=rows.find(r=>r.id===id);const b=ctx.newBadge(x,totals,day,metrics);return b.children[0].children}
+let lines=inspect('A');
+assert(lines.find(x=>x.cls==='today-new-stake').txt.includes('6,000'));
+assert(lines.find(x=>x.cls==='today-new-withdraw').txt.includes('7,700'));
+assert(lines.find(x=>x.cls.includes('today-new-profit')).txt.includes('你要努力了'));
+assert(lines.find(x=>x.cls.includes('today-new-profit')).cls.includes('amount-red'));
+lines=inspect('B');
+assert(lines.find(x=>x.cls.includes('today-new-profit')).txt.includes('给力'));
+assert(lines.find(x=>x.cls.includes('today-new-profit')).cls.includes('amount-green'));
+const row0=row('Z',null,'2026-10-01',100000,0);metrics=ctx.teamSummaryByNode([row0],day);totals=ctx.todaysNewByNode([row0],day);const zero=ctx.newBadge(row0,totals,day,metrics).children[0].children.find(x=>x.cls.includes('today-new-profit'));
+assert(zero.cls.includes('amount-black'));assert(!zero.txt.includes('给力')&&!zero.txt.includes('你要努力了'));
+for(const n of ['.today-new-withdraw','.today-new-profit.amount-green','.today-new-profit.amount-red'])assert(css.includes(n),n);
+console.log('V19 node daily withdrawal, today profit, alerts, colors, subtree and zero verified');
