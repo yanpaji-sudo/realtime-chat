@@ -1,0 +1,148 @@
+name: Export clean DFX source only
+on:
+  push:
+    branches:
+      - dfx-source-export-clean-20261112
+    paths:
+      - .github/workflows/dfx-source-export.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout export branch
+        uses: actions/checkout@v4
+        with:
+          ref: dfx-source-export-clean-20261112
+
+      - name: Extract exact DFX deployed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin dfx-postgres-production-v1
+          mkdir -p /tmp/dfx-source /tmp/export
+          git show origin/dfx-postgres-production-v1:member-tree-deploy/payload.b64 | base64 -d | tar -xz -C /tmp/dfx-source
+          ROOT=/tmp/dfx-source/member-tree
+          test -f "$ROOT/app.py"
+          test -f "$ROOT/static/index.html"
+          test -f "$ROOT/static/app.js"
+
+      - name: Remove all runtime records and credentials, then validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, shutil, subprocess, sys
+
+          root = Path("/tmp/dfx-source/member-tree")
+          remove_dirs = {
+              ".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+              ".cache", "node_modules", "backups", "backup", "uploads", "exports",
+              "runtime", "instance", "logs", "data", "database", "databases"
+          }
+          remove_suffixes = {
+              ".sqlite", ".sqlite3", ".db", ".db-wal", ".db-shm", ".sqlite-journal",
+              ".log", ".csv", ".xlsx", ".xls", ".jsonl", ".dump", ".bak", ".backup",
+              ".tar", ".tgz", ".zip", ".pyc", ".pyo", ".pem", ".key", ".p12", ".pfx"
+          }
+          data_json = re.compile(
+              r"(member|user|account|transaction|withdraw|deposit|balance|snapshot|"
+              r"export|backup|seed|demo|record|ledger).*(data|list|backup|export|snapshot)?",
+              re.I
+          )
+          for p in sorted(root.rglob("*"), key=lambda x: len(x.parts), reverse=True):
+              if p.is_dir() and p.name.lower() in remove_dirs:
+                  shutil.rmtree(p, ignore_errors=True)
+              elif p.is_file():
+                  n = p.name.lower()
+                  if n == ".env" or n.startswith(".env.") or p.suffix.lower() in remove_suffixes:
+                      p.unlink(missing_ok=True)
+                  elif p.suffix.lower() == ".json" and data_json.search(p.stem):
+                      p.unlink(missing_ok=True)
+
+          # Add a clear source-only README; no production configuration values are copied.
+          readme = """# DFX Member Tree - Source Only
+
+          This archive contains the application source code used by the DFX isolated test service,
+          extracted from branch `dfx-postgres-production-v1`.
+
+          Excluded: member/user records, account balances, deposits, withdrawals, transaction
+          ledgers, report exports, databases, SQLite files, backups, uploaded files, runtime logs,
+          caches, environment files, credentials, and private keys.
+
+          The source archive is not a database backup. Configure a new isolated database and your
+          own secure environment variables before running it. Never point a development copy at
+          the formal or DFX test database.
+          """
+          (root / "README_DFX_SOURCE_ONLY.md").write_text(readme, encoding="utf-8")
+
+          # Compile source without retaining bytecode.
+          subprocess.run([sys.executable, "-m", "py_compile", str(root / "app.py")], check=True)
+          academy = root / "academy.py"
+          if academy.exists():
+              subprocess.run([sys.executable, "-m", "py_compile", str(academy)], check=True)
+          js = root / "static" / "app.js"
+          if js.exists():
+              subprocess.run(["node", "--check", str(js)], check=True)
+          for p in root.rglob("__pycache__"):
+              shutil.rmtree(p, ignore_errors=True)
+
+          # Ensure no database, runtime data, env or credential artifacts remain.
+          forbidden = []
+          for p in root.rglob("*"):
+              if not p.is_file():
+                  continue
+              n = p.name.lower()
+              if n == ".env" or n.startswith(".env.") or p.suffix.lower() in remove_suffixes:
+                  forbidden.append(str(p.relative_to(root)))
+          if forbidden:
+              raise SystemExit("Forbidden runtime/data files remain: " + ", ".join(forbidden))
+
+          # Scan text source for common private-key/token/credential-bearing connection strings.
+          patterns = [
+              re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+              re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
+              re.compile(r"sk-[A-Za-z0-9]{20,}"),
+              re.compile(r"postgres(?:ql)?://[^\\s:'\\"]+:[^@\\s:'\\"]+@"),
+          ]
+          for p in root.rglob("*"):
+              if not p.is_file() or p.suffix.lower() in {
+                  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico",
+                  ".woff", ".woff2", ".ttf"
+              }:
+                  continue
+              try:
+                  content = p.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              if any(rx.search(content) for rx in patterns):
+                  raise SystemExit("Potential credential material found in " + str(p.relative_to(root)))
+
+          print("=== Clean DFX source file list ===")
+          for p in sorted(root.rglob("*")):
+              if p.is_file():
+                  print(f"{p.relative_to(root)} ({p.stat().st_size} bytes)")
+          print("DFX source syntax and data-exclusion checks passed.")
+          PY
+
+      - name: Create downloadable source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/dfx-source
+          zip -qr /tmp/export/DFX_Member_Tree_Source_Only.zip member-tree
+          test -s /tmp/export/DFX_Member_Tree_Source_Only.zip
+          unzip -l /tmp/export/DFX_Member_Tree_Source_Only.zip | tail -8
+
+      - name: Upload source ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DFX-Member-Tree-Source-Only
+          path: /tmp/export/DFX_Member_Tree_Source_Only.zip
+          if-no-files-found: error
+          retention-days: 30
