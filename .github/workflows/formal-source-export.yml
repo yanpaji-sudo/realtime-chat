@@ -1,0 +1,109 @@
+name: Export clean formal member-tree source
+on:
+  push:
+    branches:
+      - formal-source-export-clean-20261112
+    paths:
+      - .github/workflows/formal-source-export.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout formal production source snapshot
+        uses: actions/checkout@v4
+
+      - name: Extract and remove all runtime and member data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/formal-source
+          base64 -d member-tree-deploy/payload.b64 | tar -xz -C /tmp/formal-source
+          ROOT=/tmp/formal-source/member-tree
+          test -d "$ROOT"
+          test -f "$ROOT/app.py"
+
+          echo "=== Source tree before sanitization (paths only) ==="
+          find "$ROOT" -maxdepth 3 -type f -printf '%P\n' | sort | head -300
+
+          # Remove generated, local-runtime, upload, backup, export and data directories.
+          find "$ROOT" -type d \(
+            -name .git -o -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache -o -name node_modules \
+            -o -name backups -o -name backup -o -name uploads -o -name exports -o -name runtime -o -name instance -o -name logs -o -name data
+          \) -prune -exec rm -rf {} +
+
+          # Remove databases, logs, spreadsheets, dumps, archives, caches and local env/secrets.
+          find "$ROOT" -type f \(
+            -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.db' -o -iname '*.db-wal' -o -iname '*.db-shm' \
+            -o -iname '*.log' -o -iname '*.csv' -o -iname '*.xlsx' -o -iname '*.xls' -o -iname '*.jsonl' \
+            -o -iname '*.dump' -o -iname '*.bak' -o -iname '*.backup' -o -iname '*.tar' -o -iname '*.tgz' -o -iname '*.zip' \
+            -o -iname '*.pyc' -o -iname '*.pyo' -o -iname '.env' -o -iname '.env.*' \
+            -o -iname '*.pem' -o -iname '*.key' -o -iname '*.p12' -o -iname '*.pfx' -o -iname '*.sqlite-journal'
+          \) -delete
+
+          # Remove JSON data exports/backups and user/member snapshots, but keep source configuration JSON.
+          find "$ROOT" -type f \(
+            -iname '*member*backup*.json' -o -iname '*user*backup*.json' -o -iname '*tree*backup*.json' \
+            -o -iname '*snapshot*.json' -o -iname '*export*.json' -o -iname '*backup*.json' \
+            -o -iname '*member*data*.json' -o -iname '*user*data*.json' -o -iname '*account*data*.json' \
+            -o -iname '*seed*data*.json' -o -iname '*demo*data*.json' -o -iname '*fixture*data*.json'
+          \) -delete
+
+          # Remove any Python bytecode produced by validation.
+          python3 -m py_compile "$ROOT/app.py"
+          if [ -f "$ROOT/academy.py" ]; then python3 -m py_compile "$ROOT/academy.py"; fi
+          if [ -f "$ROOT/static/app.js" ]; then node --check "$ROOT/static/app.js"; fi
+          find "$ROOT" -type d -name __pycache__ -prune -exec rm -rf {} +
+          find "$ROOT" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+
+          # Fail if any common database or credential artifact remains.
+          if find "$ROOT" -type f \(
+            -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.db' -o -iname '*.db-wal' -o -iname '*.db-shm' \
+            -o -iname '*.log' -o -iname '*.csv' -o -iname '*.xlsx' -o -iname '*.xls' -o -iname '*.dump' \
+            -o -iname '.env' -o -iname '.env.*' -o -iname '*.pem' -o -iname '*.key' -o -iname '*.p12' -o -iname '*.pfx'
+          \) | grep -q .; then
+            echo "Runtime data or credential artifact remains in source tree."
+            exit 1
+          fi
+
+          # Fail on private keys or common hard-coded API tokens.
+          if grep -RIlE --binary-files=without-match -- '-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}' "$ROOT"; then
+            echo "Potential credential material detected."
+            exit 1
+          fi
+
+          cat > "$ROOT/README_SOURCE_ONLY.md" <<'EOF'
+          # Formal Member Tree - Source Only
+
+          This archive is prepared from the formal production branch `member-tree-render`.
+
+          It contains application source code, frontend assets, source configuration templates, and automated tests where present.
+
+          It intentionally excludes all member records, account lists, balances, transactions, databases, SQLite files, backups, exports, uploaded files, runtime logs, caches, environment files, and credentials.
+
+          ## Important
+          - This is a source-only archive, not a data backup.
+          - No production database or member data is included.
+          - Configure your own secure environment variables and persistent database before running it.
+          - Do not point a development copy at the formal production database.
+          - This export does not deploy or modify the production service.
+          EOF
+
+          echo "=== Final source-only file list (paths and sizes) ==="
+          find "$ROOT" -type f -printf '%P %s bytes\n' | sort
+          mkdir -p /tmp/export
+          cd /tmp/formal-source
+          zip -qr /tmp/export/Formal_Member_Tree_Source_Only.zip member-tree
+          test -s /tmp/export/Formal_Member_Tree_Source_Only.zip
+          unzip -l /tmp/export/Formal_Member_Tree_Source_Only.zip | tail -5
+
+      - name: Upload clean source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Formal-Member-Tree-Source-Only
+          path: /tmp/export/Formal_Member_Tree_Source_Only.zip
+          if-no-files-found: error
+          retention-days: 30
