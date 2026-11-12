@@ -144,8 +144,15 @@ jobs:
         run: |
           set -euo pipefail
           find member-tree -type d -name __pycache__ -prune -exec rm -rf {} +
-          find member-tree -type f \\( -name '*.pyc' -o -name '*.pyo' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.log' \\) -delete
-          if find member-tree -type f \\( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.pyc' -o -name '*.log' \\) | grep -q .; then exit 1; fi
+          find member-tree -type f -name '*.pyc' -delete
+          find member-tree -type f -name '*.pyo' -delete
+          find member-tree -type f -name '*.db' -delete
+          find member-tree -type f -name '*.sqlite' -delete
+          find member-tree -type f -name '*.sqlite3' -delete
+          find member-tree -type f -name '*.log' -delete
+          test -z "$(find member-tree -type d -name __pycache__ -print -quit)"
+          test -z "$(find member-tree -type f -name '*.db' -print -quit)"
+          test -z "$(find member-tree -type f -name '*.sqlite3' -print -quit)"
 
       - name: Commit test source into isolated branch
         shell: bash
