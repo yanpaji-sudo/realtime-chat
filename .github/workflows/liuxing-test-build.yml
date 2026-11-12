@@ -1,0 +1,147 @@
+name: Build clean Liuxing member-tree test source
+on:
+  push:
+    branches:
+      - liuxing-member-tree-test-20261112
+    paths:
+      - .github/workflows/liuxing-test-build.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: liuxing-member-tree-test-20261112
+      - name: Extract clean formal source and apply Liuxing branding
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin member-tree-render
+          mkdir -p /tmp/formal
+          git show origin/member-tree-render:member-tree-deploy/payload.b64 | base64 -d | tar xz -C /tmp/formal
+          test -f /tmp/formal/member-tree/app.py
+          rm -rf member-tree
+          cp -a /tmp/formal/member-tree ./member-tree
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, shutil
+
+          root=Path('member-tree')
+          remove_dirs={'.git','__pycache__','.pytest_cache','.mypy_cache','.ruff_cache','node_modules',
+                       'backups','backup','uploads','exports','runtime','instance','logs','data'}
+          remove_suffixes={'.sqlite','.sqlite3','.db','.db-wal','.db-shm','.log','.csv','.xlsx','.xls',
+                           '.jsonl','.dump','.bak','.backup','.tar','.tgz','.zip','.pyc','.pyo',
+                           '.pem','.key','.p12','.pfx'}
+          for p in sorted(root.rglob('*'),key=lambda x:len(x.parts),reverse=True):
+              if p.is_dir() and p.name.lower() in remove_dirs:
+                  shutil.rmtree(p,ignore_errors=True)
+              elif p.is_file():
+                  n=p.name.lower()
+                  if n=='.env' or n.startswith('.env.') or p.suffix.lower() in remove_suffixes:
+                      p.unlink(missing_ok=True)
+
+          # Replace every visible/source occurrence of the previous brand across text files.
+          for p in root.rglob('*'):
+              if not p.is_file() or p.suffix.lower() in {'.png','.jpg','.jpeg','.gif','.webp','.ico','.woff','.woff2','.ttf'}:
+                  continue
+              try: s=p.read_text(encoding='utf-8')
+              except (UnicodeDecodeError,OSError): continue
+              s=s.replace('磐石','流星')
+              p.write_text(s,encoding='utf-8')
+
+          # Make the test identity clear and remove any demo-seed path.
+          html=root/'static'/'index.html'
+          s=html.read_text(encoding='utf-8')
+          s=s.replace('<title>会员树状系统 · V21实时报表与树状图</title>',
+                      '<title>流星会员树状系统 · 独立测试版</title>')
+          s=s.replace('会员树状统计系统 · 数据报表V22版','流星会员树状统计系统 · 独立测试版')
+          s=s.replace('8位管理员独立登录 · 共享会员数据库','独立测试数据库 · 初始无会员数据')
+          s=s.replace('<b>会员数据中心</b>','<b>流星会员数据中心</b>')
+          s=s.replace('8位管理员独立登录 · 后端共享数据 · 支持精准定位','测试环境 · 与正式版数据完全隔离')
+          s=s.replace('8位管理员使用各自原有账号及密码登录。','请使用流星测试版专属管理员账号和密码登录。')
+          s=s.replace('（不使用演示数据）','（无演示数据）')
+          html.write_text(s,encoding='utf-8')
+
+          js=root/'static'/'app.js'
+          s=js.read_text(encoding='utf-8')
+          old="el('seedButton').onclick=async()=>{if(!confirm('本测试版无演示数据，不需要导入。'))return;try{await api('/demo/seed','POST',{});showToast('演示会员已导入');await refresh();await syncUndoStatus()}catch(e){showToast(e.message)}};"
+          s=s.replace(old,"el('seedButton').onclick=()=>showToast('流星测试版不提供演示数据');")
+          js.write_text(s,encoding='utf-8')
+
+          # Disable the demo seed endpoint so the test starts and remains empty unless real test members are entered manually.
+          app=root/'app.py'
+          s=app.read_text(encoding='utf-8')
+          start=s.find("@app.post('/api/demo/seed')")
+          end=s.find('# Administrator encrypted backup payload',start)
+          if start<0 or end<0:
+              raise SystemExit('Could not locate demo seed endpoint boundaries')
+          s=s[:start]+"@app.post('/api/demo/seed')\ndef seed_demo(req: Request):\n    raise HTTPException(410, '流星测试版不提供演示数据')\n\n\n"+s[end:]
+          s=s.replace("COOKIE = 'member_tree_v3_session'","COOKIE = 'liuxing_member_tree_test_session'")
+          s=s.replace("serializer = URLSafeTimedSerializer(SESSION_SECRET or 'UNCONFIGURED', salt='member-tree-v3')",
+                      "serializer = URLSafeTimedSerializer(SESSION_SECRET or 'UNCONFIGURED', salt='liuxing-member-tree-test')")
+          s=s.replace("app = FastAPI(title='会员树状统计系统', docs_url=None, redoc_url=None, openapi_url=None)",
+                      "app = FastAPI(title='流星会员树状统计系统（独立测试版）', docs_url=None, redoc_url=None, openapi_url=None)")
+          app.write_text(s,encoding='utf-8')
+
+          readme='''# 流星会员树测试版（空白数据环境）
+
+          - Source baseline: formal production branch `member-tree-render`.
+          - All former brand wording in the application source and UI has been changed to `流星`.
+          - This test service uses a newly provisioned, separate PostgreSQL database.
+          - No production member accounts, balances, withdrawals, reports, academy documents, backups, or logs are copied.
+          - Demo-member seeding is disabled in this test version.
+          - Test records manually created here stay isolated from the formal production database.
+          - Free Render web services can spin down; free Render Postgres databases expire after 30 days. Do not use this environment for permanent records.
+          '''
+          (root/'README_LIUXING_TEST.md').write_text(readme,encoding='utf-8')
+
+          # No former brand text or runtime data artifacts may remain in the shipped source.
+          found=[]
+          for p in root.rglob('*'):
+              if p.is_file():
+                  if p.suffix.lower() in remove_suffixes or p.name.lower()=='.env' or p.name.lower().startswith('.env.'):
+                      found.append('runtime artifact: '+str(p))
+                  try: txt=p.read_text(encoding='utf-8')
+                  except (UnicodeDecodeError,OSError): continue
+                  if '磐石' in txt:
+                      found.append('old brand text: '+str(p))
+          if found: raise SystemExit('\n'.join(found))
+          print('Source sanitization complete. No old brand text or runtime database artifacts remain.')
+          PY
+
+      - name: Validate source, tests and empty database initialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r member-tree/requirements.txt pytest
+          python -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          (cd member-tree && pytest -q)
+          cd member-tree
+          DATABASE_URL=sqlite:////tmp/liuxing-empty-smoke.sqlite SESSION_SECRET=smoke-session-secret ADMIN_USERS_JSON='{"admin":"510000$00112233445566778899aabbccddeeff00112233$00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"}' VIEWER_PASSWORD_HASH='510000$00112233445566778899aabbccddeeff00112233$00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff' ENABLE_MIDNIGHT_WORKER=0 python - <<'PY'
+          from fastapi.testclient import TestClient
+          import app
+          with TestClient(app.app) as c:
+              assert c.get('/api/health').status_code == 200
+              with app.engine.connect() as db:
+                  assert db.exec_driver_sql('SELECT COUNT(*) FROM members').scalar() == 0
+                  assert db.exec_driver_sql('SELECT COUNT(*) FROM academy_documents').scalar() == 0
+                  assert db.exec_driver_sql('SELECT COUNT(*) FROM academy_skill_drafts').scalar() == 0
+              print('Empty-state smoke test passed: 0 members, 0 academy documents, 0 academy drafts.')
+          PY
+
+      - name: Commit test source into isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add member-tree
+          git commit -m "Build clean Liuxing member-tree test version"
+          git push origin HEAD:liuxing-member-tree-test-20261112
