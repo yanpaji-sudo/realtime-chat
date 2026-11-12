@@ -95,11 +95,11 @@ jobs:
 
           - Source baseline: formal production branch `member-tree-render`.
           - All former brand wording in the application source and UI has been changed to `流星`.
-          - This test service uses a newly provisioned, separate PostgreSQL database.
+          - This test service uses its own local SQLite file and does not connect to the formal production database or any other test database.
           - No production member accounts, balances, withdrawals, reports, academy documents, backups, or logs are copied.
-          - Demo-member seeding is disabled in this test version.
-          - Test records manually created here stay isolated from the formal production database.
-          - Free Render web services can spin down; free Render Postgres databases expire after 30 days. Do not use this environment for permanent records.
+          - The database starts with zero members and zero academy documents; demo-member seeding is disabled.
+          - Test records manually created here remain isolated from the formal production database.
+          - Render Free web services have ephemeral filesystems and can spin down; any test records entered here may be lost after spin-down, restart, or redeploy. Do not use this environment for permanent records.
           '''
           (root/'README_LIUXING_TEST.md').write_text(readme,encoding='utf-8')
 
@@ -138,6 +138,14 @@ jobs:
                   assert db.exec_driver_sql('SELECT COUNT(*) FROM academy_skill_drafts').scalar() == 0
               print('Empty-state smoke test passed: 0 members, 0 academy documents, 0 academy drafts.')
           PY
+
+      - name: Remove generated test caches and local data artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find member-tree -type d -name __pycache__ -prune -exec rm -rf {} +
+          find member-tree -type f \\( -name '*.pyc' -o -name '*.pyo' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.log' \\) -delete
+          if find member-tree -type f \\( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.pyc' -o -name '*.log' \\) | grep -q .; then exit 1; fi
 
       - name: Commit test source into isolated branch
         shell: bash
