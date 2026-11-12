@@ -13,6 +13,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/checkout@v4
         with:
           ref: liuxing-member-tree-test-20261112
@@ -119,10 +122,10 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          pip install -r member-tree/requirements.txt pytest
+          pip install -r member-tree/requirements.txt pytest httpx2
           python -m py_compile member-tree/app.py member-tree/academy.py
           node --check member-tree/static/app.js
-          (cd member-tree && pytest -q)
+          (cd member-tree && PYTHONPATH=. python -m pytest -q)
           cd member-tree
           DATABASE_URL=sqlite:////tmp/liuxing-empty-smoke.sqlite SESSION_SECRET=smoke-session-secret ADMIN_USERS_JSON='{"admin":"510000$00112233445566778899aabbccddeeff00112233$00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"}' VIEWER_PASSWORD_HASH='510000$00112233445566778899aabbccddeeff00112233$00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff' ENABLE_MIDNIGHT_WORKER=0 python - <<'PY'
           from fastapi.testclient import TestClient
