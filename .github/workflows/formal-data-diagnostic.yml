@@ -1,0 +1,48 @@
+name: Diagnose formal member-tree storage and restore behavior
+on:
+  push:
+    branches: [formal-data-diagnostic-20261112]
+    paths:
+      - .github/workflows/formal-data-diagnostic.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract the exact formal production payload without deploying it
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin member-tree-render
+          mkdir -p /tmp/formal
+          git show FETCH_HEAD:member-tree-deploy/payload.b64 | base64 -d | tar xz -C /tmp/formal
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('/tmp/formal/member-tree')
+          app=(root/'app.py').read_text(encoding='utf-8')
+          lines=app.splitlines()
+          print('=== DATABASE CONFIG LINES (names/logic only) ===')
+          for i,line in enumerate(lines,1):
+              if re.search(r'DATABASE_URL|create_engine|sqlite|postgresql|postgres',line,re.I):
+                  safe=re.sub(r'(?i)(password|secret|token|api[_-]?key)\s*=\s*[^,)]*',r'\1=[REDACTED]',line)
+                  print(f'{i}: {safe[:260]}')
+          print('=== RESTORE ENDPOINT / DELETE LOGIC ===')
+          hits=[i for i,line in enumerate(lines) if 'api/admin/restore' in line or ('DELETE FROM' in line and any(x in line.lower() for x in ['member','team','import','report']))]
+          for i in hits[:20]:
+              lo=max(0,i-5); hi=min(len(lines),i+12)
+              print(f'--- app.py lines {lo+1}-{hi} ---')
+              for j in range(lo,hi):
+                  print(f'{j+1}: {lines[j][:260]}')
+          html=root/'static'/'index.html'
+          if html.exists():
+              print('=== PAGE TITLE ===')
+              for i,line in enumerate(html.read_text(encoding='utf-8').splitlines(),1):
+                  if '<title' in line or 'V22' in line or 'V44' in line:
+                      print(f'{i}: {line[:260]}')
+          print('=== ENV VARIABLE REFERENCES (no values) ===')
+          for name in sorted(set(re.findall(r'os\.getenv\(["\']([A-Z0-9_]+)',app))):
+              print(name)
+          PY
