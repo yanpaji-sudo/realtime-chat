@@ -2,7 +2,7 @@
 const multer=require('multer');
 
 module.exports=function mountImageStudio(app,sql,env,route){
-  const dailyLimit=Math.max(1,Math.min(30,Number(env.DAILY_IMAGE_LIMIT||5)));
+  const dailyLimit=0; // unlimited per member; API provider billing still applies
   const defaultModel=env.OPENAI_IMAGE_MODEL||'gpt-image-2.5-sunburst';
   const allowed=['gpt-image-2.5-sunburst','gpt-image-2.5-flare','gpt-image-2.6-sunburst','gpt-image-2.6-flare'];
   const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:15*1024*1024,files:1},fileFilter:(req,file,cb)=>cb(null,['image/png','image/jpeg','image/webp'].includes(file.mimetype))});
@@ -19,7 +19,7 @@ module.exports=function mountImageStudio(app,sql,env,route){
     if(operation==='edit'&&!req.file)return res.status(400).json({error:'请上传 PNG、JPG 或 WEBP 原图'});
     const count=await sql("SELECT COUNT(*)::int AS n FROM team_ai_image_usage WHERE user_id=$1 AND created_at>=date_trunc('day',now())",[req.actor.id]);
     const used=count.rows[0].n;
-    if(used>=dailyLimit)return res.status(429).json({error:'今天的图片生成额度已用完，每人每天'+dailyLimit+'次'});
+    if(dailyLimit>0&&used>=dailyLimit)return res.status(429).json({error:'今天的图片生成额度已用完，每人每天'+dailyLimit+'次'});
     const form=new FormData();
     form.append('model',model);
     form.append('prompt',prompt);
