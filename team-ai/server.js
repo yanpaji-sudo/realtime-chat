@@ -23,6 +23,8 @@ await sql("CREATE TABLE IF NOT EXISTS team_ai_chats(id UUID PRIMARY KEY,title TE
 await sql("CREATE TABLE IF NOT EXISTS team_ai_messages(id BIGSERIAL PRIMARY KEY,chat_id UUID REFERENCES team_ai_chats(id) ON DELETE CASCADE,user_id UUID REFERENCES team_ai_users(id),role TEXT CHECK(role IN ('user','assistant')),content TEXT NOT NULL,created_at TIMESTAMPTZ DEFAULT now())");
 await sql("CREATE TABLE IF NOT EXISTS team_ai_memories(id UUID PRIMARY KEY,scope TEXT CHECK(scope IN ('shared','private')),owner_id UUID REFERENCES team_ai_users(id),content TEXT NOT NULL,digest TEXT UNIQUE NOT NULL,source_user_id UUID REFERENCES team_ai_users(id),created_at TIMESTAMPTZ DEFAULT now())");
 await sql("CREATE INDEX IF NOT EXISTS team_ai_message_order ON team_ai_messages(chat_id,id DESC)");
+await sql("CREATE TABLE IF NOT EXISTS team_ai_image_usage(id BIGSERIAL PRIMARY KEY,user_id UUID REFERENCES team_ai_users(id),model TEXT NOT NULL,operation TEXT NOT NULL,created_at TIMESTAMPTZ DEFAULT now())");
+await sql("CREATE INDEX IF NOT EXISTS team_ai_image_usage_day ON team_ai_image_usage(user_id,created_at DESC)");
 ready=true;problem='';console.log('Team AI storage ready');
 }catch(e){problem='数据库初始化失败';console.error('DB init:',e.message);}}
 async function auth(q,s,n){let t=token(q);if(!/^[a-f0-9]{64}$/.test(t))return s.status(401).json({error:'请先登录'});let r=await sql("SELECT u.id,u.username,u.is_admin FROM team_ai_sessions x JOIN team_ai_users u ON u.id=x.user_id WHERE x.token_hash=$1 AND x.expires_at>now() AND NOT u.disabled",[hash(t)]);if(!r.rows.length)return s.status(401).json({error:'登录已过期'});q.actor=r.rows[0];n();}
@@ -32,6 +34,7 @@ app.post('/api/setup',guard,rate,route(async(q,s)=>{let n=Number((await sql('SEL
 app.post('/api/login',guard,rate,route(async(q,s)=>{let b=q.body||{},u=name(b.username),p=String(b.password||'');let r=await sql('SELECT * FROM team_ai_users WHERE username=$1 AND NOT disabled',[u]);if(!r.rows.length||!verify(p,r.rows[0].password_hash))return s.status(401).json({error:'账号或密码错误'});let t=crypto.randomBytes(32).toString('hex');await sql("INSERT INTO team_ai_sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '7 days')",[hash(t),r.rows[0].id]);cookie(q,s,t);s.json({ok:true});}));
 app.post('/api/logout',guard,route(async(q,s)=>{let t=token(q);if(t)await sql('DELETE FROM team_ai_sessions WHERE token_hash=$1',[hash(t)]);cookie(q,s,'');s.json({ok:true});}));
 app.use('/api',guard,route(auth));
+require('./image-studio')(app,sql,env,route);
 app.get('/api/me',(q,s)=>s.json({id:q.actor.id,username:q.actor.username,isAdmin:q.actor.is_admin}));
 app.get('/api/users',admin,route(async(q,s)=>s.json({users:(await sql('SELECT id,username,is_admin,disabled,created_at FROM team_ai_users ORDER BY created_at')).rows})));
 app.post('/api/users',admin,route(async(q,s)=>{let b=q.body||{},u=name(b.username),p=String(b.password||'');if(!/^[a-z0-9_.-]{3,32}$/.test(u)||p.length<10||p.length>128)return s.status(400).json({error:'账号需3至32位英文数字，密码至少10位'});let n=Number((await sql('SELECT COUNT(*)::int AS n FROM team_ai_users')).rows[0].n);if(n>=20)return s.status(400).json({error:'最多创建20位成员'});let id=crypto.randomUUID();await sql('INSERT INTO team_ai_users(id,username,password_hash) VALUES($1,$2,$3)',[id,u,pwd(p)]);s.json({id,username:u});}));
