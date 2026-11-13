@@ -30,9 +30,10 @@ module.exports=function mountImageStudio(app,sql,env,route){
     let endpoint='https://api.openai.com/v1/images/generations';
     if(operation==='edit'){
       endpoint='https://api.openai.com/v1/images/edits';
-      const file=req.file;
-      const safeName=String(file.originalname||'source.png').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
-      form.append('image',new Blob([file.buffer],{type:file.mimetype}),safeName||'source.png');
+      for(const file of req.files){
+        const safeName=String(file.originalname||'source.png').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
+        form.append('image[]',new Blob([file.buffer],{type:file.mimetype}),safeName||'source.png');
+      }
     }
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),180000);
