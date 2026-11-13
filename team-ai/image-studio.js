@@ -16,7 +16,8 @@ module.exports=function mountImageStudio(app,sql,env,route){
     const operation=req.body.operation==='edit'?'edit':'generate';
     const model=allowed.includes(req.body.model)?req.body.model:defaultModel;
     if(!prompt||prompt.length>4000)return res.status(400).json({error:'请填写1至4000字的图片要求'});
-    if(operation==='edit'&&(!req.files||req.files.length===0))return res.status(400).json({error:'请至少上传一张 PNG、JPG 或 WEBP 原图'});\n    if(operation==='edit'&&req.files.length>16)return res.status(400).json({error:'一次最多上传16张图片'});\n    if(operation==='edit'&&req.files.reduce((sum,file)=>sum+file.size,0)>45*1024*1024)return res.status(400).json({error:'所有图片合计不能超过45MB'});
+    if(operation==='edit'&&(!req.files||req.files.length===0))return res.status(400).json({error:'请至少上传一张 PNG、JPG 或 WEBP 原图'});
+    if(operation==='edit'&&req.files.length>16)return res.status(400).json({error:'一次最多上传16张图片'});\n    if(operation==='edit'&&req.files.reduce((sum,file)=>sum+file.size,0)>45*1024*1024)return res.status(400).json({error:'所有图片合计不能超过45MB'});
     const count=await sql("SELECT COUNT(*)::int AS n FROM team_ai_image_usage WHERE user_id=$1 AND created_at>=date_trunc('day',now())",[req.actor.id]);
     const used=count.rows[0].n;
     if(dailyLimit>0&&used>=dailyLimit)return res.status(429).json({error:'今天的图片生成额度已用完，每人每天'+dailyLimit+'次'});
