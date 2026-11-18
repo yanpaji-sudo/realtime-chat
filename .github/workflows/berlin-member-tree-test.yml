@@ -1,0 +1,34 @@
+name: Build Berlin member-tree test package
+on:
+  push:
+    branches: [berlin-member-tree-test-20261119]
+    paths:
+      - 'member-tree-deploy/brand_berlin.py'
+      - '.github/workflows/berlin-member-tree-test.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract the exact formal release package
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 member-tree-deploy/brand_berlin.py
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+      - name: Run available regression tests
+        run: |
+          python3 -m pip install -r member-tree/requirements.txt pytest httpx
+          cd member-tree
+          if [ -d tests ]; then python3 -m pytest -q tests; fi
+      - name: Repack isolated Berlin test package
+        run: |
+          tar -czf /tmp/member-tree-berlin-test.tgz member-tree
+          base64 -w0 /tmp/member-tree-berlin-test.tgz > member-tree-deploy/payload.b64
+          git config user.name "Berlin Test Build"
+          git config user.email "actions@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          git commit -m "Build Berlin branded isolated member-tree test package"
+          git push origin HEAD:berlin-member-tree-test-20261119
