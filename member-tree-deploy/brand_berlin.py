@@ -1,3 +1,4 @@
+# Isolated Berlin test build only; never deploys to the formal branch.
 from pathlib import Path
 root = Path("member-tree")
 replacements = [
@@ -20,7 +21,6 @@ for path in sorted(root.rglob("*")):
     if updated != original:
         path.write_text(updated, encoding="utf-8")
         changed.append(str(path))
-# Rename text-bearing paths too, deepest first.
 for path in sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
     if path.name and any(old in path.name for old, _ in replacements):
         new_name = path.name
