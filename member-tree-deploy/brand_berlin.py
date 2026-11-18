@@ -32,3 +32,5 @@ for item in changed:
     print(item)
 
 # Rebuild trigger: fast-forward-safe package publish.
+
+# Berlin test-only admin auth inspection trigger.
