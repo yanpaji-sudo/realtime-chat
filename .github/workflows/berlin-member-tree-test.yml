@@ -29,6 +29,8 @@ jobs:
           base64 -w0 /tmp/member-tree-berlin-test.tgz > member-tree-deploy/payload.b64
           git config user.name "Berlin Test Build"
           git config user.email "actions@users.noreply.github.com"
+          git fetch origin berlin-member-tree-test-20261119
+          git reset --soft FETCH_HEAD
           git add member-tree-deploy/payload.b64
           git commit -m "Build Berlin branded isolated member-tree test package"
           git push origin HEAD:berlin-member-tree-test-20261119
