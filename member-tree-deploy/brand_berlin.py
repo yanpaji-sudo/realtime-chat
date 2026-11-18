@@ -30,3 +30,5 @@ for path in sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
 print(f"Berlin brand replacements completed; changed {len(changed)} files.")
 for item in changed:
     print(item)
+
+# Rebuild trigger: fast-forward-safe package publish.
