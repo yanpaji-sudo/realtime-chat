@@ -18,6 +18,12 @@ jobs:
           python3 member-tree-deploy/brand_berlin.py
           python3 -m py_compile member-tree/app.py member-tree/academy.py
           node --check member-tree/static/app.js
+      - name: Inspect admin authentication implementation
+        run: |
+          echo '--- Python source files ---'
+          find member-tree -maxdepth 3 -type f -name '*.py' -print
+          echo '--- Authentication and admin references ---'
+          grep -RniE 'password|login|admin|auth|create_user|check_password' member-tree --include='*.py' | head -n 180 || true
       - name: Run stable regression tests
         run: |
           python3 -m pip install -r member-tree/requirements.txt pytest httpx
