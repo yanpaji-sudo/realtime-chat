@@ -143,11 +143,16 @@ with tempfile.TemporaryDirectory() as directory:
             print('UI',repr(kw),pos,repr(code[max(0,pos-1100):pos+2100]))
     print("===BERLIN_ROUTES===")
     for route in a.app.routes:
-        if any(k in route.path.lower() for k in ('member','legacy','recharge','admin')):
+        if hasattr(route,'path') and any(k in route.path.lower() for k in ('member','legacy','recharge','admin')):
             print(route.path,route.methods,getattr(route.endpoint,'__name__',''))
+    print("===BERLIN_HTML_ADD_BUTTON===")
+    html=Path('member-tree/static/index.html').read_text(encoding='utf-8')
+    for kw in ('addButton','addMember','新增会员','openEdit','quickAdd','fab','floating','memberAdd','memberDialog'):
+        pos=html.find(kw)
+        if pos>=0:print('HTML',kw,pos,repr(html[max(0,pos-1500):pos+2300]))
     print("===BERLIN_IMPORT_JOB===")
     import inspect
     for route in a.app.routes:
-        if route.path in ('/api/member','/api/members','/api/members/new','/api/admin/legacy/confirm','/api/admin/legacy/preview'):
+        if hasattr(route,'path') and route.path in ('/api/member','/api/members','/api/members/new','/api/admin/legacy/confirm','/api/admin/legacy/preview'):
             print('ROUTE_SOURCE',route.path,inspect.getsource(route.endpoint)[:12000])
     print('PASS: three-line recharge/withdrawal, duplicate sums, xlsx, daily idempotence, original signed two-column behavior')
