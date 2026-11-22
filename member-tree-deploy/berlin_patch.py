@@ -204,8 +204,9 @@ assert a.count(_dimension_old)==1, "Dimension-scanning location must be unique"
 a=a.replace(_dimension_old,_dimension_new,1)
 # Original historical deposits sometimes contain a negative settlement adjustment.
 # Permit signed historical deposit values only, without zeroing or changing data.
-_money_old="if not re.fullmatch(r'\\\\d{1,12}(?:\\\\.\\\\d{1,3})?',s):"
-_money_new="if not re.fullmatch(r'-?\\\\d{1,12}(?:\\\\.\\\\d{1,3})?' if field=='充值' else r'\\\\d{1,12}(?:\\\\.\\\\d{1,3})?',s):"
+_slash=chr(92)
+_money_old="        if not re.fullmatch(r'"+_slash+"d{1,12}(?:"+_slash+"."+_slash+"d{1,3})?',s):"
+_money_new="        if not re.fullmatch(r'-?"+_slash+"d{1,12}(?:"+_slash+"."+_slash+"d{1,3})?' if field=='充值' else r'"+_slash+"d{1,12}(?:"+_slash+"."+_slash+"d{1,3})?',s):"
 assert a.count(_money_old)==1, "Historical recharge validation location must be unique"
 a=a.replace(_money_old,_money_new,1)
 assert "ws.reset_dimensions()" in a
