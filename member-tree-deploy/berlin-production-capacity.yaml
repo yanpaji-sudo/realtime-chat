@@ -1,0 +1,13 @@
+# Only adopt the existing Berlin service; never create or modify original formal production.
+# Member database is currently SQLite on an ephemeral filesystem:
+# DO NOT apply this plan without backing up and migrating existing Berlin data.
+services:
+  - type: web
+    name: berlin-member-tree-test
+    runtime: python
+    plan: 1c-2g
+    region: singapore
+    repo: https://github.com/yanpaji-sudo/realtime-chat
+    branch: berlin-member-tree-test-20261119
+    buildCommand: base64 -d member-tree-deploy/payload.b64 | tar xz && pip install -r member-tree/requirements.txt
+    startCommand: cd member-tree && uvicorn app:app --host 0.0.0.0 --port $PORT
