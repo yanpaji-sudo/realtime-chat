@@ -1,0 +1,84 @@
+"""Isolated regression test for Berlin three-line finance upload formats.
+No live Render or production database connections. Run after payload is built.
+"""
+import io
+import os
+import sys
+import uuid
+import tempfile
+from pathlib import Path
+from datetime import date, timedelta
+from openpyxl import Workbook
+from fastapi.testclient import TestClient
+from sqlalchemy import text
+
+with tempfile.TemporaryDirectory() as directory:
+    os.environ['DATABASE_URL']='sqlite:///'+directory+'/finance_test.sqlite'
+    os.environ['ENABLE_MIDNIGHT_WORKER']='0'
+    sys.path.insert(0,'member-tree')
+    import app as a
+    a.require=lambda req,role='viewer',mutation=False:{'role':'admin','username':'test'}
+    a.db_init()
+    today=a.current_day()
+    older=(date.fromisoformat(today)-timedelta(days=2)).isoformat()
+    with a.engine.begin() as db:
+        for account,joined in [('F123576',today),('hkfu258',older),('Cxy197875',older),('why66888',older)]:
+            db.execute(text('''INSERT INTO members (id,account,joined_on,stake_cents,created_at,updated_at)
+                               VALUES (:i,:a,:j,0,:n,:n)'''),
+                       {'i':str(uuid.uuid4()),'a':account,'j':joined,'n':a.utc_now()})
+    recharge='\n'.join([
+        '首次存款','F123576','3000',
+        '充值/更换电池','hkfu258','184.786',
+        '首次存款','Cxy197875','2502.45',
+        '首次存款','hkfu258','4934.885'])
+    def single_column_xlsx(lines):
+        book=Workbook()
+        for value in lines.splitlines():
+            book.active.append([value])
+        buffer=io.BytesIO()
+        book.save(buffer)
+        return buffer.getvalue()
+    with TestClient(a.app) as client:
+        r=client.post('/api/recharge/preview',data={'content':recharge})
+        assert r.status_code==200,r.text
+        q=r.json()
+        assert q['valid'] and q['matched']==3 and q['three_line_events']==4,q
+        assert q['three_line_repeated']==1,q
+        assert q['uploaded_cents']==300000+18479+250245+493489,q
+        r=client.post('/api/recharge/'+q['job_id']+'/confirm',json={})
+        assert r.status_code==200,r.text
+        with a.engine.connect() as db:
+            rows={row['account']:row for row in a.active_rows(db)}
+            assert rows['hkfu258']['daily_recharge_cents']==511968,rows['hkfu258']
+        # A second identical snapshot must not double-add.
+        q=client.post('/api/recharge/preview',data={'content':recharge}).json()
+        assert q['valid'],q
+        r=client.post('/api/recharge/'+q['job_id']+'/confirm',json={})
+        assert r.status_code==200 and r.json()['changed']==0,r.text
+        r=client.post('/api/recharge/preview',files={
+            'upload':('recharge.xlsx',single_column_xlsx(recharge),
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')})
+        assert r.status_code==200 and r.json()['valid'],r.text
+        assert r.json()['three_line_events']==4,r.json()
+
+        withdrawal='首次提现\nwhy66888\n500\n首次提现\nwhy66888\n250'
+        q=client.post('/api/import/preview',data={'mode':'daily','content':withdrawal}).json()
+        assert q['valid'] and q['three_line_events']==2 and q['three_line_repeated']==1,q
+        assert q['withdraw_delta_cents']==75000,q
+        r=client.post('/api/import/'+q['job_id']+'/confirm',json={})
+        assert r.status_code==200,r.text
+        with a.engine.connect() as db:
+            rows={row['account']:row for row in a.active_rows(db)}
+            assert rows['why66888']['daily_withdraw_cents']==75000
+            assert rows['why66888']['total_withdraw_cents']==75000
+        r=client.post('/api/import/preview',data={'mode':'daily'},files={
+            'upload':('withdrawals.xlsx',single_column_xlsx(withdrawal),
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')})
+        assert r.status_code==200 and r.json()['valid'],r.text
+        # Two-column positive amount remains a funds return (negative internal net).
+        q=client.post('/api/import/preview',data={'mode':'daily','content':'why66888 200'}).json()
+        assert q['valid'] and q['withdraw_delta_cents']==-95000,q
+        # Two-column comma separated header is not mistaken for a 3-line record.
+        q=client.post('/api/recharge/preview',data={'content':'会员账号,当日充值\nF123576,3000'}).json()
+        assert q['valid'] and q['three_line_events']==0,q
+    print('PASS: three-line recharge/withdrawal, duplicate sums, xlsx, daily idempotence, original signed two-column behavior')
