@@ -1,0 +1,47 @@
+name: Build Berlin member tree test release
+on:
+  push:
+    branches:
+      - berlin-member-tree-test-20261119
+    paths:
+      - member-tree-deploy/berlin_patch.py
+      - .github/workflows/berlin-build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-berlin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Load original formal-release archive
+        run: |
+          git fetch origin member-tree-render
+          git show origin/member-tree-render:member-tree-deploy/payload.b64 > /tmp/berlin_formal.b64
+      - name: Build patched Berlin payload
+        run: |
+          python member-tree-deploy/berlin_patch.py
+          python - <<'PY'
+          import base64,gzip,tarfile,io
+          p=open('member-tree-deploy/payload.b64','rb').read()
+          archive=gzip.decompress(base64.b64decode(p))
+          with tarfile.open(fileobj=io.BytesIO(archive)) as t:
+              f=t.extractfile('member-tree/app.py').read().decode()
+              assert 'member_registration_times' in f
+              assert '柏林六列覆盖重建' in f
+          print('Berlin payload verified')
+          PY
+      - name: Commit test-only release archive
+        run: |
+          git config user.name "berlin-release-bot"
+          git config user.email "berlin-release-bot@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          if ! git diff --staged --quiet; then
+            git commit -m "Publish Berlin tree test from formal release with six-column importer"
+            git push origin HEAD:berlin-member-tree-test-20261119
+          fi
