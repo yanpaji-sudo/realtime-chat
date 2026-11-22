@@ -1,0 +1,51 @@
+name: Publish V22 free-server auto tour and red-ring density UI
+on:
+  push:
+    branches: [member-tree-render]
+    paths:
+      - '.github/workflows/v22-visual-formal.yml'
+permissions:
+  contents: write
+concurrency:
+  group: v22-formal-visual-release
+  cancel-in-progress: false
+jobs:
+  deploy_ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure exact formal source archive and extract it without changing database
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "6f2e14606cc35e3e13b15b937d1410fdfa76c1b8"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py > /tmp/unchanged-server.txt
+      - name: Patch only browser visualization and verify backend completely untouched
+        run: |
+          set -euo pipefail
+          python3 member-tree-v22-visual/performance_visual_patch.py
+          sha256sum --check /tmp/unchanged-server.txt
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_v22_visual.cjs
+      - name: Regression test original screen modes
+        run: |
+          set -euo pipefail
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
+      - name: Publish view-only formal archive without touching persistent data
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-visual.tgz member-tree
+          base64 -w0 /tmp/v22-visual.tgz > member-tree-deploy/payload.b64
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22 formal free server: fix scrolling repaint and add red-ring density tour (UI only)'
+            git push origin HEAD:member-tree-render
+          fi
