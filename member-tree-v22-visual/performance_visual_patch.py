@@ -57,7 +57,7 @@ new=""" const shownRows=teamFocusId?teamExportRows(teamFocusId):shownTreeMembers
 """
 once(old,new)
 old=""" function draw(){
-  const L=branchLayout(shownRows,branchClosed);const cardW=compactMode?152:260,cardH=compactMode?44:104;svg.setAttribute('viewBox',\`0 0 \${Math.max(300,host.clientWidth||1100)} \${Math.max(320,host.clientHeight||590)}\`);viewport.replaceChildren();"""
+  const L=branchLayout(shownRows,branchClosed);const cardW=compactMode?152:260,cardH=compactMode?44:104;svg.setAttribute('viewBox',`0 0 ${Math.max(300,host.clientWidth||1100)} ${Math.max(320,host.clientHeight||590)}`);viewport.replaceChildren();"""
 new=""" function draw(){
   if(!host.isConnected)return;
   const L=getLayout(),cardW=compactMode?152:260,cardH=compactMode?44:104;
@@ -66,7 +66,7 @@ new=""" function draw(){
   const visible=p=>!isVirtual||(p&&(p.x+cardW)*s+branchTransform.dx>=-margin&&
    p.x*s+branchTransform.dx<=W+margin&&(p.y+cardH/2)*s+branchTransform.dy>=-margin&&
    (p.y-cardH/2)*s+branchTransform.dy<=H+margin);
-  svg.setAttribute('viewBox',\`0 0 \${W} \${H}\`);viewport.replaceChildren();"""
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);viewport.replaceChildren();"""
 once(old,new)
 old="""  for(const [a,b]of L.edges){const p=L.positions.get(a),q=L.positions.get(b),start=p.x+cardW,end=q.x;
    const d="""
@@ -81,9 +81,9 @@ once("for(const m of shownRows){const pos=L.positions.get(m.id);if(!pos)continue
      "for(const m of shownRows){const pos=L.positions.get(m.id);if(!pos||!visible(pos))continue;")
 once("function fold(){branchClosed.has(m.id)?branchClosed.delete(m.id):branchClosed.add(m.id);draw();persistTabView()}",
      "function fold(){branchClosed.has(m.id)?branchClosed.delete(m.id):branchClosed.add(m.id);cachedLayout=null;draw();persistTabView()}")
-once("function apply(){viewport.setAttribute('transform',\`translate(\${branchTransform.dx},\${branchTransform.dy}) scale(\${branchTransform.scale})\`)}",
+once("function apply(){viewport.setAttribute('transform',`translate(${branchTransform.dx},${branchTransform.dy}) scale(${branchTransform.scale})`)}",
      """function apply(){
-  viewport.setAttribute('transform',\`translate(\${branchTransform.dx},\${branchTransform.dy}) scale(\${branchTransform.scale})\`);
+  viewport.setAttribute('transform',`translate(${branchTransform.dx},${branchTransform.dy}) scale(${branchTransform.scale})`);
   if(isVirtual&&!paintTimer){
    paintTimer=setTimeout(()=>{paintTimer=null;if(host.isConnected)draw()},110);
   }
