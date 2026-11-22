@@ -29,9 +29,9 @@ def create_member(data: MemberIn, req: Request):
                 raise HTTPException(409,'该会员资料已更新，请刷新后再次核对再覆盖')
             old={k:prior[k] for k in SNAPSHOT_FIELDS}
             try:
-                result=db.execute(text("""UPDATE members SET account=:a,joined_on=:j,parent_id=:p,
+                result=db.execute(text('''UPDATE members SET account=:a,joined_on=:j,parent_id=:p,
                     total_withdraw_cents=:w,stake_cents=:stake,remark=:remark,deleted=0,
-                    updated_at=:t,revision=revision+1 WHERE id=:id AND revision=:expected"""),
+                    updated_at=:t,revision=revision+1 WHERE id=:id AND revision=:expected'''),
                     {'a':account,'j':data.joined_on,'p':parent,'w':withdrawn,'stake':stake,
                      'remark':data.remark.strip(),'t':now,'id':mid,'expected':prior['revision']})
                 if result.rowcount!=1:
@@ -49,9 +49,9 @@ def create_member(data: MemberIn, req: Request):
                 operator.get('username',''))
         else:
             try:
-                db.execute(text("""INSERT INTO members(id,account,joined_on,parent_id,
+                db.execute(text('''INSERT INTO members(id,account,joined_on,parent_id,
                     total_withdraw_cents,stake_cents,remark,created_at,updated_at)
-                    VALUES (:id,:a,:j,:p,:w,:stake,:remark,:t,:t)"""),
+                    VALUES (:id,:a,:j,:p,:w,:stake,:remark,:t,:t)'''),
                     {'id':mid,'a':account,'j':data.joined_on,'p':parent,'w':withdrawn,
                      'stake':stake,'remark':data.remark.strip(),'t':now})
             except IntegrityError:
