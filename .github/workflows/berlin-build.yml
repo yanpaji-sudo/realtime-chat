@@ -6,6 +6,8 @@ on:
     paths:
       - member-tree-deploy/berlin_patch.py
       - member-tree-deploy/berlin_daily_recharge_patch.py
+      - member-tree-deploy/berlin_three_line_cashflow_patch.py
+      - member-tree-deploy/test_berlin_three_line_cashflow.py
       - member-tree-deploy/berlin_six_column_dedupe_patch.py
       - member-tree-deploy/test_berlin_six_column_dedupe.py
       - member-tree-deploy/berlin_full_replace_import_patch.py
@@ -46,10 +48,15 @@ jobs:
               assert 'def berlin_recharge_confirm' in f
               assert 'CREATE TABLE IF NOT EXISTS berlin_daily_recharge' in f
               assert 'def berlin_recharge_supplement' in f
+              assert 'def berlin_three_line_cashflow' in f
+              assert "berlin_three_line_cashflow(lines,'recharge')" in f
+              assert "berlin_three_line_cashflow(lines,'daily')" in f
           print('Berlin payload verified')
           PY
       - name: Regression test duplicate account imports
         run: python member-tree-deploy/test_berlin_six_column_dedupe.py
+      - name: Regression test three-line finance uploads
+        run: python member-tree-deploy/test_berlin_three_line_cashflow.py
       - name: Commit test-only release archive
         run: |
           git config user.name "berlin-release-bot"
