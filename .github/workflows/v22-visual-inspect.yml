@@ -1,0 +1,31 @@
+name: Inspect V22 free-server formal visual renderer
+on:
+  push:
+    branches: [member-tree-v22-visual-tour-preview-20261122]
+    paths:
+      - '.github/workflows/v22-visual-inspect.yml'
+      - 'member-tree-v22-visual/**'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect formal release SVG implementation without writes
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          a=Path('member-tree/static/app.js').read_text()
+          h=Path('member-tree/static/index.html').read_text()
+          for word in ['function renderBranch(){','function render(){','function branchLayout(','function draw(){','function apply(){','function reset(){','function zoom(','branchViewportControls=','withdrawGlowOn','branchFullscreenReflow','function shownTreeMembers(','branchClosed','branchSelectedAccount','const TREE_GROUPS=']:
+              p=a.find(word)
+              print('===INSPECT===',word,'at',p, 'count',a.count(word),flush=True)
+              if p>=0:
+                  print(a[max(0,p-180):p+(11500 if word=='function renderBranch(){' else 1600)],flush=True)
+          for word in ['branchZoomIn','branchFit','branch-canvas','branch-svg','withdrawTreeBtn','branchFullscreen','<body','</body>']:
+              p=h.find(word)
+              print('===HTML===',word,p,'count',h.count(word),flush=True)
+              if p>=0:print(h[max(0,p-160):p+450],flush=True)
+          PY
