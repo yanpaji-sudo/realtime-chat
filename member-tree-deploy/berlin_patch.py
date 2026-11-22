@@ -211,6 +211,15 @@ assert a.count(_money_old)==1, "Historical recharge validation location must be 
 a=a.replace(_money_old,_money_new,1)
 assert "ws.reset_dimensions()" in a
 assert "field=='充值'" in a
+# The amount checker must know which column is being validated.
+# Recharge adjustments can be signed, historical withdrawals cannot.
+assert a.count("    def cent3(v):")==1
+a=a.replace("    def cent3(v):","    def cent3(v,field='充值'):",1)
+assert a.count("cent3(value(row,'历史总提现'))")==1
+a=a.replace("cent3(value(row,'历史总提现'))",
+            "cent3(value(row,'历史总提现'),'提现')",1)
+assert "def cent3(v,field='充值')" in a
+assert "cent3(value(row,'历史总提现'),'提现')" in a
 ap.write_text(a)
 import py_compile
 py_compile.compile(str(ap),doraise=True)
