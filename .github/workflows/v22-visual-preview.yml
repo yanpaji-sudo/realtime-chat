@@ -1,0 +1,30 @@
+name: Preview V22 free-server visualization fixes
+on:
+  push:
+    branches: [member-tree-v22-visual-tour-preview-20261122]
+    paths:
+      - 'member-tree-v22-visual/**'
+      - '.github/workflows/v22-visual-preview.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract current formal archive and apply visual-only performance patch
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py > /tmp/formal-unmodified.txt
+          python3 member-tree-v22-visual/performance_visual_patch.py
+          sha256sum --check /tmp/formal-unmodified.txt
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_v22_visual.cjs
+      - name: Run bundled existing frontend tests (read-only)
+        run: |
+          set -euo pipefail
+          for t in member-tree/tests/test_v32_fullscreen_hover.cjs member-tree/tests/test_v27_red_withdrawal_ui.cjs member-tree/tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
