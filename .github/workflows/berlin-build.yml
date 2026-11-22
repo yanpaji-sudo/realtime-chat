@@ -12,6 +12,8 @@ on:
       - member-tree-deploy/berlin_six_column_dedupe_patch.py
       - member-tree-deploy/test_berlin_six_column_dedupe.py
       - member-tree-deploy/berlin_full_replace_import_patch.py
+      - member-tree-deploy/berlin_bulk_new_members_patch.py
+      - member-tree-deploy/test_berlin_bulk_new_members.py
       - .github/workflows/berlin-build.yml
   workflow_dispatch:
 
@@ -62,6 +64,8 @@ jobs:
         run: python member-tree-deploy/test_berlin_six_column_dedupe.py
       - name: Regression test three-line finance uploads
         run: python member-tree-deploy/test_berlin_three_line_cashflow.py
+      - name: Test today's member six-field full Excel incremental import
+        run: python member-tree-deploy/test_berlin_bulk_new_members.py
       - name: Commit test-only release archive
         run: |
           git config user.name "berlin-release-bot"
