@@ -259,6 +259,8 @@ exec(compile(Path('member-tree-deploy/berlin_signed_withdrawal_realtime_patch.py
 exec(compile(Path('member-tree-deploy/berlin_daily_recharge_patch.py').read_text(encoding='utf-8'),'berlin_daily_recharge_patch.py','exec'))
 # Berlin finance raw exports: three-line description / account / amount events.
 exec(compile(Path('member-tree-deploy/berlin_three_line_cashflow_patch.py').read_text(encoding='utf-8'),'berlin_three_line_cashflow_patch.py','exec'))
+# Berlin extra cashflow layouts: amount / memo / account and amount / account.
+exec(compile(Path('member-tree-deploy/berlin_reverse_cashflow_patch.py').read_text(encoding='utf-8'),'berlin_reverse_cashflow_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
