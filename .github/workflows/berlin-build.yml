@@ -7,6 +7,7 @@ on:
       - member-tree-deploy/berlin_patch.py
       - member-tree-deploy/berlin_daily_recharge_patch.py
       - member-tree-deploy/berlin_three_line_cashflow_patch.py
+      - member-tree-deploy/berlin_reverse_cashflow_patch.py
       - member-tree-deploy/test_berlin_three_line_cashflow.py
       - member-tree-deploy/berlin_six_column_dedupe_patch.py
       - member-tree-deploy/test_berlin_six_column_dedupe.py
@@ -51,6 +52,8 @@ jobs:
               assert 'def berlin_three_line_cashflow' in f
               assert "berlin_three_line_cashflow(lines,'recharge')" in f
               assert "berlin_three_line_cashflow(lines,'daily')" in f
+              assert 'if reverse_line or reverse_pair:' in f
+              assert '第{line_no}行金额后缺少会员账号' in f
           print('Berlin payload verified')
           PY
       - name: Install application dependencies for isolated financial tests
