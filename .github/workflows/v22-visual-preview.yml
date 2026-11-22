@@ -25,6 +25,7 @@ jobs:
       - name: Run bundled existing frontend tests (read-only)
         run: |
           set -euo pipefail
-          for t in member-tree/tests/test_v32_fullscreen_hover.cjs member-tree/tests/test_v27_red_withdrawal_ui.cjs member-tree/tests/test_v28_compact.cjs; do
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
             if [ -f "$t" ]; then node "$t"; fi
           done
