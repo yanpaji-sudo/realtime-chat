@@ -113,7 +113,7 @@ def parse_legacy_full_export(payload,filename):
 assert a.count("@app.post('/api/admin/legacy/preview')")==1
 a=a.replace("@app.post('/api/admin/legacy/preview')",parser+"@app.post('/api/admin/legacy/preview')",1)
 a=a.replace("'roots':sum(1 for x in parsed if not x['parent_account']),",
-            "'roots':sum(1 for x in parsed if not x['parent_account']),\\n            'placeholders':sum(1 for x in parsed if x.get('__placeholder__')),")
+            "'roots':sum(1 for x in parsed if not x['parent_account']), 'placeholders':sum(1 for x in parsed if x.get('__placeholder__'))," )
 a=a.replace("'notice':'恢复旧版全员资料会替换当前会员及关系；不会凭空恢复旧版缺失的逐日流水或撤回记录。CSV/Excel只保留本人金额，旧表中的各层汇总不会重复导入。旧文件当日提现按本次导入的北京时间日期挂账，请核对文件是否是今日导出。'",
             "'notice':('柏林六列覆盖重建：缺失上级创建占位节点，保留每日提现、余额和历史快照。' if parsed and parsed[0].get('__berlin__') else '旧版恢复格式，执行前请备份。')")
 branch = '''
@@ -156,7 +156,7 @@ branch = '''
             return {'ok':True,'members':len(parsed),
                     'placeholders':sum(bool(x.get('__placeholder__')) for x in parsed)}
 '''
-anchor="        now=utc_now();today=current_day()\\n        byaccount={x['account'].casefold():str(uuid.uuid4()) for x in parsed}"
+anchor="        byaccount={x['account'].casefold():str(uuid.uuid4()) for x in parsed}"
 assert a.count(anchor)==1
 a=a.replace(anchor,branch+anchor,1)
 ap.write_text(a)
