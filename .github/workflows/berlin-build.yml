@@ -54,7 +54,7 @@ jobs:
           print('Berlin payload verified')
           PY
       - name: Install application dependencies for isolated financial tests
-        run: python -m pip install -r member-tree/requirements.txt
+        run: python -m pip install -r member-tree/requirements.txt httpx2
       - name: Regression test duplicate account imports
         run: python member-tree-deploy/test_berlin_six_column_dedupe.py
       - name: Regression test three-line finance uploads
