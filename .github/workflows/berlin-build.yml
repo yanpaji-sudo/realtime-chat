@@ -5,6 +5,7 @@ on:
       - berlin-member-tree-test-20261119
     paths:
       - member-tree-deploy/berlin_patch.py
+      - member-tree-deploy/berlin_daily_recharge_patch.py
       - member-tree-deploy/berlin_six_column_dedupe_patch.py
       - member-tree-deploy/test_berlin_six_column_dedupe.py
       - member-tree-deploy/berlin_full_replace_import_patch.py
@@ -41,6 +42,10 @@ jobs:
               assert "UPDATE members SET deleted=1" in f
               assert 'berlin_incremental_6_columns' not in f
               assert '确认追加会员数据' not in f
+              assert 'def berlin_recharge_preview' in f
+              assert 'def berlin_recharge_confirm' in f
+              assert 'CREATE TABLE IF NOT EXISTS berlin_daily_recharge' in f
+              assert 'def berlin_recharge_supplement' in f
           print('Berlin payload verified')
           PY
       - name: Regression test duplicate account imports
