@@ -32,7 +32,7 @@ new = """            removed_count=len({str(x['account']).casefold() for x in ex
             now=utc_now()"""
 assert base.count(old) == 1
 base = base.replace(old, new, 1)
-old = "            return {'ok':True,'members':len(parsed),\n                     'placeholders':sum(bool(x.get('__placeholder__')) for x in parsed)}"
+old = "            return {'ok':True,'members':len(parsed),\n                    'placeholders':sum(bool(x.get('__placeholder__')) for x in parsed)}"
 new = """            return {'ok':True,'members':len(parsed),'removed':removed_count,
                     'mode':'replace','placeholders':sum(bool(x.get('__placeholder__')) for x in parsed)}"""
 assert base.count(old) == 1
