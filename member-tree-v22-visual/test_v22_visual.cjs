@@ -13,7 +13,7 @@ const group=[
 ];
 const areas=sandbox.rank(group,440,350);
 assert.strictEqual(areas.length,3,JSON.stringify(areas));
-assert.deepStrictEqual(areas.map(x=>x.count),[4,3,1],'must rank count of red rings, NOT withdrawal sum');
+assert.deepStrictEqual(Array.from(areas,x=>Number(x.count)),[4,3,1],'must rank count of red rings, NOT withdrawal sum');
 assert.strictEqual(sandbox.rank([],440,350).length,0);
 for(const term of [
  'function startTour()','function startDensity()','function showSurvey(index)',
