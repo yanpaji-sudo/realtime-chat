@@ -124,3 +124,12 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'berlinBulkLaunch' in html and 'berlinBulkDialog' in html
     assert '同账号（覆盖）' in Path('member-tree/static/app.js').read_text(encoding='utf-8')
     print('PASS: Berlin last-upload-wins six-field upsert, account-level last row wins, stable IDs, unlisted/financial fields safe, cycles rejected')
+
+# === Temporary visualization implementation inspection ===
+ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+html=Path('member-tree/static/index.html').read_text(encoding='utf-8')
+for needle in ('function renderBranch(', 'function renderTree(', 'function render(', 'function index(', 'withdrawGlowOn', 'branchTransform=', 'function focus', 'const zoom=', 'let zoom=', 'function zoom(', 'branchSelectedAccount', 'branchFullscreenReflow', 'data-view="branch"', 'withdrawTreeBtn'):
+    source=html if 'data-view=' in needle else ui
+    at=source.find(needle)
+    print('\n===VIS_INSPECT===',needle,at)
+    if at>=0:print(source[max(0,at-500):at+15000] if needle in ('function renderBranch(', 'function renderTree(', 'function render(') else source[max(0,at-900):at+3600])
