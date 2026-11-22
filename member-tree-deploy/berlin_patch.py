@@ -263,6 +263,8 @@ exec(compile(Path('member-tree-deploy/berlin_three_line_cashflow_patch.py').read
 exec(compile(Path('member-tree-deploy/berlin_reverse_cashflow_patch.py').read_text(encoding='utf-8'),'berlin_reverse_cashflow_patch.py','exec'))
 # Recognize pasted recharge/withdrawal triplets even when the import screen starts in combined mode.
 exec(compile(Path('member-tree-deploy/berlin_auto_cashflow_mode_patch.py').read_text(encoding='utf-8'),'berlin_auto_cashflow_mode_patch.py','exec'))
+# Incremental daily new member import: auto-read complete Excel with no roster deletion.
+exec(compile(Path('member-tree-deploy/berlin_bulk_new_members_patch.py').read_text(encoding='utf-8'),'berlin_bulk_new_members_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
