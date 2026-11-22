@@ -161,6 +161,8 @@ branch = '''
 anchor="        byaccount={x['account'].casefold():str(uuid.uuid4()) for x in parsed}"
 assert a.count(anchor)==1
 a=a.replace(anchor,branch+anchor,1)
+assert a.count('万诚数据统计') == 1
+a=a.replace('万诚数据统计','柏林数据统计')
 ap.write_text(a)
 j=j.replace('导入旧版全员数据 · 一键重建会员树','一键复原树状图 · 柏林六列格式')
 j=j.replace('支持老版本“导出全部CSV / 导出Excel”文件，自动识别会员、加入日期、直属上级、备注、建仓、余额、累计提现、当日提现。加密 .mtbackup 文件请使用顶部「恢复加密备份」。请不要选择只含层级合计的“逐层汇总表”。',
@@ -169,12 +171,26 @@ j=j.replace('当前正式系统会员：','当前测试系统会员：')
 j=j.replace('建仓合计：${d.amounts.stake}', '占位上级：${d.placeholders||0}个\\n建仓合计：${d.amounts.stake}')
 j=j.replace('即将用导出文件完整替换正式会员资料，影响所有8名管理员。','即将用六列表格覆盖柏林测试会员树，影响所有10名管理员。')
 j=j.replace('8位管理员','10位管理员')
+assert j.count('万诚数据统计') == 1
+assert j.count('磐石AI学院') >= 1
+assert j.count('磐石 AI 学院') == 1
+j=j.replace('万诚数据统计','柏林数据统计')
+j=j.replace('磐石AI学院','柏林学院')
+j=j.replace('磐石 AI 学院','柏林学院')
+j=j.replace('你好，我是磐石AI话术导师','你好，我是柏林学院话术导师')
 jp.write_text(j)
 h=h.replace('会员树状系统 · V21实时报表与树状图','柏林树状图系统 · 免费测试版')
 h=h.replace('会员树状统计系统 · 数据报表V22版','柏林树状图系统 · 测试版')
 h=h.replace('会员数据中心','柏林树状图系统')
 h=h.replace('8位管理员','10位管理员').replace('正式数据库','测试数据库')
+assert '磐石AI学院' in h
+h=h.replace('磐石AI学院','柏林学院')
 hp.write_text(h)
+academy_file=root/'academy.py'
+academy_src=academy_file.read_text()
+assert '【磐石AI学院·课程专属话术导师】' in academy_src
+academy_src=academy_src.replace('【磐石AI学院·课程专属话术导师】','【柏林学院·课程专属话术导师】')
+academy_file.write_text(academy_src)
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
