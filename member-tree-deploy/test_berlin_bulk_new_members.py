@@ -125,11 +125,38 @@ with tempfile.TemporaryDirectory() as directory:
     assert '同账号（覆盖）' in Path('member-tree/static/app.js').read_text(encoding='utf-8')
     print('PASS: Berlin last-upload-wins six-field upsert, account-level last row wins, stable IDs, unlisted/financial fields safe, cycles rejected')
 
-# === Temporary visualization implementation inspection ===
-ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+# View-only tests: simulation of non-overlapping red-ring hotspots.
+js=Path('member-tree/static/app.js').read_text(encoding='utf-8')
 html=Path('member-tree/static/index.html').read_text(encoding='utf-8')
-for needle in ('function renderBranch(', 'function renderTree(', 'function render(', 'function index(', 'withdrawGlowOn', 'branchTransform=', 'function focus', 'const zoom=', 'let zoom=', 'function zoom(', 'branchSelectedAccount', 'branchFullscreenReflow', 'data-view="branch"', 'withdrawTreeBtn'):
-    source=html if 'data-view=' in needle else ui
-    at=source.find(needle)
-    print('\n===VIS_INSPECT===',needle,at)
-    if at>=0:print(source[max(0,at-500):at+15000] if needle in ('function renderBranch(', 'function renderTree(', 'function render(') else source[max(0,at-900):at+3600])
+assert 'function berlinRankWithdrawClusters(' in js
+assert '▶ 自动浏览' in js and '提现密度提醒' in js
+assert '下一处 →' in js and '← 上一处' in js
+assert 'function startAutoTour()' in js and 'function startDensitySurvey()' in js
+assert 'const zoom=.13' in js and 'requestAnimationFrame(step)' in js
+assert 'daily_withdraw_cents||0' in js
+assert 'berlin-visual-toolbar' in html
+node_test=r"""
+const fs=require('fs'),vm=require('vm');
+const source=fs.readFileSync('member-tree/static/app.js','utf-8');
+const from=source.indexOf('function berlinRankWithdrawClusters(');
+const to=source.indexOf('\nlet berlinVisionMode=',from);
+if(from<0||to<=from)throw new Error('Missing density helper boundaries');
+const ctx={}; vm.runInNewContext(source.slice(from,to)+'\nthis.rank=berlinRankWithdrawClusters;',ctx);
+const group=[
+ {x:30,y:30,amount:50,account:'a1'},
+ {x:40,y:65,amount:60,account:'a2'},
+ {x:35,y:100,amount:75,account:'a3'},
+ {x:55,y:120,amount:85,account:'a4'},
+ {x:30,y:1100,amount:100,account:'b1'},
+ {x:45,y:1140,amount:200,account:'b2'},
+ {x:60,y:1180,amount:300,account:'b3'},
+ {x:25,y:2200,amount:10000000,account:'c1'}];
+const ranked=ctx.rank(group,420,330);
+if(ranked.length!==3||ranked[0].count!==4||ranked[1].count!==3||ranked[2].count!==1){
+ throw new Error('Withdrawal density ranks should be 4, 3, 1 rings not by largest amount: '+JSON.stringify(ranked))
+}
+if(ctx.rank([],420,330).length!==0)throw new Error('Empty data must have no hotspot');
+console.log('PASS: ranked red-ring hotspots 4>3>1, non-overlapping navigation, count prioritized over withdrawal amount');
+"""
+subprocess.run(['node','-e',node_test],check=True)
+print('PASS: minimal-scale vertical animation, density mode controls and view-only implementation present')
