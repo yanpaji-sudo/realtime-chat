@@ -1,0 +1,61 @@
+name: Promote validated test features to formal member tree
+on:
+  push:
+    branches:
+      - member-tree-render
+    paths:
+      - '.github/workflows/formal-promote.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Load release archives
+        run: |
+          set -euo pipefail
+          cp member-tree-deploy/payload.b64 /tmp/formal_payload.b64
+          git fetch origin berlin-member-tree-test-20261119
+          git show origin/berlin-member-tree-test-20261119:member-tree-deploy/payload.b64 > /tmp/berlin_payload.b64
+          base64 -d /tmp/berlin_payload.b64 | tar xz
+      - name: Preserve formal labels and settings while promoting test features
+        run: |
+          python member-tree-deploy/formal_promotion_overlay.py
+      - name: Verify resulting formal application
+        run: |
+          python -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,tarfile,io
+          data=Path("member-tree-deploy/payload.b64").read_bytes()
+          with tarfile.open(fileobj=io.BytesIO(gzip.decompress(base64.b64decode(data)))) as t:
+              py=t.extractfile("member-tree/app.py").read().decode()
+              js=t.extractfile("member-tree/static/app.js").read().decode()
+              h=t.extractfile("member-tree/static/index.html").read().decode()
+              assert "def _berlin_sample_due" in py
+              assert "berlin_incremental_6_columns" in py
+              assert "member_registration_times" in py
+              assert "SESSION_SECRET" in py
+              assert "DATABASE_URL" in py
+              assert "const TREE_GROUPS=['01','02','03','06','08'];" in js
+              assert "berlinRefreshBusy" in js
+              assert "会员树状统计系统" in h
+              assert "柏林" not in h
+              assert "daili01" not in js
+          print("Formal promotion release checks passed")
+          PY
+      - name: Publish tested formal source payload
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'Formal: promote tested Berlin features and performance without data reset'
+            git push origin HEAD:member-tree-render
+          fi
