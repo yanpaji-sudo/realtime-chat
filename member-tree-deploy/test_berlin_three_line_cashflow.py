@@ -81,4 +81,40 @@ with tempfile.TemporaryDirectory() as directory:
         # Two-column comma separated header is not mistaken for a 3-line record.
         q=client.post('/api/recharge/preview',data={'content':'会员账号,当日充值\nF123576,3000'}).json()
         assert q['valid'] and q['three_line_events']==0,q
+        # Reverse order: amount / optional Chinese note / account; repeated rows summed.
+        reverse_recharge='\n'.join([
+            '3000','首次存款','F123576',
+            '184.786','充值/更换电池','hkfu258',
+            '4934.885','hkfu258','2502.45','Cxy197875'])
+        q=client.post('/api/recharge/preview',data={'content':reverse_recharge}).json()
+        assert q['valid'] and q['three_line_events']==4 and q['three_line_repeated']==1,q
+        assert q['uploaded_cents']==300000+18479+493489+250245,q
+        r=client.post('/api/recharge/'+q['job_id']+'/confirm',json={})
+        assert r.status_code==200 and r.json()['changed']==0,r.text
+        # Forward and reversed events can coexist without losing any transaction.
+        q=client.post('/api/recharge/preview',
+            data={'content':'首次存款\nF123576\n100\n200\nF123576'}).json()
+        assert q['valid'] and q['three_line_events']==2 and q['three_line_repeated']==1,q
+        assert q['uploaded_cents']==30000,q
+        # Reverse withdrawal keeps positive 500 as an actual cash-out.
+        q=client.post('/api/import/preview',
+            data={'mode':'daily','content':'500\n首次提现\nwhy66888'}).json()
+        assert q['valid'] and q['three_line_events']==1,q
+        assert q['withdraw_delta_cents']==-25000,q  # previous snapshot 750
+        q=client.post('/api/import/preview',
+            data={'mode':'daily','content':'500\t\nwhy66888'}).json()
+        assert q['valid'] and q['three_line_events']==1 and q['withdraw_delta_cents']==-25000,q
+        q=client.post('/api/import/preview',
+            data={'mode':'daily','content':'500\twhy66888'}).json()
+        assert q['valid'] and q['three_line_events']==1 and q['withdraw_delta_cents']==-25000,q
+        q=client.post('/api/import/preview',data={
+            'mode':'daily','content':'首次提现\nwhy66888\n500\n200\nwhy66888'}).json()
+        assert q['valid'] and q['three_line_events']==2 and q['three_line_repeated']==1,q
+        assert q['withdraw_delta_cents']==-5000,q
+        q=client.post('/api/recharge/preview',files={
+            'upload':('reverse.xlsx',single_column_xlsx(reverse_recharge),
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}).json()
+        assert q['valid'] and q['three_line_events']==4,q
+        r=client.post('/api/import/preview',data={'mode':'daily','content':'500'})
+        assert r.status_code==400 and '缺少会员账号' in r.text,r.text
     print('PASS: three-line recharge/withdrawal, duplicate sums, xlsx, daily idempotence, original signed two-column behavior')
