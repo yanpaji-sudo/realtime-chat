@@ -1,10 +1,11 @@
-name: Build Berlin member tree test release
+name: Build Berlin paid production release
 on:
   push:
     branches:
       - berlin-member-tree-test-20261119
     paths:
       - member-tree-deploy/berlin_patch.py
+      - member-tree-deploy/berlin_full_replace_import_patch.py
       - .github/workflows/berlin-build.yml
   workflow_dispatch:
 
@@ -33,8 +34,11 @@ jobs:
           with tarfile.open(fileobj=io.BytesIO(archive)) as t:
               f=t.extractfile('member-tree/app.py').read().decode()
               assert 'member_registration_times' in f
-              assert 'berlin_incremental_6_columns' in f
-              assert '柏林六列追加' in f
+              assert 'berlin_6_columns' in f
+              assert '柏林六列全量覆盖' in f
+              assert "UPDATE members SET deleted=1" in f
+              assert 'berlin_incremental_6_columns' not in f
+              assert '确认追加会员数据' not in f
           print('Berlin payload verified')
           PY
       - name: Commit test-only release archive
