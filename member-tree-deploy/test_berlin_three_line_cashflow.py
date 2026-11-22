@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory() as directory:
         return buffer.getvalue()
     with TestClient(a.app) as client:
         # User-reported simplest Chinese-label / account / integer recharge case.
-        q_simple=client.post('/api/recharge/preview',data={'content':'首次充值\\ndwz123\\n100'}).json()
+        q_simple=client.post('/api/recharge/preview',data={'content':'首次充值\ndwz123\n100'}).json()
         assert q_simple['valid'] and q_simple['matched']==1 and q_simple['three_line_events']==1 and q_simple['uploaded_cents']==10000,q_simple
         r=client.post('/api/recharge/preview',data={'content':recharge})
         assert r.status_code==200,r.text
