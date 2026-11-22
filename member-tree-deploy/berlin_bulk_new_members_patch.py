@@ -139,12 +139,12 @@ async def berlin_new_preview(req:Request, upload:UploadFile=File(...)):
                  r['parent_account'].casefold() not in incoming},key=str.casefold)
         jobid=None
         if candidates:
-            db.execute(text('''CREATE TABLE IF NOT EXISTS berlin_bulk_new_jobs
+            db.execute(text("""CREATE TABLE IF NOT EXISTS berlin_bulk_new_jobs
                 (id TEXT PRIMARY KEY, rows_json TEXT NOT NULL,
-                 source_stamp TEXT NOT NULL,created_at TEXT NOT NULL)'''))
+                 source_stamp TEXT NOT NULL,created_at TEXT NOT NULL)"""))
             jobid=str(uuid.uuid4())
-            db.execute(text('''INSERT INTO berlin_bulk_new_jobs(id,rows_json,source_stamp,created_at)
-                 VALUES (:id,:data,:stamp,:created)'''),
+            db.execute(text("""INSERT INTO berlin_bulk_new_jobs(id,rows_json,source_stamp,created_at)
+                 VALUES (:id,:data,:stamp,:created)"""),
                  {'id':jobid,'data':json.dumps({'candidates':candidates,'placeholders':placeholders},ensure_ascii=False),
                   'stamp':stamp,'created':utc_now()})
     return {'valid':bool(candidates),'job_id':jobid,
@@ -164,9 +164,9 @@ def berlin_new_confirm(job_id:str,req:Request):
     with engine.begin() as db:
         write_lock(db)
         settle_past_days(db)
-        db.execute(text('''CREATE TABLE IF NOT EXISTS berlin_bulk_new_jobs
+        db.execute(text("""CREATE TABLE IF NOT EXISTS berlin_bulk_new_jobs
             (id TEXT PRIMARY KEY, rows_json TEXT NOT NULL,
-             source_stamp TEXT NOT NULL,created_at TEXT NOT NULL)'''))
+             source_stamp TEXT NOT NULL,created_at TEXT NOT NULL)"""))
         row=db.execute(text('SELECT * FROM berlin_bulk_new_jobs WHERE id=:i'),{'i':job_id}).mappings().first()
         if not row:raise HTTPException(404,'预览已失效，请重新选择文件')
         now_members=active_rows(db)
@@ -190,24 +190,24 @@ def berlin_new_confirm(job_id:str,req:Request):
             current[rec['account'].casefold()]=str(uuid.uuid4())
         for account in placeholders:
             mid=current[account.casefold()]
-            db.execute(text('''INSERT INTO members
+            db.execute(text("""INSERT INTO members
                 (id,account,joined_on,parent_id,stake_cents,total_withdraw_cents,remark,created_at,updated_at)
-                VALUES (:id,:account,:joined,NULL,0,0,:remark,:now,:now)'''),
+                VALUES (:id,:account,:joined,NULL,0,0,:remark,:now,:now)"""),
                 {'id':mid,'account':account,'joined':current_day(),
                  'remark':'上级占位（待补资料）','now':now})
             all_new.append((mid,account))
-        db.execute(text('''CREATE TABLE IF NOT EXISTS member_registration_times
-            (member_id TEXT PRIMARY KEY, registered_at TEXT NOT NULL)'''))
+        db.execute(text("""CREATE TABLE IF NOT EXISTS member_registration_times
+            (member_id TEXT PRIMARY KEY, registered_at TEXT NOT NULL)"""))
         for rec in candidates:
             mid=current[rec['account'].casefold()]
-            db.execute(text('''INSERT INTO members
+            db.execute(text("""INSERT INTO members
                 (id,account,joined_on,parent_id,stake_cents,total_withdraw_cents,remark,created_at,updated_at)
-                VALUES (:id,:account,:joined,NULL,:stake,:total,:remark,:now,:now)'''),
+                VALUES (:id,:account,:joined,NULL,:stake,:total,:remark,:now,:now)"""),
                 {'id':mid,'account':rec['account'],'joined':rec['joined_on'],
                  'stake':rec['stake_cents'],'total':rec['total_cents'],
                  'remark':rec['remark'],'now':now})
-            db.execute(text('''INSERT INTO member_registration_times(member_id,registered_at)
-                VALUES (:i,:t) ON CONFLICT(member_id) DO UPDATE SET registered_at=excluded.registered_at'''),
+            db.execute(text("""INSERT INTO member_registration_times(member_id,registered_at)
+                VALUES (:i,:t) ON CONFLICT(member_id) DO UPDATE SET registered_at=excluded.registered_at"""),
                 {'i':mid,'t':rec['joined_on']})
             all_new.append((mid,rec['account']))
         # Reject cycles in the uploaded portion; ensure references are fully resolvable.
