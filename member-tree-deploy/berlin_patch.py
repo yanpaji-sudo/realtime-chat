@@ -16,6 +16,8 @@ h=hp.read_text()
 assert a.count("def parse_legacy_full_export(payload,filename):")==1
 a=a.replace("def parse_legacy_full_export(payload,filename):","def parse_formal_legacy_export(payload,filename):",1)
 parser = '''
+from decimal import ROUND_HALF_UP
+
 def parse_legacy_full_export(payload,filename):
     """Berlin six-column import; also accept the unmodified official format."""
     extension=os.path.splitext(filename.lower())[1]
