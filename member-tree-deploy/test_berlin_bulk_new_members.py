@@ -123,6 +123,14 @@ with tempfile.TemporaryDirectory() as directory:
     html=Path('member-tree/static/index.html').read_text(encoding='utf-8')
     assert 'berlinBulkLaunch' in html and 'berlinBulkDialog' in html
     assert '同账号（覆盖）' in Path('member-tree/static/app.js').read_text(encoding='utf-8')
+    import inspect
+    for function in ('create_member','update_member','validate_member','resolved_parent','parent_ok','validate_stake_for_level'):
+        if hasattr(a,function):
+            print('===SINGLE_MEMBER_'+function+'===',inspect.getsource(getattr(a,function)))
+    source=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+    start=source.find('function openEdit(')
+    end=source.find('function testDownloadBlob(',start)
+    print('===EDIT_UI_SOURCE===',source[start:end] if end>start else 'missing')
     print('PASS: Berlin last-upload-wins six-field upsert, account-level last row wins, stable IDs, unlisted/financial fields safe, cycles rejected')
 
 # View-only tests: simulation of non-overlapping red-ring hotspots.
