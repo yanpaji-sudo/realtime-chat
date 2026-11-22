@@ -49,6 +49,11 @@ with tempfile.TemporaryDirectory() as directory:
         print('===DEBUG_CASHFLOW_PARSER_SOURCE_START===')
         print(inspect.getsource(a.berlin_three_line_cashflow))
         print('===DEBUG_CASHFLOW_PARSER_SOURCE_END===')
+        from pathlib import Path
+        ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+        for word in ['/api/recharge/preview','unmatched_count','充值预览','充值文件']:
+            idx=ui.find(word)
+            print('===DEBUG_UI===',word,idx,repr(ui[max(0,idx-1800):idx+3000]))
         print('===DEBUG_UNMATCHED_PREVIEW===',client.post('/api/recharge/preview',data={'content':'首次充值\\nnotarealmember123\\n100'}).json())
         r=client.post('/api/recharge/preview',data={'content':recharge})
         assert r.status_code==200,r.text
