@@ -42,6 +42,14 @@ with tempfile.TemporaryDirectory() as directory:
         # User-reported simplest Chinese-label / account / integer recharge case.
         q_simple=client.post('/api/recharge/preview',data={'content':'首次充值\ndwz123\n100'}).json()
         assert q_simple['valid'] and q_simple['matched']==1 and q_simple['three_line_events']==1 and q_simple['uploaded_cents']==10000,q_simple
+        import inspect
+        print('===DEBUG_RECHARGE_PREVIEW_SOURCE_START===')
+        print(inspect.getsource(a.berlin_recharge_preview))
+        print('===DEBUG_RECHARGE_PREVIEW_SOURCE_END===')
+        print('===DEBUG_CASHFLOW_PARSER_SOURCE_START===')
+        print(inspect.getsource(a.berlin_three_line_cashflow))
+        print('===DEBUG_CASHFLOW_PARSER_SOURCE_END===')
+        print('===DEBUG_UNMATCHED_PREVIEW===',client.post('/api/recharge/preview',data={'content':'首次充值\\nnotarealmember123\\n100'}).json())
         r=client.post('/api/recharge/preview',data={'content':recharge})
         assert r.status_code==200,r.text
         q=r.json()
