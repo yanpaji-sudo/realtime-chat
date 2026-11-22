@@ -33,7 +33,8 @@ jobs:
           with tarfile.open(fileobj=io.BytesIO(archive)) as t:
               f=t.extractfile('member-tree/app.py').read().decode()
               assert 'member_registration_times' in f
-              assert '柏林六列覆盖重建' in f
+              assert 'berlin_incremental_6_columns' in f
+              assert '柏林六列追加' in f
           print('Berlin payload verified')
           PY
       - name: Commit test-only release archive
