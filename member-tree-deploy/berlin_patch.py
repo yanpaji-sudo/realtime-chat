@@ -269,6 +269,8 @@ exec(compile(Path('member-tree-deploy/berlin_bulk_new_members_patch.py').read_te
 exec(compile(Path('member-tree-deploy/berlin_bulk_latest_wins_patch.py').read_text(encoding='utf-8'),'berlin_bulk_latest_wins_patch.py','exec'))
 # Berlin presentation-only tour and local withdrawal ring-density ranking.
 exec(compile(Path('member-tree-deploy/berlin_visual_tour_density_patch.py').read_text(encoding='utf-8'),'berlin_visual_tour_density_patch.py','exec'))
+# Single-member plus-button now upserts existing account safely, preserving balances and history.
+exec(compile(Path('member-tree-deploy/berlin_single_member_upsert_patch.py').read_text(encoding='utf-8'),'berlin_single_member_upsert_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
