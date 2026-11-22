@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory() as directory:
         assert '已自动识别为当日充值流水' in ui
         assert '未找到会员账号' in ui
         q_xlsx=client.post('/api/recharge/preview',files={
-            'upload':('simple.xlsx',single_column_xlsx('首次充值\\ndwz123\\n100'),
+            'upload':('simple.xlsx',single_column_xlsx('首次充值\ndwz123\n100'),
                       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}).json()
         assert q_xlsx['valid'] and q_xlsx['matched']==1 and q_xlsx['uploaded_cents']==10000,q_xlsx
         r=client.post('/api/recharge/preview',data={'content':recharge})
