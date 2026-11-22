@@ -141,6 +141,8 @@ assert '▶ 自动浏览' in js and '提现密度提醒' in js
 assert '下一处 →' in js and '← 上一处' in js
 assert 'function startAutoTour()' in js and 'function startDensitySurvey()' in js
 assert 'const zoom=.13' in js and 'requestAnimationFrame(step)' in js
+assert 'if(shownRows.length>550&&!berlinPaintTimeout)' in js, 'Continuous rAF scroll must not debounce away redraws'
+assert 'berlinVisionTourResumeDy=branchTransform.dy' in js, 'Keep scan position when background refresh remounts SVG'
 assert 'daily_withdraw_cents||0' in js
 assert 'berlin-visual-toolbar' in html
 node_test=r"""
