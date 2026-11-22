@@ -255,6 +255,8 @@ exec(compile(Path('member-tree-deploy/berlin_balance_daily_money_patch.py').read
 exec(compile(Path('member-tree-deploy/berlin_six_column_dedupe_patch.py').read_text(encoding='utf-8'),'berlin_six_column_dedupe_patch.py','exec'))
 # Signed cash-flow withdrawals: immediate daily/cumulative net changes, idempotent per day.
 exec(compile(Path('member-tree-deploy/berlin_signed_withdrawal_realtime_patch.py').read_text(encoding='utf-8'),'berlin_signed_withdrawal_realtime_patch.py','exec'))
+# Berlin add-on only: daily recharge snapshots; midnight supplemental credit.
+exec(compile(Path('member-tree-deploy/berlin_daily_recharge_patch.py').read_text(encoding='utf-8'),'berlin_daily_recharge_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
