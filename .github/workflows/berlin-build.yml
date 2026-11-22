@@ -13,6 +13,7 @@ on:
       - member-tree-deploy/test_berlin_six_column_dedupe.py
       - member-tree-deploy/berlin_full_replace_import_patch.py
       - member-tree-deploy/berlin_bulk_new_members_patch.py
+      - member-tree-deploy/berlin_bulk_latest_wins_patch.py
       - member-tree-deploy/test_berlin_bulk_new_members.py
       - .github/workflows/berlin-build.yml
   workflow_dispatch:
