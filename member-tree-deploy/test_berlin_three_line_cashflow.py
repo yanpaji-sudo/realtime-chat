@@ -42,19 +42,17 @@ with tempfile.TemporaryDirectory() as directory:
         # User-reported simplest Chinese-label / account / integer recharge case.
         q_simple=client.post('/api/recharge/preview',data={'content':'首次充值\ndwz123\n100'}).json()
         assert q_simple['valid'] and q_simple['matched']==1 and q_simple['three_line_events']==1 and q_simple['uploaded_cents']==10000,q_simple
-        import inspect
-        print('===DEBUG_RECHARGE_PREVIEW_SOURCE_START===')
-        print(inspect.getsource(a.berlin_recharge_preview))
-        print('===DEBUG_RECHARGE_PREVIEW_SOURCE_END===')
-        print('===DEBUG_CASHFLOW_PARSER_SOURCE_START===')
-        print(inspect.getsource(a.berlin_three_line_cashflow))
-        print('===DEBUG_CASHFLOW_PARSER_SOURCE_END===')
-        from pathlib import Path
+        # Ensure the actual shipped JavaScript routes pasted labeled transactions automatically.
+        import subprocess
+        subprocess.run(['node','--check','member-tree/static/app.js'],check=True)
         ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
-        for word in ['/api/recharge/preview','unmatched_count','充值预览','充值文件']:
-            idx=ui.find(word)
-            print('===DEBUG_UI===',word,idx,repr(ui[max(0,idx-1800):idx+3000]))
-        print('===DEBUG_UNMATCHED_PREVIEW===',client.post('/api/recharge/preview',data={'content':'首次充值\\nnotarealmember123\\n100'}).json())
+        assert 'const clearTriplet=typedLines.length>=3' in ui
+        assert '已自动识别为当日充值流水' in ui
+        assert '未找到会员账号' in ui
+        q_xlsx=client.post('/api/recharge/preview',files={
+            'upload':('simple.xlsx',single_column_xlsx('首次充值\\ndwz123\\n100'),
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}).json()
+        assert q_xlsx['valid'] and q_xlsx['matched']==1 and q_xlsx['uploaded_cents']==10000,q_xlsx
         r=client.post('/api/recharge/preview',data={'content':recharge})
         assert r.status_code==200,r.text
         q=r.json()
