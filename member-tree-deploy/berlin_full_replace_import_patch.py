@@ -71,12 +71,17 @@ j = j.replace('预计新增：${d.added_members||0}人（含缺失上级占位�
               '本次名单：${d.members||0}人（含缺失上级占位）')
 old = "result.textContent=`本批处理完成：新增 ${res.added||0} 人，更新 ${res.updated||0} 人；现有会员总计 ${res.total_members||0} 人。`;"
 new = "result.textContent=`全量覆盖成功：当前 ${res.members} 位会员，已从树状图移除 ${res.removed||0} 位旧会员。`;"
-assert j.count(old) == 1
-j = j.replace(old,new,1)
+if old in j:
+    j = j.replace(old,new,1)
+# Older UI builds use the direct success message instead of the append summary.
+j = j.replace("result.textContent='已成功重建会员树 '+res.members+' 位会员及上下级关系。';",
+              "result.textContent='已全量覆盖会员树 '+res.members+' 位会员及上下级关系。';")
 old = "showToast('已合并上传：新增 '+(res.added||0)+' 人，更新 '+(res.updated||0)+' 人')"
 new = "showToast('已全量覆盖会员树：'+res.members+' 人')"
-assert j.count(old) == 1
-j = j.replace(old,new,1)
+if old in j:
+    j = j.replace(old,new,1)
+j = j.replace("showToast('成功恢复 '+res.members+' 位会员')",
+              "showToast('已全量覆盖 '+res.members+' 位会员')")
 j = j.replace('六列数据会追加／更新会员和上下级关系，不会清空其他组。',
               '六列表格会全量覆盖现有会员树；如需保留其他小组，请将其会员也包含在本次文件中。')
 j = j.replace('不同小组可以分批上传，原有其他组不删除。',
