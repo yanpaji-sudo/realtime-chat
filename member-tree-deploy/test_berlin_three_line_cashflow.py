@@ -22,7 +22,7 @@ with tempfile.TemporaryDirectory() as directory:
     today=a.current_day()
     older=(date.fromisoformat(today)-timedelta(days=2)).isoformat()
     with a.engine.begin() as db:
-        for account,joined in [('F123576',today),('hkfu258',older),('Cxy197875',older),('why66888',older)]:
+        for account,joined in [('F123576',today),('hkfu258',older),('Cxy197875',older),('why66888',older),('dwz123',older)]:
             db.execute(text('''INSERT INTO members (id,account,joined_on,stake_cents,created_at,updated_at)
                                VALUES (:i,:a,:j,0,:n,:n)'''),
                        {'i':str(uuid.uuid4()),'a':account,'j':joined,'n':a.utc_now()})
@@ -39,6 +39,9 @@ with tempfile.TemporaryDirectory() as directory:
         book.save(buffer)
         return buffer.getvalue()
     with TestClient(a.app) as client:
+        # User-reported simplest Chinese-label / account / integer recharge case.
+        q_simple=client.post('/api/recharge/preview',data={'content':'首次充值\\ndwz123\\n100'}).json()
+        assert q_simple['valid'] and q_simple['matched']==1 and q_simple['three_line_events']==1 and q_simple['uploaded_cents']==10000,q_simple
         r=client.post('/api/recharge/preview',data={'content':recharge})
         assert r.status_code==200,r.text
         q=r.json()
