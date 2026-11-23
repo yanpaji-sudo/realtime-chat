@@ -1,0 +1,30 @@
+name: Inspect Berlin read-only sync integration points (no deploy)
+on:
+  push:
+    branches: [berlin-db-readonly-source-20261123]
+    paths:
+      - '.github/workflows/berlin-db-source-inspect.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect original source API contracts without connecting to any databases
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('member-tree/app.py').read_text(encoding='utf-8')
+          j=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+          for term in ["@app.get('/api/tree')","@app.get('/api/report","def tree(", "class MemberIn(", "def require(", "def active_rows(", "def get_totals(", "def settle_past_days(", "@app.get('/api/health", "class MemberOut"]:
+              n=p.find(term)
+              print('BACKEND',repr(term),'index=',n,flush=True)
+              if n>=0:print(p[max(0,n-100):n+(5000 if ('tree' in term or 'active_rows' in term) else 1800)],flush=True)
+          for term in ["async function berlinFetchTree()", "async function refresh(", "function render(){", "function setRole(", "let members=", "const url=", "el('import"]:
+              n=j.find(term)
+              print('FRONT',repr(term),'index=',n,flush=True)
+              if n>=0:print(j[max(0,n-100):n+(3500 if 'refresh' in term or 'berlinFetch' in term else 1400)],flush=True)
+          PY
