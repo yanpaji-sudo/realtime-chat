@@ -19,6 +19,10 @@ jobs:
           from pathlib import Path
           p=Path('member-tree/app.py').read_text(encoding='utf-8')
           j=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+          for term in ["def sums(", "def active_rows(", "def current_day(", "def report_window(", "def require(", "def db_init("]:
+              n=p.find(term)
+              print('CORE',repr(term),'index=',n,flush=True)
+              if n>=0:print(p[max(0,n-200):n+6500],flush=True)
           for term in ["@app.get('/api/tree')","@app.get('/api/report","def tree(", "class MemberIn(", "def require(", "def active_rows(", "def get_totals(", "def settle_past_days(", "@app.get('/api/health", "class MemberOut"]:
               n=p.find(term)
               print('BACKEND',repr(term),'index=',n,flush=True)
