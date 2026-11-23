@@ -275,6 +275,8 @@ exec(compile(Path('member-tree-deploy/berlin_single_member_upsert_patch.py').rea
 exec(compile(Path('member-tree-deploy/berlin_visual_repaint_patch.py').read_text(encoding='utf-8'),'berlin_visual_repaint_patch.py','exec'))
 # Smart-paste and single-member parent matching ignore ASCII case; retain original member spelling.
 exec(compile(Path('member-tree-deploy/berlin_case_insensitive_member_patch.py').read_text(encoding='utf-8'),'berlin_case_insensitive_member_patch.py','exec'))
+# Allow 0 initial capital in the single member add/edit dialog and backend validation.
+exec(compile(Path('member-tree-deploy/berlin_zero_stake_patch.py').read_text(encoding='utf-8'),'berlin_zero_stake_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
