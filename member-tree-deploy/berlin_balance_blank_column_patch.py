@@ -9,6 +9,15 @@ All other modes and the previous import/ledger semantics remain untouched.
 """
 # Shared parse_lines is also used by recharge and withdrawal; normalize only
 # balance mode before original row-length and cents validation.
+# Strip a literal text heading before tokenization turns it into four words.
+original="""        if isinstance(line, str):
+            line = line.replace('\\ufeff', '').strip()"""
+replacement="""        if isinstance(line, str):
+            if mode=='balance' and line.replace('\\ufeff','').strip().lower()=='upload format for balance':
+                continue
+            line = line.replace('\\ufeff', '').strip()"""
+assert a.count(original)==1, 'Financial parser string heading anchor changed'
+a=a.replace(original,replacement,1)
 needle="""        # Extra empty trailing columns are harmless (common with Excel exports).
         while len(parts) > expected and not parts[-1]:
             parts.pop()
