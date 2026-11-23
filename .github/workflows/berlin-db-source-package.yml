@@ -1,0 +1,59 @@
+name: Package Berlin source only (NO RENDER DEPLOY)
+on:
+  push:
+    branches: [berlin-db-readonly-source-20261123]
+    paths:
+      - '.github/workflows/berlin-db-source-package.yml'
+permissions:
+  contents: write
+jobs:
+  build_source_zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Extract the unchanged Berlin source archive
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+      - name: Create original source-only zip (no database, credentials, backups)
+        run: |
+          set -euo pipefail
+          mkdir -p source-packages
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          root=Path('member-tree')
+          output=Path('source-packages/berlin-original-source.zip')
+          hidden_exclude={'.env','.env.local','.git','.pytest_cache','__pycache__','.venv','venv'}
+          blocked={'.db','.sqlite','.sqlite3','.pem','.key','.p12','.mtbackup','.log'}
+          with ZipFile(output,'w',compression=ZIP_DEFLATED,compresslevel=8) as z:
+              for f in root.rglob('*'):
+                  if not f.is_file():continue
+                  if any(x in hidden_exclude for x in f.parts) or f.suffix.lower() in blocked:continue
+                  if f.name.startswith('.env'):continue
+                  z.write(f,f.as_posix())
+              z.writestr('HOW_TO_BUILD_DB_AUTO_SYNC.md',
+                  '# 数据库自动同步源码版\\n\\n'
+                  '本包为未改动的柏林系统原始源码；\\n'
+                  '另下载附件 berlin_platform_db_source_components.zip，\\n'
+                  '解压后运行 python apply_to_existing_berlin.py member-tree，\\n'
+                  '即可生成只读数据库自动同步版本源码。\\n'
+                  '此操作不部署也不连接任何生产数据库。\\n'
+                  '必须先依据真实平台表结构配置 platform_snapshot.sql、只读连接 DSN。\\n')
+          assert output.stat().st_size>10000
+          print('SOURCE ONLY zip:',output,'bytes:',output.stat().st_size)
+          PY
+      - name: Commit source-only archive to isolated branch (NOT deployed by Render)
+        run: |
+          set -euo pipefail
+          git config user.name 'source-packaging-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add source-packages/berlin-original-source.zip
+          if ! git diff --cached --quiet; then
+            git commit -m 'Source only: archived original Berlin source for database-read adapter'
+            git push origin HEAD:berlin-db-readonly-source-20261123
+          fi
