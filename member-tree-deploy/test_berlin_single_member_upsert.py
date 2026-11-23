@@ -74,18 +74,65 @@ with tempfile.TemporaryDirectory() as folder:
         assert r.status_code==200 and r.json()['mode']=='created',r.text
         assert get('fresh_new901')['parent_id']==child_id and count()==4
         assert get('user900')['balance_cents']==777000
+
+        # All-case variants of a known parent are the same member.
+        r=client.post('/api/members',json={
+          'account':'SGR771','joined_on':today,'parent_account':'ROOT700',
+          'stake':'10000','total_withdraw':'0','remark':'大写新会员'})
+        assert r.status_code==200 and r.json()['mode']=='created',r.text
+        case_id=r.json()['id']
+        assert get('SGR771')['parent_id']==root_id
+        assert count()==5
+        # Mixed case must UPDATE original member, never create duplicate, keep the original casing.
+        original=get('user900')
+        r=client.post('/api/members',json={
+          'account':'UsEr900','joined_on':today,'parent_account':'RoOt700',
+          'stake':'9550','total_withdraw':'250.50','remark':'不同大小写覆盖',
+          'expected_revision':original['revision']})
+        assert r.status_code==200 and r.json()['mode']=='updated' and r.json()['id']==child_id,r.text
+        assert count()==5
+        case_member=get('USER900')
+        assert case_member['account']=='user900'
+        assert case_member['balance_cents']==777000 and case_member['daily_withdraw_cents']==1700
+        # Existing member editing likewise treats case-only spelling as same identity.
+        r=client.put('/api/members/'+child_id,json={
+          'account':'USER900','joined_on':today,'parent_account':'ROOT700',
+          'stake':'9550','total_withdraw':'250.50','remark':'保持账号原样',
+          'expected_revision':case_member['revision']})
+        assert r.status_code==200,r.text
+        assert get('user900')['account']=='user900'
+        assert count()==5
+        # The cycle guard must still work under case-insensitive parent lookups.
+        r=client.post('/api/members',json={
+          'account':'root700','joined_on':older,'parent_account':'sGr771',
+          'stake':'10000','total_withdraw':'0','remark':'循环测试'})
+        assert r.status_code==400 and '自己或下级' in r.text,r.text
+        assert get('root700')['parent_id'] is None
+
     ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
     assert '新增会员 / 覆盖已有账号' in ui
     assert "response.mode==='updated'" in ui
     assert '保存将覆盖' in ui
+
+    # Parse the exact 8-slash screenshot format with uppercase member and parent.
+    node_test=r"""
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync('member-tree/static/app.js','utf-8');
+const start=src.indexOf('function smartParseMemberText(value,nowOverride)');
+const stop=src.indexOf('window.smartParseMemberText=smartParseMemberText;',start);
+const helper=src.indexOf('function berlinMatchMemberAccount(value)');
+const helperEnd=src.indexOf('function smartPasteApply()',helper);
+assert(start>=0&&stop>start&&helper>stop&&helperEnd>helper);
+const ctx={window:{},members:[{account:'sgr771'},{account:'sgz7750'}]};
+vm.runInNewContext(src.slice(start,stop)+'\n'+src.slice(helper,helperEnd)+'\nthis.parse=smartParseMemberText;this.canonical=berlinMatchMemberAccount;',ctx);
+const parsed=ctx.parse('09.25/宋桂荣/SGR771/69/女/13945331241/黑龙江/SGZ7750','2026-11-23');
+assert.strictEqual(parsed.account,'SGR771');
+assert.strictEqual(parsed.parent_account,'SGZ7750');
+assert.strictEqual(parsed.joined_on,'2026-09-25');
+assert.strictEqual(ctx.canonical(parsed.account)?.account,'sgr771');
+assert.strictEqual(ctx.canonical(parsed.parent_account)?.account,'sgz7750');
+console.log('PASS: case-insensitive account/parent lookup for uppercase slash-format smart paste');
+"""
+    subprocess.run(['node','-e',node_test],check=True)
     subprocess.run(['node','--check','member-tree/static/app.js'],check=True)
     print('PASS: single + member overwrite, no duplicates, keep ID/balance/daily, latest wins, stale conflict, cycle rejection, new add')
-
-# Temporary visibility check for case-insensitive smart paste and parent selection.
-source=Path('member-tree/static/app.js').read_text(encoding='utf-8')
-for key in ("function smartParseMemberText(", "function smartPasteReset(", "function smartFillMember", "function smart", "function openEdit(", "function saveEdit(", "function search", "editParentAccount", "parentAccounts", "sgz7750"):
- idx=source.find(key)
- print("===CASE_INSPECT===" + key + "@" + str(idx),flush=True)
- if idx>=0:print(source[max(0,idx-450):idx+4500],flush=True)
-import inspect
-print('===PARENT_IMPL===',inspect.getsource(a.resolved_parent),flush=True)
