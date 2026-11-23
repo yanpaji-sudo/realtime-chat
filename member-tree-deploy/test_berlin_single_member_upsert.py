@@ -109,6 +109,40 @@ with tempfile.TemporaryDirectory() as folder:
         assert r.status_code==400 and '自己或下级' in r.text,r.text
         assert get('root700')['parent_id'] is None
 
+        # A new member may have zero initial capital.
+        resp=client.post('/api/members',json={
+            'account':'zero_new', 'joined_on':today,'parent_account':'ROOT700',
+            'stake':'0','total_withdraw':'0','remark':'零建仓'})
+        assert resp.status_code==200 and resp.json()['mode']=='created',resp.text
+        new_zero=get('zero_new')
+        assert new_zero['stake_cents']==0 and new_zero['parent_id']==root_id
+        assert count()==6
+
+        # Editing an existing stake to zero keeps ID, balance and daily ledger.
+        previous=get('user900')
+        resp=client.put('/api/members/'+child_id,json={
+            'account':'USER900','joined_on':today,'parent_account':'ROOT700',
+            'stake':'0','total_withdraw':'250.50','remark':'编辑零建仓',
+            'expected_revision':previous['revision']})
+        assert resp.status_code==200,resp.text
+        updated=get('user900')
+        assert updated['id']==child_id and updated['stake_cents']==0
+        assert updated['balance_cents']==777000 and updated['daily_withdraw_cents']==1700
+        assert count()==6
+
+        # Negative values remain invalid.
+        bad=client.post('/api/members',json={
+            'account':'negative_rejected','joined_on':today,'parent_account':'ROOT700',
+            'stake':'-0.1','total_withdraw':'0','remark':'负数应拒绝'})
+        assert bad.status_code==400,bad.text
+        assert count()==6
+
+    import re
+    html=Path('member-tree/static/index.html').read_text(encoding='utf-8')
+    field=re.search(r'<input\b[^>]*\bid\s*=\s*["\']editStake["\'][^>]*>',html,re.I|re.S)
+    assert field is not None, 'missing editStake input'
+    assert 'min="0"' in field.group(0),field.group(0)
+    assert 'step="0.01"' in field.group(0),field.group(0)
     ui=Path('member-tree/static/app.js').read_text(encoding='utf-8')
     assert '新增会员 / 覆盖已有账号' in ui
     assert "response.mode==='updated'" in ui
