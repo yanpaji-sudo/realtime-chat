@@ -80,3 +80,12 @@ with tempfile.TemporaryDirectory() as folder:
     assert '保存将覆盖' in ui
     subprocess.run(['node','--check','member-tree/static/app.js'],check=True)
     print('PASS: single + member overwrite, no duplicates, keep ID/balance/daily, latest wins, stale conflict, cycle rejection, new add')
+
+# Temporary visibility check for case-insensitive smart paste and parent selection.
+source=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+for key in ("function smartParseMemberText(", "function smartPasteReset(", "function smartFillMember", "function smart", "function openEdit(", "function saveEdit(", "function search", "editParentAccount", "parentAccounts", "sgz7750"):
+ idx=source.find(key)
+ print("===CASE_INSPECT===" + key + "@" + str(idx),flush=True)
+ if idx>=0:print(source[max(0,idx-450):idx+4500],flush=True)
+import inspect
+print('===PARENT_IMPL===',inspect.getsource(a.resolved_parent),flush=True)
