@@ -277,6 +277,8 @@ exec(compile(Path('member-tree-deploy/berlin_visual_repaint_patch.py').read_text
 exec(compile(Path('member-tree-deploy/berlin_case_insensitive_member_patch.py').read_text(encoding='utf-8'),'berlin_case_insensitive_member_patch.py','exec'))
 # Allow 0 initial capital in the single member add/edit dialog and backend validation.
 exec(compile(Path('member-tree-deploy/berlin_zero_stake_patch.py').read_text(encoding='utf-8'),'berlin_zero_stake_patch.py','exec'))
+# Keep night recharge snapshots authoritative for manually added today joiners.
+exec(compile(Path('member-tree-deploy/berlin_manual_recharge_reconcile_patch.py').read_text(encoding='utf-8'),'berlin_manual_recharge_reconcile_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
