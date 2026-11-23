@@ -1,0 +1,31 @@
+name: Test Berlin nightly recharge vs manually created member (NO DEPLOY)
+on:
+  push:
+    branches: [berlin-recharge-reconcile-dev-20261123]
+    paths:
+      - 'member-tree-deploy/berlin_patch.py'
+      - 'member-tree-deploy/berlin_manual_recharge_reconcile_patch.py'
+      - 'member-tree-deploy/test_berlin_manual_recharge_reconcile.py'
+      - '.github/workflows/berlin-recharge-regression.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack official base without real customer DB
+        run: |
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 > /tmp/berlin_formal.b64
+          python member-tree-deploy/berlin_patch.py
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Install dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Test standalone manual recharge reconciliation and existing finance behavior
+        run: |
+          python member-tree-deploy/test_berlin_manual_recharge_reconcile.py
+          python member-tree-deploy/test_berlin_three_line_cashflow.py
+          python member-tree-deploy/test_berlin_single_member_upsert.py
+          python member-tree-deploy/test_berlin_bulk_new_members.py
