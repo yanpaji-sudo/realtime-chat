@@ -1,0 +1,33 @@
+name: Inspect Berlin balance text and Excel parsing (NO DEPLOY)
+on:
+  push:
+    branches: [berlin-balance-tabs-20261123-dev]
+    paths:
+      - '.github/workflows/berlin-balance-inspect.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and inspect source without connecting to production
+        run: |
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 >/tmp/berlin_formal.b64
+          python member-tree-deploy/berlin_patch.py
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('member-tree/app.py').read_text()
+          j=Path('member-tree/static/app.js').read_text()
+          for name in ['def parse_lines(', 'def import_preview(', "@app.post('/api/import/preview')", 'def excel_account(', 'def berlin_three_line_cashflow(', 'def parse_finance', 'def parse_import']:
+              p=s.find(name)
+              print('===PARSER===',name,p,flush=True)
+              if p>=0:
+                  q=s.find('\n\n',p+30)
+                  print(s[max(0,p-120):p+16500],flush=True)
+          for name in ['function openImport', 'importText', 'fileUpload', 'balance', '解析并预览']:
+              p=j.find(name)
+              print('===FRONT===',name,p,flush=True)
+              if p>=0:print(j[max(0,p-300):p+3000],flush=True)
+          PY
