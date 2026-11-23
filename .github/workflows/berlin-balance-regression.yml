@@ -1,0 +1,31 @@
+name: Test Berlin three-column balance upload WITHOUT deploying
+on:
+  push:
+    branches: [berlin-balance-tabs-20261123-dev]
+    paths:
+      - 'member-tree-deploy/berlin_patch.py'
+      - 'member-tree-deploy/berlin_balance_blank_column_patch.py'
+      - 'member-tree-deploy/test_berlin_balance_blank_column.py'
+      - '.github/workflows/berlin-balance-regression.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build in isolated runner, never connecting to Render
+        run: |
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 >/tmp/berlin_formal.b64
+          python member-tree-deploy/berlin_patch.py
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Install isolated local test requirements
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Test balances, finances and existing import formats
+        run: |
+          python member-tree-deploy/test_berlin_balance_blank_column.py
+          python member-tree-deploy/test_berlin_three_line_cashflow.py
+          python member-tree-deploy/test_berlin_manual_recharge_reconcile.py
+          python member-tree-deploy/test_berlin_single_member_upsert.py
