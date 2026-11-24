@@ -281,6 +281,8 @@ exec(compile(Path('member-tree-deploy/berlin_zero_stake_patch.py').read_text(enc
 exec(compile(Path('member-tree-deploy/berlin_manual_recharge_reconcile_patch.py').read_text(encoding='utf-8'),'berlin_manual_recharge_reconcile_patch.py','exec'))
 # Accept balance upload with A=account, B=empty, C=amount (text or Excel).
 exec(compile(Path('member-tree-deploy/berlin_balance_blank_column_patch.py').read_text(encoding='utf-8'),'berlin_balance_blank_column_patch.py','exec'))
+# Allow account/amount or amount/account, resolving numeric account IDs against roster.
+exec(compile(Path('member-tree-deploy/berlin_bidirectional_finance_patch.py').read_text(encoding='utf-8'),'berlin_bidirectional_finance_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
