@@ -1,0 +1,32 @@
+name: Inspect V22 account search for remark linking
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-remark-search-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and inspect search source without user data
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          import re
+          src=open('member-tree/static/app.js',encoding='utf-8').read()
+          html=open('member-tree/static/index.html',encoding='utf-8').read()
+          for label,text in [('JS',src),('HTML',html)]:
+              print('===== '+label+' =====')
+              pattern=r'输入完整会员账号|回车精准|searchInput|search-input|账号搜索|精确搜索|precisionSearch|定位账号|会员账号搜索|精准定位|searchMember|accountSearch'
+              for match in list(re.finditer(pattern,text,re.I))[:24]:
+                  start,end=max(0,match.start()-560),min(len(text),match.end()+1250)
+                  print('--- Offset',match.start(),'---')
+                  print(text[start:end])
+          print('=== Nearby functions and controls ===')
+          for line in src.splitlines():
+              if re.search(r'search|memberSearch|findMember|locateMember',line,re.I):
+                  print(line[:380])
+          PY
