@@ -82,13 +82,15 @@ once("const matches=v22HistMatches(),amounts=v22HistAmounts();",
 once("}else if(!v22HistResult?.recorded){\n  label='该日无已记录的提现数据';",
      """}else if(!v22HistResult?.recorded){
   label=v22HistIsOverview()?'该时间段无已记录的提现数据':'该日无已记录的提现数据';""")
+once("note='尚无该日上传记录，不能把今日提现算到昨日';",
+     "note=v22HistIsOverview()?'本时间段无已上传的提现台账，不能将缺失日期当作零提现':'尚无该日上传记录，不能把今日提现算到昨日';")
 once("}else{\n  label='提现记录 '+matches.length+' 人';\n  const returns=matches.filter",
      """}else if(v22HistIsOverview()){
   const period=v22HistMode==='week'?'本周':'本月';
   const repeat=matches.filter(x=>Number(frequency.get(x.id)?.days||0)>=2).length;
   const totalMoney=matches.reduce((sum,x)=>sum+Number(frequency.get(x.id)?.amount_cents||0),0);
   label=period+'提现 '+matches.length+' 人 · 重复 '+repeat+' 人 · 合计 '+money(totalMoney,true);
-  note='红圈=1天 · 橙圈=2—3天 · 紫圈=4天以上 ｜ 已记录 '+
+  note=period+' '+v22HistResult.start_day+' ～ '+v22HistResult.end_day+' ｜ 红圈=1天 · 橙圈=2—3天 · 紫圈=4天以上 ｜ 已记录 '+
     v22HistResult.recorded_days+'/'+v22HistResult.expected_days+' 天'+
     (v22HistResult.missing_days?'，缺少 '+v22HistResult.missing_days+' 天':'，覆盖完整')+
     '；按不同提现日期计数';
