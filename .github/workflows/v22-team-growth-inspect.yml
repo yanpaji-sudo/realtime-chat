@@ -33,6 +33,24 @@ jobs:
               print('===CUT===',term,pos,flush=True)
               print(j[max(0,pos-1250):pos+4300],flush=True)
               pos+=len(term);found+=1
+          print('===EXACT RANKING FUNCTIONS===',flush=True)
+          for begin,endmarker in [
+            ('function computeRanking(', '\\nfunction '),
+            ('function periodAmounts(', '\\nfunction '),
+            ('function renderRanking()', '\\nfunction '),
+            ('function renderRanking(){', 'function '),
+          ]:
+            i=j.find(begin)
+            if i<0:continue
+            end=j.find(endmarker,i+len(begin))
+            if end<0:end=len(j)
+            print('RANK_FN',begin,'START',i,'END',end,flush=True)
+            print(j[i:min(end,i+21000)],flush=True)
+          print('===CSS RANKINGS===',flush=True)
+          for pattern in ['.ranking-table', '.ranking-number','.ranking-detail-cell','.table-scroll']:
+            start=h.find(pattern)
+            print('CSS',pattern,'START',start,flush=True)
+            if start>=0:print(h[max(0,start-150):start+700],flush=True)
           print('===PY ROUTES===',flush=True)
           for term in ["@app.get('/api/rank", "@app.get('/api/leader", "def team_rank", "def get_rank", "def rank", "team_rankings", "joined_on"]:
             pos=p.find(term)
