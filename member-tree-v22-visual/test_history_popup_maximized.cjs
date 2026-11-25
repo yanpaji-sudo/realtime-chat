@@ -16,22 +16,28 @@ const classList=()=>{
  },contains:cls=>set.has(cls)};
 };
 const details={
- open:false,classList:classList(),listeners:{},
- addEventListener(name,cb){this.listeners[name]=cb}
+ open:false,classList:classList(),listeners:{},parentElement:null,attrs:{},
+ addEventListener(name,cb){this.listeners[name]=cb},
+ setAttribute(k,v){this.attrs[k]=v},
+ removeAttribute(k){delete this.attrs[k]}
 };
 const maximizeBtn={
  textContent:'⛶ 最大化预览',
  attrs:{},setAttribute(k,v){this.attrs[k]=v},
  focus(){focused++}
 };
+const toolbar={insertBefore(node,anchor){assert.strictEqual(anchor,note);node.parentElement=this;}};
+const note={};
+details.parentElement=toolbar;
+const body={classList:classList(),appendChild(node){node.parentElement=this}};
 const doc={
- body:{classList:classList()},
+ body,
  addEventListener(name,cb){handlers[name]=cb}
 };
 const ctx={
  document:doc,
  v22HistUpdateToolbar:()=>{updates++},
- t:{details,maximizeBtn}
+ t:{details,maximizeBtn,b:toolbar,note}
 };
 vm.createContext(ctx);
 vm.runInContext('let v22HistToolbar=null;\n'+js.slice(start,end),ctx);
@@ -41,6 +47,8 @@ assert.strictEqual(run('v22HistMaximized'),false);
 run('v22HistSetMaximized(true)');
 assert.strictEqual(run('v22HistMaximized'),true);
 assert.strictEqual(details.open,true,'Expanding opens the details popup');
+assert.strictEqual(details.parentElement,body,'Maximized detail panel must be portalled to body, not clipped by tree canvas');
+assert.strictEqual(details.attrs['aria-modal'],'true');
 assert(details.classList.contains('v22-hist-maximized'),'Full-size class applied');
 assert(doc.body.classList.contains('v22-hist-page-maximized'),'Body scrolling should be suppressed');
 assert(maximizeBtn.textContent.includes('还原'));
@@ -49,6 +57,8 @@ assert.strictEqual(updates,1,'List should redraw with larger page size');
 run('v22HistSetMaximized(false)');
 assert.strictEqual(run('v22HistMaximized'),false);
 assert(!details.classList.contains('v22-hist-maximized'),'Restore returns normal dropdown');
+assert.strictEqual(details.parentElement,toolbar,'Restore puts original detail into toolbar');
+assert.strictEqual(details.attrs['aria-modal'],undefined);
 assert(!doc.body.classList.contains('v22-hist-page-maximized'),'Restore frees page scroll');
 assert(maximizeBtn.textContent.includes('最大化'));
 assert.strictEqual(maximizeBtn.attrs['aria-pressed'],'false');
@@ -78,6 +88,10 @@ assert(html.includes('z-index:2147483000!important'));
 assert(html.includes('overflow:auto!important'));
 assert(html.includes('position:sticky!important'));
 assert(html.includes('body.v22-hist-page-maximized'));
+assert(html.includes('id="v22-historical-popup-portal-fix-css"'));
+assert(html.includes('body>.v22-hist-details.v22-hist-maximized'));
+assert(js.includes('document.body.appendChild(t.details)'));
+assert(js.includes('t.b.insertBefore(t.details,t.note)'));
 assert(!js.includes('fetch(')||js.includes("'/history/withdrawals"),
  'Maximize must not introduce network requests');
 console.log('PASS: maximize/restore, keyboard Escape, focus, scroll, sticky header, normal popup unchanged, sorting and member navigation retained');
