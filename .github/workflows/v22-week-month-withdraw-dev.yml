@@ -1,0 +1,47 @@
+name: Validate V22 weekly/monthly withdrawal overview before deploying
+on:
+  push:
+    branches: [v22-week-month-withdraw-overview-dev-20261125]
+    paths:
+      - '.github/workflows/v22-week-month-withdraw-dev.yml'
+      - 'member-tree-v22-visual/weekly_monthly_withdraw_api_patch.py'
+      - 'member-tree-v22-visual/weekly_monthly_withdraw_ui_patch.py'
+      - 'member-tree-v22-visual/test_weekly_monthly_api.py'
+      - 'member-tree-v22-visual/test_weekly_monthly_ui.cjs'
+      - 'member-tree-v22-visual/test_history_ui.cjs'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack exact latest V22 formal archive without touching Render
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/academy.py > /tmp/v22-academy-unchanged.sha256
+      - name: Apply read-only aggregation and user interface patches
+        run: |
+          set -euo pipefail
+          python3 member-tree-v22-visual/weekly_monthly_withdraw_api_patch.py
+          python3 member-tree-v22-visual/weekly_monthly_withdraw_ui_patch.py
+          sha256sum --check /tmp/v22-academy-unchanged.sha256
+          python3 -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install SQLite-only regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Test weekly/monthly date-aware aggregation and historical daily records
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          python member-tree-v22-visual/test_history_api.py
+      - name: Regression test V22 standard red rings, fullscreen and compact view
+        run: |
+          set -euo pipefail
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
