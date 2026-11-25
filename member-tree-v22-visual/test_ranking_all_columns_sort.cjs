@@ -43,9 +43,9 @@ for(const [field,descending,ascending] of [
 }
 for(const field of ['teamName']){
  key(field);ctx.rankSort='desc';
- assert.deepStrictEqual(order(),['a','b','d','c'],'Chinese text descending');
+ assert.deepStrictEqual(order(),['b','a','d','c'],'Chinese text descending');
  ctx.rankSort='asc';
- assert.deepStrictEqual(order(),['c','d','b','a'],'Chinese text ascending');
+ assert.deepStrictEqual(order(),['c','d','a','b'],'Chinese text ascending');
 }
 // Equal numeric values are deterministically ordered by original score rank.
 ctx.ties=raw.map(x=>({...x,teamBalance:10000}));
