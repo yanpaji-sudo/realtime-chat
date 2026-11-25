@@ -198,6 +198,16 @@ replace1("function renderBranch(){\n if(v22VisionStop){v22VisionStop();v22Vision
 old="withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0"
 assert j.count(old)==3,('red SVG live-day anchors changed',j.count(old))
 j=j.replace(old,"withdrawGlowOn&&v22HistMode!=='withdraw'&&Number(m.daily_withdraw_cents||0)!==0")
+
+# Preserve V27's exact original withdrawal conditional; only gate its inner
+# rendering on historical mode. This also keeps upstream V27 regressions valid.
+old_daily_if="if(withdrawGlowOn&&v22HistMode!=='withdraw'&&Number(m.daily_withdraw_cents||0)!==0){"
+assert j.count(old_daily_if)==1, 'V27 draw condition changed'
+j=j.replace(old_daily_if,"if(withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0){\n     if(v22HistMode!=='withdraw'){",1)
+old_inner="group.append(svgEl('ellipse',{cx:cardW/2,cy:cardH/2,rx:compactMode?88:149,ry:compactMode?29:80,class:'withdraw-red-inner',fill:'none','aria-hidden':'true'}));\n    }"
+assert j.count(old_inner)==1, 'V27 original inner ring changed'
+j=j.replace(old_inner,old_inner.replace("\n    }","\n     }\n    }"),1)
+
 replace1("const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&ownWithdraw!==0;",
  "const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&v22HistMode!=='withdraw'&&ownWithdraw!==0;")
 # The viewport only draws visible nodes; selected rings have a non-scaling
