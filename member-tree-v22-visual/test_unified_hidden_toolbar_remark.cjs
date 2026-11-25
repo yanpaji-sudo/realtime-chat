@@ -4,7 +4,7 @@ const js=fs.readFileSync('member-tree/static/app.js','utf8');
 const style=fs.readFileSync('member-tree/static/style.css','utf8');
 const start=js.indexOf('// V22 unified toolbar, fullscreen Alt+Q toggle');
 const end=js.indexOf('function locateBranchAccount(){',start);
-assert(start>0&&end>start,'Search helper inserted before existing accurate account locator');
+assert(start>0&&end>start,'Search helper index invalid: start='+start+', end='+end+', firstLocate='+js.indexOf('function locateBranchAccount(){')+', total='+js.length);
 const members=[
  {id:1,account:'000123',remark:'李强 北京'},
  {id:2,account:'a567',remark:'王芳'},
