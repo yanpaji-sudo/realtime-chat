@@ -32,6 +32,7 @@ const context={
  t:{list:mk('div')},mk,
  v22HistIsOverview(){return this.v22HistMode==='week'||this.v22HistMode==='month'},
  money:(cents)=>Number(cents/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}),
+ document:{addEventListener:()=>{},body:{classList:{toggle:()=>{}}}},
  v22HistFocus:()=>{touched=true}
 };
 // Prefer lexical closure over host 'this' for the helper's globals.
