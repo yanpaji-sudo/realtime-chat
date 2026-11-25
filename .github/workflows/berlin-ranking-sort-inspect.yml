@@ -1,0 +1,38 @@
+name: Inspect Berlin ranking for V22 all-column sorting (NO DEPLOY)
+on:
+  push:
+    branches: [berlin-ranking-all-sort-dev-20261125]
+    paths: ['.github/workflows/berlin-ranking-sort-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact current Berlin release ranking in isolated runner
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          from pathlib import Path
+          j=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+          h=Path('member-tree/static/index.html').read_text(encoding='utf-8')
+          for token in ['function computeRanking(', 'function renderRanking(){','function renderRanking(', 'let rankSort=', 'let rankPeriod=', 'v22RankingSortedRows', 'rankSort', '新增百分比', '排行榜','排名','团队总余额','teamCount','function v22RankGrowthPercent(', 'rankExpanded','ranking-table','function render(){']:
+            found=[];i=0
+            while len(found)<5:
+              i=j.find(token,i)
+              if i<0:break
+              found.append(i);i+=len(token)
+            print('MARKER',token,found,flush=True)
+          for start_token in ['function weekStart(', 'function computeRanking(', 'function renderRanking(){','function renderRanking(', 'function render(){']:
+            p=j.find(start_token)
+            if p<0:continue
+            q=j.find('\nfunction ',p+len(start_token))
+            print('===SECTION===',start_token,'start',p,'end',q,flush=True)
+            print(j[max(0,p-300):min(q if q>p else len(j),p+(18000 if 'Ranking' in start_token else 4400))],flush=True)
+          for token in ['ranking-table', 'ranking-sort', 'v22-ranking', 'team-leader','排名']:
+            i=h.find(token)
+            print('===HTML===',token,i,flush=True)
+            if i>=0:print(h[max(0,i-350):i+850],flush=True)
+          PY
