@@ -1,4 +1,4 @@
-name: Inspect V22 account and remark filtering sources
+name: Inspect V22 full screen controls and toolbar layout
 on:
   push:
     branches: [member-tree-render]
@@ -16,10 +16,26 @@ jobs:
           python - <<'PY'
           import re
           s=open('member-tree/static/app.js',encoding='utf-8').read()
-          for pat in [r'function getShown\(',r'function tableData\(',r'function renderTableView\(',r'function renderTable\(',r'function renderRanking\(',r'\.includes\(query\.toLowerCase\(\)\)',r'query\.toLowerCase\(\)',r'\bquery\b.+includes',r'query\.length']:
-           hits=list(re.finditer(pat,s))
-           print('=====',pat,'HITS',len(hits))
-           for m in hits[:8]:
-            a=max(0,m.start()-170);b=min(len(s),m.end()+1200)
-            print('OFFSET',m.start(),s[a:b])
+          h=open('member-tree/static/index.html',encoding='utf-8').read()
+          css=open('member-tree/static/styles.css',encoding='utf-8').read() if __import__('pathlib').Path('member-tree/static/styles.css').exists() else ''
+          patterns=[
+            ('app',r'function fullscreenActive\('),('app',r'function toggleTreeFullscreen\('),
+            ('app',r'function render\('),('app',r'function configure\('),
+            ('app',r'function locateBranchAccount\('),('app',r'function v22HistUpdateToolbar\('),
+            ('app',r'function renderBranch\('),
+            ('app',r'function renderTree\('),
+            ('html',r'panel-header'),('html',r'branchSearchGo'),
+            ('html',r'\.panel-header'),('html',r'\.main'),('html',r'\.sidebar'),
+            ('html',r'tree-fullscreen'),('html',r'fullscreen'),('html',r'\.actions'),
+            ('css',r'fullscreen')
+          ]
+          for label,pat in patterns:
+           text={'app':s,'html':h,'css':css}[label]
+           matches=list(re.finditer(pat,text))
+           print('\n####',label,pat,'count',len(matches))
+           for m in matches[:3]:
+            a=max(0,m.start()-250);b=min(len(text),m.end()+3800)
+            print('OFFSET',m.start())
+            print(text[a:b])
+          print('STATIC FILES',list(__import__('pathlib').Path('member-tree/static').glob('*')))
           PY
