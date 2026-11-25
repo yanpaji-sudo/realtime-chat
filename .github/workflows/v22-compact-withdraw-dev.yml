@@ -6,6 +6,7 @@ on:
       - '.github/workflows/v22-compact-withdraw-dev.yml'
       - 'member-tree-v22-visual/compact_withdraw_list_soft_rings_patch.py'
       - 'member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs'
+      - 'member-tree-v22-visual/test_weekly_monthly_ui.cjs'
 permissions:
   contents: read
 jobs:
