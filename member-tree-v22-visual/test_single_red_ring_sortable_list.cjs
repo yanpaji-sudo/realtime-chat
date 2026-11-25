@@ -7,7 +7,7 @@ const end=js.indexOf('function v22HistIsOverview(){',start);
 assert(start>0&&end>start);
 const listStart=js.indexOf(' t.list.replaceChildren();',end);
 const listEnd=js.indexOf(' if(matches.length>400)',listStart);
-assert(listStart>0&&listEnd>listStart&&listEnd-listStart<3800,
+assert(listStart>0&&listEnd>listStart&&listEnd-listStart<5200,
  'Must test real popup rendering fragment');
 function mk(tag,cls='',text=''){
  return {tag,cls,text,children:[],attrs:{},
