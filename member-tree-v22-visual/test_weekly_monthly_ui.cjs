@@ -36,7 +36,7 @@ const sandbox={
  view:'branch',teamFocusId:null,
  shownTreeMembers:()=>visible,teamExportRows:()=>visible,
  render:()=>{renders++},
- requestAnimationFrame:(cb)=>cb(),document:{querySelectorAll:()=>[]},
+ requestAnimationFrame:(cb)=>cb(),document:{querySelectorAll:()=>[],addEventListener:()=>{},body:{classList:{toggle:()=>{}}}},
  el:()=>null,money:v=>String(v/100),
  calls,api:async(path)=>{requests.push(path);return path.includes('mode=week')?week:month}
 };
