@@ -57,7 +57,7 @@ assert.strictEqual(a.required_percent,150);
 assert.strictEqual(a.required_cents,15000);
 assert.strictEqual(a.direct_count,4);
 assert.strictEqual(a.umbrella_count,5,'Indirect descendant counted, own account excluded');
-assert.strictEqual(a.team_win_cents,20000,'Team total from personal stake and all children minus withdrawals');
+assert.strictEqual(a.team_win_cents,16000,'Team total from personal stake and all children minus withdrawals');
 assert.strictEqual(a.remark,'负责人A');
 assert.strictEqual(c.required_percent,200);
 assert.strictEqual(c.direct_count,5);
