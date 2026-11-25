@@ -1,0 +1,59 @@
+name: Publish V22 fullscreen historical withdrawal detail preview
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-history-popup-max-formal.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v22-history-popup-max-formal-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact V22 live base archive and protect financial code
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "584b6f0869a29c88759ce899b563e1ae4c91565c"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt > /tmp/v22-protected-finance.sha256
+      - name: Add fullscreen history table and verify syntax and sorting
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/history_popup_maximized_patch.py
+          sha256sum --check /tmp/v22-protected-finance.sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated temporary regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify recorded withdrawal finance not changed
+        run: |
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          python member-tree-v22-visual/test_history_api.py
+      - name: Preserve existing fullscreen and red withdrawal rings
+        run: |
+          set -euo pipefail
+          cd member-tree
+          for f in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$f" ]; then node "$f"; fi
+          done
+      - name: Publish app source package without changing persistent PostgreSQL
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-history-fullscreen.tgz member-tree
+          base64 -w0 /tmp/v22-history-fullscreen.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: maximize and restore historical withdrawal list with sticky sort headers'
+            git push origin HEAD:member-tree-render
+          fi
