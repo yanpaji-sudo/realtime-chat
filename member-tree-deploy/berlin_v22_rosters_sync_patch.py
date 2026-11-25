@@ -334,9 +334,10 @@ function berlinLoanDraw(){
  const sorted=berlinReviewSort(filtered,berlinLoanSort,berlinLoanDesc);
  const max=Math.max(0,Math.ceil(sorted.length/BERLIN_REVIEW_PAGE)-1);
  berlinLoanPage=Math.min(berlinLoanPage,max);
- const overall=berlinReviewIndex(members).people.filter(x=>
+ const tree=berlinReviewIndex(members);
+ const overall=tree.people.filter(x=>
   String(x.remark||'')!=='上级占位（待补资料）'&&
-  (!ui.select.value||berlinReviewIndex(members).group(x)===ui.select.value))
+  (!ui.select.value||tree.group(x)===ui.select.value))
     .reduce((s,x)=>s+Number(x.stake_cents||0)-Number(x.total_withdraw_cents||0),0);
  ui.note.textContent='直属下级不足5人：个人余额达到建仓150%；直属达到5人及以上：个人余额达到建仓200%。伞下总人数不含本人，输赢＝本人及全部下级建仓－累计提现。此名单只用于审核，不自动放款。';
  ui.summary.textContent='符合条件 '+sorted.length+' 人　｜　当前筛选范围整体输赢 '+berlinReviewSign(overall);
