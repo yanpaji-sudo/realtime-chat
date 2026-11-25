@@ -160,35 +160,32 @@ function v22UnifiedToolbarSetup(){
 }
 '''
 once("function locateBranchAccount(){",helper+"\nfunction locateBranchAccount(){")
-once("  if(!searched){showToast('请输入完整会员账号，再点击「精准定位」');field.focus();return false}",
-     "  if(!searched){showToast('请输入会员账号或备注后搜索');field.focus();return false}")
-once("  const member=members.find(m=>m.account===searched);",
-     """  const candidates=v22RemarkSearchLocateMatches(searched);
-  if(candidates.length>1){
-   field.setCustomValidity('');
-   v22RemarkSuggestionsShow();
-   showToast('匹配到 '+candidates.length+' 位会员，请从账号和备注候选中选择');
-   field.focus();return false;
-  }
-  const member=candidates[0];""")
-once("   branchSelectedAccount='';field.setCustomValidity('未找到完整账号，请检查前导0和大小写');",
-     "   branchSelectedAccount='';field.setCustomValidity('未找到匹配的账号或备注');")
-once("   showToast('未找到此完整会员账号。请输入完整账号（不是部分数字）。');",
-     "   showToast('未找到相应会员，请输入完整账号或备注关键字');")
-once("  field.setCustomValidity('');\n  const index=new Map(members.map(m=>[m.id,m]));let cur=member,steps=0;",
-     "  field.setCustomValidity('');v22RemarkSuggestionsHide();\n  const index=new Map(members.map(m=>[m.id,m]));let cur=member,steps=0;")
-once("  branchSelectedAccount=member.account;branchFocusRequested=true;branchViewportReady=false;branchResetRequested=true;view='branch';persistTabView();render();",
-     "  branchSelectedAccount=member.account;branchFocusRequested=true;branchViewportReady=false;branchResetRequested=true;view='branch';persistTabView();render();")
+once("if(!searched){showToast('请输入完整会员账号，再点击「精准定位」');field.focus();return false}",
+     "if(!searched){showToast('请输入会员账号或备注后搜索');field.focus();return false}")
+once("const member=members.find(m=>m.account===searched);",
+     """const candidates=v22RemarkSearchLocateMatches(searched);
+ if(candidates.length>1){
+  field.setCustomValidity('');
+  v22RemarkSuggestionsShow();
+  showToast('匹配到 '+candidates.length+' 位会员，请从账号和备注候选中选择');
+  field.focus();return false;
+ }
+ const member=candidates[0];""")
+once("branchSelectedAccount='';field.setCustomValidity('未找到完整账号，请检查前导0和大小写');",
+     "branchSelectedAccount='';field.setCustomValidity('未找到匹配的账号或备注');")
+once("showToast('未找到此完整会员账号。请输入完整账号（不是部分数字）。');",
+     "showToast('未找到相应会员，请输入完整账号或备注关键字');")
+once("field.setCustomValidity('');\n const index=new Map(members.map(m=>[m.id,m]));let cur=member,steps=0;",
+     "field.setCustomValidity('');v22RemarkSuggestionsHide();\n const index=new Map(members.map(m=>[m.id,m]));let cur=member,steps=0;")
 # Account / remark linking across existing list, table, tree and ranking.
 fragment="x.account.toLowerCase().includes(query.toLowerCase())"
 assert s.count(fragment)==5,("Expected five existing search sites",s.count(fragment))
 s=s.replace(fragment,"v22RemarkSearchMatches(x,query)")
 # Move history/loan/dormant controls into the same bar instead of a separate lower row.
-once("""  if(container.parentElement&&t.b.parentElement!==container.parentElement)
-   container.parentElement.insertBefore(t.b,container);""",
-"""  const unified=document.getElementById('v22UnifiedTrack');
-  const target=unified||container.parentElement;
-  if(target&&t.b.parentElement!==target)target.append(t.b);""")
+import re
+s,count=re.subn(r"if\(container\.parentElement&&t\.b\.parentElement!==container\.parentElement\)\s*container\.parentElement\.insertBefore\(t\.b,container\);",
+    "const unified=document.getElementById('v22UnifiedTrack');\n  const target=unified||container.parentElement;\n  if(target&&t.b.parentElement!==target)target.append(t.b);",s)
+assert count==1,"V22 history toolbar mount has changed"
 # Placeholder responsive with search note.
 once("el('search').placeholder=view==='branch'?'输入完整会员账号 · 回车精准定位':'🔎 搜索会员账号';",
      "el('search').placeholder=view==='branch'?'🔎 账号 / 备注 · 回车定位':'🔎 搜索账号或备注';")
@@ -196,82 +193,6 @@ once("el('search').placeholder=view==='branch'?'输入完整会员账号 · 回�
 once("el('exportBtn').onclick=()=>testDownloadMembers();selectedLogin('viewer')}",
      "el('exportBtn').onclick=()=>testDownloadMembers();v22UnifiedToolbarSetup();selectedLogin('viewer')}")
 # Fallback fullscreen has no fullscreenchange event, so sync after toggle.
-once("  refreshFullscreenButton();rescaleFullscreenBranch();\n }\n if(typeof document!=='undefined')document.addEventListener('fullscreenchange'",
-     "  refreshFullscreenButton();rescaleFullscreenBranch();v22UnifiedToolbarSync();\n }\n if(typeof document!=='undefined')document.addEventListener('fullscreenchange'")
-# Important: when rendered in other views, the dock remains in a stable DOM parent.
-assert s.count('function v22UnifiedToolbarSetup(){')==1
-assert s.count('v22UnifiedToolbarSetup();selectedLogin')==1
-assert s.count('v22RemarkSearchMatches(x,query)')==5
-style=r'''
-/* V22 single compact hideable toolbar. Keep existing buttons and their handlers. */
-.panel:has(#v22UnifiedToolbar)>.panel-header{display:none!important}
-.panel:has(#v22UnifiedToolbar){position:relative!important;min-height:0}
-.v22-unified-dock{display:flex;flex-direction:column;gap:4px;
- position:relative;z-index:80;background:#f8fbfe;
- border-bottom:1px solid #d5e3ec;padding:5px 12px;box-sizing:border-box}
-.v22-unified-toggle{align-self:flex-end;white-space:nowrap;
- color:#225a78;border:1px solid #b5d0df;background:#fff;
- padding:5px 11px;border-radius:8px;cursor:pointer;font-weight:800;font-size:12px}
-.v22-unified-toggle:hover{background:#e6f6fb}
-.v22-unified-track{display:none;gap:6px;align-items:center;align-content:center;
- flex-wrap:wrap;padding:4px 0;min-width:0}
-.v22-unified-dock.v22-unified-open .v22-unified-track{display:flex}
-.v22-unified-track .actions,
-.v22-unified-track .v22-hist-toolbar:not([hidden]){display:contents!important}
-.v22-unified-track .v22-hist-toolbar[hidden]{display:none!important}
-.v22-unified-track button,.v22-unified-track select,
-.v22-unified-track input{flex:0 0 auto;white-space:nowrap}
-.v22-unified-track .button:not(.hidden),.v22-unified-track .v22-hist-button,
-.v22-unified-track .v22-hist-mode{border-radius:7px!important;margin:0!important;
- padding:5px 9px!important;min-height:32px;font-size:12px!important;line-height:1.2}
-.v22-unified-track button.hidden,
-.v22-unified-track select.hidden,
-.v22-unified-track input.hidden{display:none!important}
-.v22-unified-track .v22-hist-label{padding:0 8px;border-left:2px solid #bbd7e5;
- flex:0 0 auto;white-space:nowrap}
-.v22-unified-track .v22-hist-note{display:none!important}
-.v22-unified-track .v22-hist-date{height:32px;box-sizing:border-box}
-.v22-unified-track .v22-hist-count{font-size:11px;padding:5px}
-.v22-unified-search-holder{position:relative;flex:0 1 240px;min-width:180px}
-.v22-unified-search-holder:has(input.hidden){display:none}
-.v22-unified-search-holder>.search{box-sizing:border-box;display:block;width:100%!important;
- height:32px!important;min-width:0!important;margin:0!important}
-.v22-unified-results[hidden]{display:none!important}
-.v22-unified-results{position:absolute;top:calc(100% + 4px);left:0;
- min-width:310px;max-width:min(490px,calc(100vw - 24px));
- max-height:310px;overflow-y:auto;z-index:1200;background:white;
- border:1px solid #a8bdcc;border-radius:9px;
- box-shadow:0 14px 36px #15334b40}
-.v22-unified-result-heading{position:sticky;top:0;background:#eaf2f7;
- color:#516d7d;font-size:11px;padding:7px 10px;z-index:1}
-.v22-unified-result{display:flex!important;gap:10px;align-items:center;text-align:left;
- width:100%;padding:9px 12px;border:0;border-bottom:1px solid #e7eef2;
- background:#fff;color:#183a4e;cursor:pointer}
-.v22-unified-result:hover,.v22-unified-result:focus-visible{background:#dff2f9}
-.v22-unified-result>b{min-width:100px;overflow:hidden;text-overflow:ellipsis;font-size:12px}
-.v22-unified-result>span{color:#537381;font-size:11px;overflow:hidden;text-overflow:ellipsis}
-.v22-unified-result-more{padding:6px 10px;font-size:11px;color:#647986}
-.panel:fullscreen .v22-unified-dock:not(.v22-unified-open),
-.panel.fullscreen-fallback .v22-unified-dock:not(.v22-unified-open){display:none!important}
-.panel:fullscreen .v22-unified-dock.v22-unified-open,
-.panel.fullscreen-fallback .v22-unified-dock.v22-unified-open{
- position:absolute!important;top:8px;left:8px;right:8px;z-index:140!important;
- max-height:min(43vh,310px);overflow:visible;
- border:1px solid #b5cedb;border-radius:11px;
- background:#fffffff4;box-shadow:0 10px 40px #0b2f5270}
-.panel:fullscreen .v22-unified-track,
-.panel.fullscreen-fallback .v22-unified-track{max-height:calc(min(43vh,310px) - 43px);overflow-y:auto}
-.panel:fullscreen .v22-unified-toggle,
-.panel.fullscreen-fallback .v22-unified-toggle{background:#e8f6fd}
-@media(max-width:720px){
- .v22-unified-dock{padding:5px 7px}
- .v22-unified-track{gap:4px}
- .v22-unified-search-holder{flex:1 1 100%;min-width:0}
- .v22-unified-track .button:not(.hidden){font-size:11px!important;padding:5px!important}
- .v22-unified-results{min-width:min(310px,95vw)}
-}
-'''
-assert css.count(".v22-unified-dock")==0
-p.write_text(s,encoding='utf-8')
-cssfile.write_text(css+"\n"+style,encoding='utf-8')
-print("PASS: V22 unified Alt+Q fullscreen toolbar, original controls merged, account/remark linked search")
+once("refreshFullscreenButton();rescaleFullscreenBranch();\n}",
+     "refreshFullscreenButton();rescaleFullscreenBranch();v22UnifiedToolbarSync();\n}")
+
