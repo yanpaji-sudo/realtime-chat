@@ -287,6 +287,10 @@ exec(compile(Path('member-tree-deploy/berlin_bidirectional_finance_patch.py').re
 exec(compile(Path('member-tree-deploy/berlin_history_join_calendar_patch.py').read_text(encoding='utf-8'),'berlin_history_join_calendar_patch.py','exec'))
 # Highly visible neon/gold outer ring and cyan inner ring remain thick at any zoom.
 exec(compile(Path('member-tree-deploy/berlin_history_neon_visibility_patch.py').read_text(encoding='utf-8'),'berlin_history_neon_visibility_patch.py','exec'))
+# Keep Berlin second-level rankings in parity with V22: 4 growth percentages.
+exec(compile(Path('member-tree-v22-visual/team_growth_percentage_patch.py').read_text(encoding='utf-8'),'team_growth_percentage_patch.py','exec'))
+# Click-to-sort every ranking field; preserve original team financial aggregates.
+exec(compile(Path('member-tree-v22-visual/ranking_all_columns_sort_patch.py').read_text(encoding='utf-8'),'ranking_all_columns_sort_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
