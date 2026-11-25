@@ -1,4 +1,4 @@
-name: Publish V22 compact fullscreen toolbar and member note search
+name: Publish V22 keyboard-drawer tools and account remark search
 on:
   push:
     branches: [member-tree-render]
