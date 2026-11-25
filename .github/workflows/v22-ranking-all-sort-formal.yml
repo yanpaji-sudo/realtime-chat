@@ -1,0 +1,58 @@
+name: Publish V22 sortable team ranking across all data columns
+on:
+  push:
+    branches: [member-tree-render]
+    paths:
+      - '.github/workflows/v22-ranking-all-sort-formal.yml'
+permissions:
+  contents: write
+concurrency:
+  group: v22-ranking-all-sort-formal-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard exact V22 base package before sorting UI patch
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "50b58a55a0a5c56d479f585128ec91517fbdbef8"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt > /tmp/v22-original-backend.sha256
+      - name: Apply all-column sort to existing team leaderboard, preserving money data
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/ranking_all_columns_sort_patch.py
+          sha256sum --check /tmp/v22-original-backend.sha256
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_ranking_all_columns_sort.cjs
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+      - name: Verify fullscreen withdrawal popups and original historical UI
+        run: |
+          set -euo pipefail
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+      - name: Install isolated SQLite regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Assert stored withdrawal history and amounts unchanged
+        run: |
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+      - name: Package code only without touching live member or funds DB
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-ranking-sort-all.tgz member-tree
+          base64 -w0 /tmp/v22-ranking-sort-all.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: sort every team leaderboard column ascending and descending'
+            git push origin HEAD:member-tree-render
+          fi
