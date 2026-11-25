@@ -80,7 +80,7 @@ function v22FollowRender(){
  const allGroups=[...new Set([...TREE_GROUPS,
   ...members.map(x=>String(x.group_account||'').trim()),...v22FollowRows.map(x=>x.group)]
   .filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
- const active=ui.group.value||v22FollowGroup;
+ const active=ui.group.children.length?ui.group.value:v22FollowGroup;
  ui.group.replaceChildren();
  const all=mk('option','','全部分组');all.value='';ui.group.append(all);
  for(const value of allGroups){const o=mk('option','',value);o.value=value;ui.group.append(o)}
