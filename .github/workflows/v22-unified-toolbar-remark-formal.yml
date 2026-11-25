@@ -1,4 +1,4 @@
-name: Publish V22 collapsible Alt-Q toolbar with remark search
+name: Publish V22 compact fullscreen toolbar and member note search
 on:
   push:
     branches: [member-tree-render]
