@@ -85,7 +85,7 @@ assert.strictEqual(check("berlinHistoryMatches('2026-11-24').length"),0,
 sandbox.view='tree';
 check("berlinHistorySwitchDate('2026-11-23')");
 assert.strictEqual(renderCalls,1,'Standard member tree gets a redraw');
-assert.strictEqual(sandbox.collapsed.size,0,'Tree ancestors must expand for selected join day');
+assert.strictEqual(sandbox.collapsed.has('root'),false,'The selected member must be visible even when its ancestor was collapsed');
 console.log('PASS: historical calendar day stepping, group scope, placeholder excluded, show all daily newcomers, expand paths, center focus, empty days');
 """
 subprocess.run(['node','-e',node_test],check=True)
