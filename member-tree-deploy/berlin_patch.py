@@ -293,6 +293,8 @@ exec(compile(Path('member-tree-v22-visual/team_growth_percentage_patch.py').read
 exec(compile(Path('member-tree-v22-visual/ranking_all_columns_sort_patch.py').read_text(encoding='utf-8'),'ranking_all_columns_sort_patch.py','exec'))
 # Read-only three-month inactivity roster with per-group and balance/layer rollups.
 exec(compile(Path('member-tree-deploy/berlin_flatline_list_patch.py').read_text(encoding='utf-8'),'berlin_flatline_list_patch.py','exec'))
+# Sync independently-tested V22 dormant and release review lists, no finance/backend changes.
+exec(compile(Path('member-tree-deploy/berlin_v22_rosters_sync_patch.py').read_text(encoding='utf-8'),'berlin_v22_rosters_sync_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
