@@ -1,0 +1,40 @@
+name: Verify V22 historical daily withdrawal rings (NO DEPLOY)
+on:
+  push:
+    branches: [v22-history-withdraw-calendar-dev-20261125]
+    paths:
+      - '.github/workflows/v22-history-withdraw-test.yml'
+      - 'member-tree-v22-visual/history_withdraw_api_patch.py'
+      - 'member-tree-v22-visual/history_calendar_ui_patch.py'
+      - 'member-tree-v22-visual/test_history_api.py'
+      - 'member-tree-v22-visual/test_history_ui.cjs'
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack unchanged V22 formal archive; apply only the history feature
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/academy.py > /tmp/v22-academy-unchanged
+          python3 member-tree-v22-visual/history_withdraw_api_patch.py
+          python3 member-tree-v22-visual/history_calendar_ui_patch.py
+          sha256sum --check /tmp/v22-academy-unchanged
+          python3 -m py_compile member-tree/app.py member-tree/academy.py
+          node --check member-tree/static/app.js
+      - name: Verify V22 historical day picker and persistent neon outlines
+        run: node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated test dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Query only temporary SQLite to verify exact daily ledger history
+        run: python member-tree-v22-visual/test_history_api.py
+      - name: Regression test original full-screen, red ring and compact options
+        run: |
+          set -euo pipefail
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
