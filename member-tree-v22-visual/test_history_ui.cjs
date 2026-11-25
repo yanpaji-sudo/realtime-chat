@@ -76,9 +76,9 @@ evalJs("v22HistUpdateToolbar=()=>{}");
  for(const part of ['v22-hist-ring-gold','v22-hist-ring-yellow','v22-hist-ring-cyan',
   'v22-hist-ring-crimson','v22-hist-ring-red','v22-hist-ring-pink',
   "'vector-effect':'non-scaling-stroke'"])assert(js.includes(part),part);
- assert(js.includes("v22HistMode!=='withdraw'&&Number(m.daily_withdraw_cents||0)!==0"),
+ assert(js.includes("v22HistMode==='new'&&Number(m.daily_withdraw_cents||0)!==0"),
   'Do not contaminate yesterday history with live today red rings');
- assert(js.includes("v22HistMode==='withdraw'?Number(historyAmounts.get(x.id)||0)"),
+ assert(js.includes("v22HistIsWithdrawMode()?Number(historyAmounts.get(x.id)||0)"),
   'Withdrawal density must use selected historical day');
  assert(html.includes('v22-historical-browse-css'));
  assert(html.includes('outline:5px solid #ffea00'));
