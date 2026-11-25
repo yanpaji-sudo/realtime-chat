@@ -147,7 +147,8 @@ function v22DormantRender(){
  const {heading,summary,group,total,table,footer,oldest}=state;
  heading.textContent='躺平名单 · '+visible.length+' 人';
  summary.textContent='符合条件 '+visible.length+' 人　｜　当前余额合计 '+money(sum,true)+'　｜　涉及分组 '+activeGroups.size+' 个';
- const groups=[...new Set(v22DormantRows.map(x=>x.group))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
+ const groupValues=[...TREE_GROUPS,...members.map(x=>String(x.group_account||'').trim()),...v22DormantRows.map(x=>x.group)];
+ const groups=[...new Set(groupValues.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
  group.replaceChildren();
  const all=mk('option','','全部分组');all.value='';
  group.append(all);
