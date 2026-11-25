@@ -1,0 +1,47 @@
+name: Inspect Berlin historical newcomer date visualization source
+on:
+  push:
+    branches: [berlin-historical-newcomer-calendar-dev-20261125]
+    paths:
+      - '.github/workflows/berlin-history-inspect.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect built UI and member fields without touching production data
+        run: |
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 >/tmp/berlin_formal.b64
+          python member-tree-deploy/berlin_patch.py
+          python - <<'PY'
+          from pathlib import Path
+          j=Path('member-tree/static/app.js').read_text()
+          h=Path('member-tree/static/index.html').read_text()
+          a=Path('member-tree/app.py').read_text()
+          for token,pre,post in [
+             ('function renderBranch(){',0,7800),
+             ('function draw(){',0,11000),
+             ('function node(',200,3800),
+             ('function getBerlinLayout(',400,1600),
+             ('function apply(){',0,1800),
+             ('function render(){',200,1800),
+             ('function renderTree(){',0,1400),
+             ('const shownRows=teamFocusId?',150,1400),
+             ('let berlinVisionMode=',0,1000),
+             ('function mk(',250,750),
+             ('function dateNow(',100,500),
+             ("if(withdrawGlowOn",700,1000),
+             ('member_registration_times',550,2200),
+             ('joined_on:',350,1200)]:
+             p=(a if token in ('member_registration_times','joined_on:') else j).find(token)
+             s=a if token in ('member_registration_times','joined_on:') else j
+             print('===CUT===',token,'found',p,'count',s.count(token),flush=True)
+             if p>=0:print(s[max(0,p-pre):p+post],flush=True)
+          for token in ['branch-canvas','branch-view','branchTree','<body','</body>']:
+              p=h.find(token)
+              print('===HTML===',token,'found',p,flush=True)
+              if p>=0:print(h[max(0,p-200):p+700],flush=True)
+          PY
