@@ -98,7 +98,9 @@ call('v22LoanClose()');
 assert.strictEqual(body.children.length,0);
 assert(!classNames.has('v22-loan-body-open'));
 assert(js.includes("const loan=mk('button','v22-hist-button v22-loan-trigger','💰 放款名单')"));
-assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,prev,pick"));
+assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,prev,pick") ||
+       js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,follow,prev,pick"),
+       "Existing dormant and loan buttons remain, optionally with follow-up button");
 assert(html.includes('id="v22-loan-roster-style"'));
 assert.strictEqual(JSON.stringify(people),before,'Opening and filtering display must not change financial fields');
 console.log('PASS: V22 read-only release eligibility 150% (<5 direct), 200% (>=5 direct), all descendants and signed P/L, accounts/notes/current balance/group filters/finance unchanged');
