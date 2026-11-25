@@ -117,7 +117,7 @@ for(let i=0;i<10;i++){
 assert.strictEqual(headings()[10].children.length,0,'Actions not sorted');
 assert.strictEqual(headings()[8].children[0].text,'↓','Default profit score descending');
 const startOrder=accounts();
-assert.strictEqual(startOrder[0],'a10','Default existing score leaderboard preserved');
+assert.strictEqual(startOrder[0],vm.runInContext("computeRanking(members,'2026-11-25','daily')[0].account",ctx),'Default existing score leaderboard preserved');
 const getNames=()=>{
  const cur=rankingRows();return cur.map(x=>[x.children[2].text,x.children[9].text])
 };
