@@ -1,0 +1,44 @@
+name: Test V22 one red history ring and clickable amount/count sorting (NO DEPLOY)
+on:
+  push:
+    branches: [v22-single-red-ring-sortable-withdraw-dev-20261125]
+    paths:
+      - '.github/workflows/v22-one-ring-sort-dev.yml'
+      - 'member-tree-v22-visual/single_red_ring_sortable_list_patch.py'
+      - 'member-tree-v22-visual/test_single_red_ring_sortable_list.cjs'
+      - 'member-tree-v22-visual/test_history_ui.cjs'
+      - 'member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild current production code locally without connecting to production DB
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-money-unchanged.sha256
+          python member-tree-v22-visual/single_red_ring_sortable_list_patch.py
+          sha256sum --check /tmp/v22-money-unchanged.sha256
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Test clickable sort-by-count and sort-by-amount, single ring and daily/newcomer history
+        run: |
+          set -euo pipefail
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated regression tools
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify original financial ledger and V22 red-ring behavior
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          python member-tree-v22-visual/test_history_api.py
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
