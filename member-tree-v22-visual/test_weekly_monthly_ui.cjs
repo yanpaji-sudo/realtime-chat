@@ -86,13 +86,14 @@ run("v22HistUpdateToolbar=()=>{}");
  assert.strictEqual(run('v22HistMatches().length'),2);
  for(const txt of ['🟠 本周提现总览','🟣 本月提现总览',
    "'v22-hist-frequency-'+detail.tier",
-   'v22-hist-count-badge','v22HistStep',
+   'v22-hist-account-row','v22HistStep',
    'v22HistIsWithdrawMode()'])assert(js.includes(txt),txt);
  for(const txt of ['v22-withdraw-frequency-css','#ff9b15','#a54aff',
    'attr(data-v22-hist-days)','v22-hist-count-bg-high'])assert(html.includes(txt),txt);
  assert(js.includes("if(v22HistMode==='new'){"),
    'Historical week/month should hide current-day red rings');
  assert(js.includes("'vector-effect':'non-scaling-stroke'"));
+ assert(!js.includes("class:'v22-hist-count-badge'"),'Day count SVG badge is intentionally removed');
  assert(js.includes('startDensity()'));
  console.log('PASS: week/month modes, day vs week vs month stepping, 1/2-3/4+ tiers, empty periods, scoped tree, anchored badges, no live-day contamination');
 })().catch(err=>{console.error(err);process.exit(1)});
