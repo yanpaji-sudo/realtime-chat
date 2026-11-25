@@ -42,6 +42,7 @@ const sandbox={
  view:'branch',
  collapsed:new Set(['root','alice']),
  requestAnimationFrame:(cb)=>cb(),
+ document:{querySelectorAll:()=>[]},
  render:()=>{renderCalls++},
  mk:()=>{throw new Error('calendar DOM creation should be mocked')},
  el:()=>null,
