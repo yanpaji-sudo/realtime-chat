@@ -6,6 +6,7 @@ on:
       - '.github/workflows/v22-ranking-all-sort-dev.yml'
       - 'member-tree-v22-visual/ranking_all_columns_sort_patch.py'
       - 'member-tree-v22-visual/test_ranking_all_columns_sort.cjs'
+      - 'member-tree-v22-visual/test_team_growth_percentage.cjs'
 permissions:
   contents: read
 jobs:
