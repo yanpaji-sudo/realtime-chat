@@ -83,6 +83,9 @@ ctx.rankPeriod='daily';ctx.rankSort='desc';
 ctx.rankExpanded=new Set();ctx.query='';ctx.role='viewer';
 ctx.mk=mk;ctx.money=x=>String(x);ctx.amountClass=()=>'';ctx.fullscreenActive=()=>false;
 ctx.toggleTreeFullscreen=()=>{};
+// Standalone ranking VM extracts the render function without global search helpers.
+// Preserve query behavior while ensuring the new remark-aware search is available.
+ctx.v22RemarkSearchMatches=(member,term)=>[member.account,member.remark].some(v=>String(v||'').toLocaleLowerCase().includes(String(term||'').trim().toLocaleLowerCase()));
 ctx.historyCoverage={tracking_since:'2026-09-01',imported_days:[]};
 ctx.v33ActiveRankingMembers=()=>[];
 let renderCalls=0,lastUi=null;
