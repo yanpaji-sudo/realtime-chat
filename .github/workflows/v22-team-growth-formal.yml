@@ -1,0 +1,56 @@
+name: Publish V22 team ranking four signup percentage formulas
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-team-growth-formal.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v22-team-growth-percent-formal-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard exact V22 app archive including fixed history scrollbar
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "c1863874524cf65e156e9b77219b16679df2e231"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-unchanged-finance.sha256
+      - name: Add only one new-member rate column to the four team rankings
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/team_growth_percentage_patch.py
+          sha256sum --check /tmp/v22-unchanged-finance.sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+      - name: Ensure historic maximized scrollbar, rings and click-to-sort remain intact
+        run: |
+          set -euo pipefail
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated test dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify the existing deposits, withdrawal ledger and team records are unchanged
+        run: |
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+      - name: Publish app source package only; live PostgreSQL stays unchanged
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-team-growth-rate.tgz member-tree
+          base64 -w0 /tmp/v22-team-growth-rate.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: show daily, weekly, monthly and total newcomer rate in team ranking'
+            git push origin HEAD:member-tree-render
+          fi
