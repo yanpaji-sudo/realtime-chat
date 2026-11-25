@@ -33,7 +33,7 @@ jobs:
           sha256sum --check /tmp/v22-protected-sha256
           node --check member-tree/static/app.js
           node member-tree-v22-visual/test_unified_hidden_toolbar_remark.cjs
-      - name: Regression: existing tree, ranking, dormant and loan views
+      - name: Regress existing tree, ranking, dormant and loan views
         run: |
           set -euo pipefail
           node member-tree-v22-visual/test_dormant_roster.cjs
