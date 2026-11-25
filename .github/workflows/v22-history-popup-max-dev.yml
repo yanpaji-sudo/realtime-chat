@@ -1,0 +1,41 @@
+name: Test V22 history popup maximize and restore (NO DEPLOY)
+on:
+  push:
+    branches: [v22-history-popup-maximized-dev-20261125]
+    paths:
+      - '.github/workflows/v22-history-popup-max-dev.yml'
+      - 'member-tree-v22-visual/history_popup_maximized_patch.py'
+      - 'member-tree-v22-visual/test_history_popup_maximized.cjs'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build current V22 release in isolated CI
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-unchanged.sha256
+          python member-tree-v22-visual/history_popup_maximized_patch.py
+          sha256sum --check /tmp/v22-unchanged.sha256
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Test max preview, keyboard restore and inherited controls
+        run: |
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated finance-regression prerequisites
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Test daily, weekly, monthly accounting unaffected
+        run: |
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          cd member-tree
+          for f in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$f" ]; then node "$f"; fi
+          done
