@@ -1,0 +1,40 @@
+name: Inspect V22 member ancestry, groups and history toolbar (NO DEPLOY)
+on:
+  push:
+    branches: [v22-dormant-list-dev-20261125]
+    paths: ['.github/workflows/v22-dormant-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source-only inspect
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+          py=Path('member-tree/app.py').read_text(encoding='utf-8')
+          for term in ["function v22HistUpdateToolbar(){","function v22HistChange(","function v22HistShown()","function v22HistOldest()","function shownTreeMembers(","function teamExportRows(","function render(){","function mk(","function money(","function daysBetween(","function diffDays(","function today(","let members=","let view=","let teamFocusId=","function v22HistSyncMaximized()"]:
+            pos=js.find(term)
+            if pos<0:continue
+            print('===MARK===',term,pos,flush=True)
+            print(js[max(0,pos-250):pos+(9000 if term=="function v22HistUpdateToolbar(){" else 2800)],flush=True)
+          print('===GROUPS JS===',flush=True)
+          for term in ['group_account','groupName','group_account||','group_account||\'\'', 'groupOptions','groupSelect','groupIds','groupList','groupFilter','groupName','joined_on','members=','parent_id']:
+            positions=[];start=0
+            while len(positions)<9:
+              i=js.find(term,start)
+              if i<0:break
+              positions.append(i);start=i+len(term)
+            print(term,positions,flush=True)
+            for pos in positions[:2]:print(js[max(0,pos-200):pos+380],flush=True)
+          print('===API DATA===',flush=True)
+          for term in ["@app.get('/api/tree')",'def db_init(', 'CREATE TABLE IF NOT EXISTS members', 'group_account','def active_rows(','joined_on', 'GROUP BY']:
+            pos=py.find(term)
+            print(term,pos,flush=True)
+            if pos>=0:print(py[max(0,pos-170):pos+1350],flush=True)
+          PY
