@@ -1,0 +1,65 @@
+name: Publish V22 unified fullscreen toolbar and remark-linked search
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-unified-toolbar-remark-formal.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v22-unified-toolbar-remark-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruct protected V22 frontend
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse b926e3d04a376637deebccb48c1db3dedf2d6ab2:member-tree-deploy/payload.b64)" = "a677b8a19aa6c1b6a3590948daaae9837521e450"
+          git show b926e3d04a376637deebccb48c1db3dedf2d6ab2:member-tree-deploy/payload.b64 | base64 -d | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt > /tmp/v22-protected-sha256
+      - name: Rebuild existing dormant and loan rosters before toolbar change
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/dormant_roster_patch.py
+          python member-tree-v22-visual/loan_release_roster_patch.py
+      - name: Patch unified responsive dock and linked account remark search
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/unified_hidden_toolbar_remark_patch.py
+          sha256sum --check /tmp/v22-protected-sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_unified_hidden_toolbar_remark.cjs
+      - name: Regression: existing tree, ranking, dormant and loan views
+        run: |
+          set -euo pipefail
+          node member-tree-v22-visual/test_dormant_roster.cjs
+          node member-tree-v22-visual/test_loan_release_roster.cjs
+          node member-tree-v22-visual/test_ranking_all_columns_sort.cjs
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install temporary finance regression tools
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify financial backend and historical records unchanged
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+      - name: Commit static frontend archive only without modifying database
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-unified-toolbar.tgz member-tree
+          base64 -w0 /tmp/v22-unified-toolbar.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: hideable Alt-Q fullscreen toolbar, unified controls, account and remark search'
+            git push origin HEAD:member-tree-render
+          fi
