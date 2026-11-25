@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const js=fs.readFileSync('member-tree/static/app.js','utf8');
 const style=fs.readFileSync('member-tree/static/style.css','utf8');
-const start=js.indexOf('// V22 unified toolbar, fullscreen Alt+Q toggle');
+const start=js.indexOf('let v22UnifiedUI=null,v22UnifiedFullscreenBefore=false;');
 const end=js.indexOf('function locateBranchAccount(){',start);
 assert(start>0&&end>start,'Search helper index invalid: start='+start+', end='+end+', firstLocate='+js.indexOf('function locateBranchAccount(){')+', total='+js.length);
 const members=[
