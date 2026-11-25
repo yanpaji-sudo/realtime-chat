@@ -36,7 +36,9 @@ assert.deepStrictEqual(names(call("v22RemarkSearchCandidates('000')")),['000123'
 assert.deepStrictEqual(names(call("v22RemarkSearchLocateMatches('不存在')")),[]);
 assert.strictEqual(JSON.stringify(members),frozen,'No lookup changes records');
 assert(js.includes("v22UnifiedToolbarSetup();selectedLogin('viewer')"));
-assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,prev,pick"));
+assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,prev,pick") ||
+       js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,follow,prev,pick"),
+       "Existing dormant and loan buttons remain, optionally with follow-up button");
 assert(js.includes("document.getElementById('v22UnifiedTrack')"));
 assert(js.includes("input.value=String(member.account||'')"));
 assert(js.includes("if(candidates.length>1)"),'No accidental double-match autofocus');
