@@ -1,0 +1,57 @@
+name: Publish V22 grouped three-month inactive downline roster
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-dormant-formal.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v22-grouped-dormant-roster-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact V22 formal app and protect financial backend
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "a677b8a19aa6c1b6a3590948daaae9837521e450"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-protected-finances.sha256
+      - name: Add 3-month dormant list button, group filter and exact current balance settlement
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/dormant_roster_patch.py
+          sha256sum --check /tmp/v22-protected-finances.sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_dormant_roster.cjs
+      - name: Regression test ranking, history and expanded list
+        run: |
+          set -euo pipefail
+          node member-tree-v22-visual/test_ranking_all_columns_sort.cjs
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install temporary SQLite finance regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Confirm finance and historical daily withdrawal records unchanged
+        run: |
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+      - name: Publish application archive only without modifying Render PostgreSQL
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-grouped-dormant-roster.tgz member-tree
+          base64 -w0 /tmp/v22-grouped-dormant-roster.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: grouped three-month inactive downline roster, A/B/C depths and balance summary'
+            git push origin HEAD:member-tree-render
+          fi
