@@ -1,0 +1,42 @@
+name: Test V22 dormant downline roster and finance isolation (NO DEPLOY)
+on:
+  push:
+    branches: [v22-dormant-list-dev-20261125]
+    paths:
+      - '.github/workflows/v22-dormant-dev.yml'
+      - 'member-tree-v22-visual/dormant_roster_patch.py'
+      - 'member-tree-v22-visual/test_dormant_roster.cjs'
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack V22 formal application into temporary runner
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-finance-preserved.sha256
+      - name: Add read-only grouped dormancy roster to history toolbar
+        run: |
+          set -euo pipefail
+          python3 member-tree-v22-visual/dormant_roster_patch.py
+          sha256sum --check /tmp/v22-finance-preserved.sha256
+          python3 -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_dormant_roster.cjs
+      - name: Preserve existing history, sorting and maximize popup
+        run: |
+          node member-tree-v22-visual/test_ranking_all_columns_sort.cjs
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install temporary SQLite finance test dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify member and withdrawal finances remain untouched
+        run: |
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
