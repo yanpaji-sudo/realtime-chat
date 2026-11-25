@@ -196,7 +196,7 @@ replace1("function renderBranch(){\n if(v22VisionStop){v22VisionStop();v22Vision
 # Suppress live-date withdrawal rings ONLY while inspecting another day's
 # withdrawal records. New-member browsing keeps the original display.
 old="withdrawGlowOn&&Number(m.daily_withdraw_cents||0)!==0"
-assert j.count(old)==2,('red SVG anchors changed',j.count(old))
+assert j.count(old)==3,('red SVG live-day anchors changed',j.count(old))
 j=j.replace(old,"withdrawGlowOn&&v22HistMode!=='withdraw'&&Number(m.daily_withdraw_cents||0)!==0")
 replace1("const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&ownWithdraw!==0;",
  "const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&v22HistMode!=='withdraw'&&ownWithdraw!==0;")
