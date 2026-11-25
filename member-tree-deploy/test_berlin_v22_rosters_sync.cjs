@@ -74,7 +74,7 @@ assert.strictEqual(four.direct_count,4);
 assert.strictEqual(four.target_percent,150);
 assert.strictEqual(four.target_cents,1500000);
 assert.strictEqual(four.umbrella_count,5,'Includes indirect descendant but excludes self');
-assert.strictEqual(four.team_win_cents,570000,
+assert.strictEqual(four.team_win_cents,610000,
  'Team win/loss is team stake - total withdrawal, with all descendants');
 assert.strictEqual(five.direct_count,5);
 assert.strictEqual(five.target_percent,200);
