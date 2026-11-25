@@ -1,4 +1,4 @@
-name: Publish V22 August 60-day no-referral follow-up roster
+name: Publish V22 60-day inactive referral follow-up list
 on:
   push:
     branches: [member-tree-render]
