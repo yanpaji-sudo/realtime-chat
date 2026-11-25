@@ -17,6 +17,21 @@ const people=[
  {id:'e_new',account:'e_new',parent_id:'root',level:2,joined_on:'2026-08-26',group_account:'02',balance_cents:10000},
  {id:'phantom',account:'placeholder',parent_id:'root',level:2,joined_on:'2025-01-01',group_account:'03',balance_cents:999900,remark:'上级占位（待补资料）'},
 ];
+// SAN base group heads do not appear; each child is tier A, grandchild tier B.
+// All unrelated teams retain their existing level labels.
+const special=[
+ {id:'sx',account:'mainx',parent_id:null,level:1,joined_on:'2025-01-01',group_account:'08'},
+ ...['SAN001','SAN002','SAN005','SAN006','SAN008'].flatMap((account,i)=>[
+  {id:'special'+i,account,parent_id:'sx',level:2,joined_on:'2025-02-01',group_account:'08'},
+  {id:'child'+i,account:'branch'+i,parent_id:'special'+i,level:3,joined_on:'2026-02-01',group_account:'08'},
+  {id:'grand'+i,account:'leaf'+i,parent_id:'child'+i,level:4,joined_on:'2026-03-01',group_account:'08'}
+ ]),
+ {id:'other',account:'other',parent_id:'sx',level:2,joined_on:'2026-01-02',group_account:'08'},
+];
+people.find(x=>x.id==='b').stake_cents=300000;
+people.find(x=>x.id==='b').total_withdraw_cents=250000;
+people.find(x=>x.id==='c').stake_cents=10000;
+people.find(x=>x.id==='c').total_withdraw_cents=60000;
 function mk(tag,cls='',text=''){
  return {tag,cls,text,value:'',children:[],attrs:{},
   append(...x){this.children.push(...x);for(const child of x)child.parentElement=this},
@@ -57,6 +72,8 @@ assert.deepStrictEqual(ids,['b','c','c_old','d'],
  'New grandchild excludes older ancestors; recent joins and placeholder excluded');
 const c=result.find(x=>x.id==='c');
 assert.strictEqual(c.latest_descendant_join,'2026-08-24');
+assert.strictEqual(c.net_win_cents,-50000);
+assert.strictEqual(result.find(x=>x.id==='b').net_win_cents,50000);
 assert.strictEqual(c.descendant_count,1);
 assert.strictEqual(c.level,'B');
 assert.strictEqual(c.remark,'王三');
@@ -65,6 +82,14 @@ assert.strictEqual(result.find(x=>x.id==='d').days,92);
 assert.strictEqual(result.find(x=>x.id==='d').level,'A');
 assert.strictEqual(result.find(x=>x.id==='b').group,'02');
 assert.strictEqual(result.reduce((sum,x)=>sum+x.balance_cents,0),680000);
+const specialResult=Array.from(call("v22DormantAnalyze(special,'2026-11-25')"));
+assert.strictEqual(specialResult.length,11,'Five group roots removed, ten descendants and one normal team remain');
+assert(specialResult.every(x=>!/^SAN(001|002|005|006|008)$/i.test(x.account)));
+for(let i=0;i<5;i++){
+ assert.strictEqual(specialResult.find(x=>x.account==='branch'+i).level,'A');
+ assert.strictEqual(specialResult.find(x=>x.account==='leaf'+i).level,'B');
+}
+assert.strictEqual(specialResult.find(x=>x.account==='other').level,'A');
 call('v22DormantOpen()');
 assert.strictEqual(body.children.length,1,'Modal is mounted in document.body');
 assert(classes.has('v22-dormant-body-open'));
@@ -76,9 +101,18 @@ assert(state.total.children[0].text.includes('6,800'),'Overall reconciliation su
 const headers=state.table.children[0].children.map(x=>x.text);
 assert.deepStrictEqual(headers.map(s=>s.split(' ')[0]),[
  '所属分组','会员备注','会员账号','层级','加入日期','躺平时间',
- '当前余额','历史下级数','最近下级新增'
+ '当前余额','历史下级数','输赢'
 ]);
 assert.deepStrictEqual(state.group.children.map(x=>x.value),['','01','02','03','04']);
+const cRecord=state.table.children.find(row=>row.children?.[2]?.text==='c');
+assert(cRecord.children[8].text.includes('-500'),'Negative member win/loss shown');
+assert.strictEqual(cRecord.children[8].cls,'v22-dormant-profit-negative');
+const bRecord=state.table.children.find(row=>row.children?.[2]?.text==='b');
+assert(bRecord.children[8].text.includes('+500'),'Positive member win/loss shown');
+assert.strictEqual(bRecord.children[8].cls,'v22-dormant-profit-positive');
+state.table.children[0].children[8].onclick();
+assert.strictEqual(call('v22DormantSort'),'net_win_cents');
+assert.strictEqual(call('v22DormantDesc'),true);
 state.group.value='04';state.group.onchange();
 assert(state.heading.textContent.includes('0 人'));
 assert(state.summary.textContent.includes('0'));
@@ -104,4 +138,4 @@ assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,prev,pick")
 assert(html.includes('id="v22-dormant-roster-style"'));
 assert(html.includes('min-height:0;flex:1 1 0;overflow:auto;'));
 assert(html.includes('.v22-dormant-total'));
-console.log('PASS: true three-calendar-month cutoff/leap, indirect descendants, join-day inactivity, group filters, level A/B/C, account/remark/balance, sorting, overall settlement, modal lifecycle');
+console.log('PASS: true 3-month dormant roster, five SAN group heads excluded, descendants rebase at A, unrelated levels stable, personal signed win-loss sorting, group summaries preserved');
