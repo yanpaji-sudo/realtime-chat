@@ -40,6 +40,18 @@ jobs:
              s=a if token in ('member_registration_times','joined_on:') else j
              print('===CUT===',token,'found',p,'count',s.count(token),flush=True)
              if p>=0:print(s[max(0,p-pre):p+post],flush=True)
+          print('===TREE_VIEW_PATTERNS===',flush=True)
+          for token in ["view==='tree'","view==='branch'","function renderMain","function renderMember","function memberCard(","function memberNode(","data-member-id","member-card","member-row","function render(){","const highlighted","joined_on===current","branch-today"]:
+              starts=[];p=0
+              while True:
+                  p=j.find(token,p)
+                  if p<0 or len(starts)>=7:break
+                  starts.append(p);p+=len(token)
+              print('OCC',token,starts,flush=True)
+              for k in starts[:3]:print(j[max(0,k-350):k+1050],flush=True)
+          print('===TREE_RENDER_END===',flush=True)
+          p=j.index('function render(){')
+          print(j[p:p+5000],flush=True)
           for token in ['branch-canvas','branch-view','branchTree','<body','</body>']:
               p=h.find(token)
               print('===HTML===',token,'found',p,flush=True)
