@@ -105,8 +105,11 @@ function berlinHistoryEnsureControls(){
   berlinHistoryToolbar={bar,previous,date,next,todayBtn,count,details,accounts,note};
  }
  const controls=berlinHistoryToolbar;
- if(controls.bar.parentElement!==title.parentElement)
-     title.parentElement.insertBefore(controls.bar,title.nextSibling);
+ const content=el('content');
+ // Mount beside, not inside, the content container so full re-renders retain
+ // the date picker, and the top navigation flex layout is not compressed.
+ if(content?.parentElement&&controls.bar.parentElement!==content.parentElement)
+     content.parentElement.insertBefore(controls.bar,content);
  controls.bar.hidden=!visible;
  if(!visible)return;
  const today=dateNow();
@@ -210,7 +213,7 @@ assert j.count(anchor)==1
 css=r"""
 <style id="berlin-history-calendar-css">
 .berlin-history-toolbar[hidden],.berlin-history-members[hidden]{display:none!important}
-.berlin-history-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+.berlin-history-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;box-sizing:border-box;width:100%;
  border:1px solid #abcddd;border-radius:11px;padding:9px 10px;margin:6px 0 12px;
  background:#eff8ff;color:#143747;box-shadow:0 1px 5px #0e678615}
 .berlin-history-heading{font-weight:800;font-size:13px;color:#075985}
