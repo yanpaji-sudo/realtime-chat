@@ -1,0 +1,40 @@
+name: Validate Berlin ranking all-column sorts and growth parity (NO DEPLOY)
+on:
+  push:
+    branches: [berlin-ranking-all-sort-dev-20261125]
+    paths:
+      - '.github/workflows/berlin-ranking-all-sort-dev.yml'
+      - 'member-tree-deploy/berlin_patch.py'
+      - 'member-tree-v22-visual/team_growth_percentage_patch.py'
+      - 'member-tree-v22-visual/ranking_all_columns_sort_patch.py'
+      - 'member-tree-v22-visual/test_team_growth_percentage.cjs'
+      - 'member-tree-v22-visual/test_ranking_all_columns_sort.cjs'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load pinned Berlin base archive in isolated CI
+        run: |
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 > /tmp/berlin_formal.b64
+      - name: Build original Berlin features plus all-column ranking sorting
+        run: |
+          set -euo pipefail
+          python member-tree-deploy/berlin_patch.py
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_team_growth_percentage.cjs
+          node member-tree-v22-visual/test_ranking_all_columns_sort.cjs
+      - name: Install isolated application regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify original Berlin uploads, imported funds and history unchanged
+        run: |
+          set -euo pipefail
+          python member-tree-deploy/test_berlin_manual_recharge_reconcile.py
+          python member-tree-deploy/test_berlin_bidirectional_finance.py
+          python member-tree-deploy/test_berlin_history_calendar.py
+          python member-tree-deploy/test_berlin_history_neon_visibility.py
+          python member-tree-deploy/test_berlin_single_member_upsert.py
