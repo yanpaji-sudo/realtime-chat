@@ -27,7 +27,7 @@ const sandbox={
  shownTreeMembers:()=>visible,teamExportRows:()=>visible,
  api:async()=>reply,
  render:()=>{renderCalls++},calls,
- requestAnimationFrame:(cb)=>cb(),document:{querySelectorAll:()=>[]},
+ requestAnimationFrame:(cb)=>cb(),document:{querySelectorAll:()=>[],addEventListener:()=>{},body:{classList:{toggle:()=>{}}}},
  el:()=>null,money:(n)=>String(n/100),
 };
 vm.createContext(sandbox);
