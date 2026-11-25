@@ -1,0 +1,39 @@
+name: Verify V22 compact withdrawal list and softer historical highlights (NO DEPLOY)
+on:
+  push:
+    branches: [v22-compact-withdraw-list-subtle-rings-dev-20261125]
+    paths:
+      - '.github/workflows/v22-compact-withdraw-dev.yml'
+      - 'member-tree-v22-visual/compact_withdraw_list_soft_rings_patch.py'
+      - 'member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build in isolated runner; keep current user DB untouched
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/unchanged-v22.sha256
+          python3 member-tree-v22-visual/compact_withdraw_list_soft_rings_patch.py
+          sha256sum --check /tmp/unchanged-v22.sha256
+          python3 -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Verify popup fields and restrained rings in actual source
+        run: |
+          node member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated dependency set
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Preserve history ledger and financial behavior
+        run: |
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          python member-tree-v22-visual/test_history_api.py
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
