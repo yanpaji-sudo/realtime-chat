@@ -1,0 +1,41 @@
+name: Inspect V22 team ranking calculation and markup (NO DEPLOY)
+on:
+  push:
+    branches: [v22-team-growth-percent-dev-20261125]
+    paths: ['.github/workflows/v22-team-growth-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect tree-ranking source in isolated environment
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('member-tree/app.py').read_text(encoding='utf-8')
+          j=Path('member-tree/static/app.js').read_text(encoding='utf-8')
+          h=Path('member-tree/static/index.html').read_text(encoding='utf-8')
+          print('===PATTERN COUNTS===',flush=True)
+          for src,source in [('JS',j),('PY',p)]:
+            for token in ['团队排行榜','团队排行','排行榜','新增百分比','裂变百分比','新增人数','今日新增','本周新增','本月新增','总榜','团长排行','rankings','rankMode','ranking','function renderRanking','function renderRank','rankData','joined_on','teamMembers','teamCount','firstJoin','totalMembers']:
+              pos=source.find(token)
+              print('PATTERN',src,token,source.count(token),pos,flush=True)
+          print('===JS UI ANCHORS===',flush=True)
+          for term in ['团队排行榜','团队排行','团长排行','本周新增','本月新增','新增人数','今日新增','总榜','rankMode','function renderRank','function renderRanking','function ranking','function rank','function teamStats','function growthRate','function render(){']:
+            found=0;pos=0
+            while found<5:
+              pos=j.find(term,pos)
+              if pos<0:break
+              print('===CUT===',term,pos,flush=True)
+              print(j[max(0,pos-1250):pos+4300],flush=True)
+              pos+=len(term);found+=1
+          print('===PY ROUTES===',flush=True)
+          for term in ["@app.get('/api/rank", "@app.get('/api/leader", "def team_rank", "def get_rank", "def rank", "team_rankings", "joined_on"]:
+            pos=p.find(term)
+            print('===BACKEND===',term,pos,flush=True)
+            if pos>=0:print(p[max(0,pos-950):pos+4100],flush=True)
+          PY
