@@ -1,0 +1,31 @@
+name: Inspect V22 available member name fields (NO DEPLOY)
+on:
+  push:
+    branches: [v22-compact-withdraw-list-subtle-rings-dev-20261125]
+    paths: ['.github/workflows/v22-compact-name-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract release source and locate member name/label fields
+        run: |
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('member-tree/app.py').read_text()
+          j=Path('member-tree/static/app.js').read_text()
+          for body,mark in [(p,'BACKEND'),(j,'FRONTEND')]:
+            for k in ['CREATE TABLE IF NOT EXISTS members','def active_rows(', 'def snapshot(', '@app.get(\'/api/tree\')', "function memberCard(", "function nodeCard(", "function renderTree(", "const members=", "let members=", "function money(", "function render(){", "remark:", "nickname:", "real_name:", "name:", "displayName", "m.remark"]:
+              i=body.find(k)
+              if i<0:continue
+              print('===MARK===',mark,k,i,flush=True)
+              print(body[max(0,i-170):i+2200],flush=True)
+          print('===LEDGER SUMMARY SNIPPETS===',flush=True)
+          for k in ['function v22HistUpdateToolbar()', "const val=v22HistIsOverview()", "const badge=svgEl('g'", ".v22-hist-ring-gold", ".v22-hist-count-label"]:
+              i=j.find(k)
+              print(k,i,flush=True)
+              if i>=0:print(j[max(0,i-400):i+2100],flush=True)
+          PY
