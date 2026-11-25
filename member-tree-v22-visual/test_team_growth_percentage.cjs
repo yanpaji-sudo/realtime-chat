@@ -55,6 +55,9 @@ function mk(tag,cls='',text=''){
   setAttribute(k,v){this.attrs[k]=v}};
 }
 const rstart=js.indexOf('function renderRanking(){');
+const sortStart=js.indexOf("let v22RankingSortField='score';");
+assert(sortStart>0&&sortStart<rstart);
+vm.runInContext(js.slice(sortStart,rstart),ctx);
 const rend=js.indexOf('\n// Read-only left-to-right distribution',rstart);
 assert(rstart>0&&rend>rstart);
 const renderCode=js.slice(rstart,rend);
