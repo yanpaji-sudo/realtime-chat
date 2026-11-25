@@ -35,6 +35,13 @@ jobs:
               pos=j.find(needle)
               print('UI',needle,pos,flush=True)
               if pos>=0:print(j[max(0,pos-150):pos+(8500 if needle=='function renderBranch(){' else 3700)],flush=True)
+          print('===EXTRA API / LEDGER ANCHORS===',flush=True)
+          for tok in ['async function api(', 'function api(', 'async function refresh(', 'function refresh(', 'let members=', 'let businessDay=', 'daily_import_days','daily_withdraw_ledger','def record_daily_','def update_daily_']:
+              for fname,body in [('JS',j),('PY',p)]:
+                  pos=body.find(tok)
+                  if pos<0:continue
+                  print(fname,tok,pos,flush=True)
+                  print(body[max(0,pos-120):pos+3200],flush=True)
           print('===HTML existing markers===',flush=True)
           for needle in ['branch-canvas','member-top','</body>','withdraw-red-outer','history']:
               print(needle,h.find(needle),flush=True)
