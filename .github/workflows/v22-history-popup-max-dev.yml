@@ -7,6 +7,8 @@ on:
       - 'member-tree-v22-visual/history_popup_maximized_patch.py'
       - 'member-tree-v22-visual/test_history_popup_maximized.cjs'
       - 'member-tree-v22-visual/test_single_red_ring_sortable_list.cjs'
+      - 'member-tree-v22-visual/test_weekly_monthly_ui.cjs'
+      - 'member-tree-v22-visual/test_history_ui.cjs'
 permissions:
   contents: read
 jobs:
