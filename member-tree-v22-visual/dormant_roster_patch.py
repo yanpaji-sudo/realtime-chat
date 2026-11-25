@@ -29,15 +29,19 @@ let v22DormantPanel=null;
 let v22DormantGroup='',v22DormantPage=0;
 let v22DormantSort='days',v22DormantDesc=true,v22DormantRows=[];
 const V22_DORMANT_PAGE_SIZE=100;
-const V22_DORMANT_EXCLUDED_ACCOUNTS=new Set(['SAN001','SAN002','SAN005','SAN006','SAN008']);
-// For only these five structural groups, their children restart at tier A.
+const V22_DORMANT_EXCLUDED_ACCOUNTS=new Set(['SAN1','SAN2','SAN5','SAN6','SAN8']);
+// 兼容 SAN008 / san08 / SAN8 等同一组长账号的不同补零方式。
+function v22DormantAccountKey(account){
+ return String(account||'').trim().toUpperCase().replace(/^SAN0+([1-9]\d*)$/,'SAN$1');
+}
+// Five SAN group heads remain structural only; their direct children show A.
 function v22DormantDisplayLevel(member,byId){
  let current=member,seen=new Set([member.id]),distance=0;
  while(current.parent_id&&byId.has(current.parent_id)){
   const parent=byId.get(current.parent_id);
   if(seen.has(parent.id))break;
   seen.add(parent.id);distance++;
-  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(String(parent.account||'').trim().toUpperCase()))
+  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(v22DormantAccountKey(parent.account)))
    return v22DormantLevel(distance+1);
   current=parent;
  }
@@ -118,7 +122,10 @@ function v22DormantAnalyze(rows,day){
  for(const member of rows){
   const joined=String(member.joined_on||'').slice(0,10);
   if(!v22DormantDate(joined)||joined>cutoff||member.deleted)continue;
-  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(String(member.account||'').trim().toUpperCase()))continue;
+  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(v22DormantAccountKey(member.account)))continue;
+  // Only members with a CURRENT nonzero balance are eligible for this list.
+  // Keep all ancestors in the underlying tree so descendants retain intact history.
+  if(Number(member.balance_cents||0)===0)continue;
   // Placeholder ancestors are not actual eligible members.
   if(String(member.remark||'')==='上级占位（待补资料）')continue;
   const latest=newest.get(member.id)||'';
@@ -221,7 +228,7 @@ function v22DormantRender(){
  for(const [name,row] of groupsSummary){
   total.append(mk('span','',name+'：'+row.count+'人 / '+money(row.balance,true)));
  }
- oldest.textContent='口径：加入满三个自然月、最近三个自然月全部下级（含间接下级）无新增；五个 SAN 总节点不参与名单，其下级从 A 层起算。躺平时间＝本人加入日至今天；输赢＝本人建仓－累计提现；余额为当前余额。';
+ oldest.textContent='口径：加入满三个自然月、最近三个自然月全部下级（含间接下级）无新增；余额为0的会员不参与名单；SAN01/02/05/06/08组长不参与，其直属下级从A层起算。躺平时间＝本人加入日至今天；输赢＝本人建仓－累计提现；余额为当前余额。';
  footer.replaceChildren();
  const prev=mk('button','','◀ 上一页');prev.type='button';
  prev.disabled=v22DormantPage<=0;
@@ -379,4 +386,4 @@ assert s.count("function v22DormantAnalyze(")==1
 assert s.count("v22-dormant-trigger")==1
 js.write_text(s,encoding="utf-8")
 html.write_text(h,encoding="utf-8")
-print("PASS: V22 3-month dormant roster, 5 SAN root exclusions, descendant A-tier rebasing, personal win/loss")
+print("PASS: V22 dormant roster filters zero-balance accounts; SAN account aliases rebase children A; personal net win/loss")
