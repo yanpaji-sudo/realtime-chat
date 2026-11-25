@@ -6,8 +6,8 @@ const start=js.indexOf('let v22HistListSortField=');
 const end=js.indexOf('function v22HistIsOverview(){',start);
 assert(start>0&&end>start);
 const listStart=js.indexOf(' t.list.replaceChildren();',end);
-const listEnd=js.indexOf(' if(matches.length>400)',listStart);
-assert(listStart>0&&listEnd>listStart&&listEnd-listStart<3800,
+const listEnd=js.indexOf(' if(matches.length>maxRows)',listStart);
+assert(listStart>0&&listEnd>listStart&&listEnd-listStart<5200,
  'Must test real popup rendering fragment');
 function mk(tag,cls='',text=''){
  return {tag,cls,text,children:[],attrs:{},
@@ -32,6 +32,7 @@ const context={
  t:{list:mk('div')},mk,
  v22HistIsOverview(){return this.v22HistMode==='week'||this.v22HistMode==='month'},
  money:(cents)=>Number(cents/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}),
+ document:{addEventListener:()=>{},body:{classList:{toggle:()=>{}}}},
  v22HistFocus:()=>{touched=true}
 };
 // Prefer lexical closure over host 'this' for the helper's globals.
