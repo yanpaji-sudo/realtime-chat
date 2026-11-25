@@ -62,7 +62,7 @@ Object.assign(ctx,{
  members:team,businessDay:day,dateNow:()=>day,rankPeriod:'daily',
  rankSort:'desc',rankExpanded:new Set(),query:'',role:'viewer',mk,
  money:(v)=>String(v),amountClass:()=>'',fullscreenActive:()=>false,
- toggleTreeFullscreen:()=>{},periodStart:()=>day,
+ toggleTreeFullscreen:()=>{},
  historyCoverage:{tracking_since:'2026-09-01',imported_days:[]}
 });
 vm.runInContext(renderCode,ctx);
@@ -92,7 +92,7 @@ for(const period of ['daily','week','month','total']){
  assert.strictEqual(tr.children[4].text,'4','Team count still in original column');
  assert.strictEqual(tr.children[6].text,String(top.dailyStake),'Original deposit shifted, not altered');
  assert.strictEqual(tr.children[7].text,String(top.dailyWithdraw),'Withdrawal preserved');
- assert.strictEqual(tr.children[8].text,String(top.score),'Net score preserved');
+ assert.strictEqual(tr.children[8].text,(top.score>0?'+':'')+String(top.score),'Net score preserved with original positive sign');
  assert.strictEqual(tr.children[9].text,String(top.teamBalance),'Total balance preserved');
 }
 // Expanded detail row colspan must match new 11-column parent table.
