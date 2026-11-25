@@ -70,8 +70,8 @@ assert.strictEqual(body.children.length,1,'Modal is mounted in document.body');
 assert(classes.has('v22-dormant-body-open'));
 assert(call('v22DormantPanel').table.children.length===5,'Header + 4 eligible rows');
 const state=call('v22DormantPanel');
-assert(state.heading.text.includes('4 人'));
-assert(state.summary.text.includes('6,800'),'Overall balance shown for all groups');
+assert(state.heading.textContent.includes('4 人'));
+assert(state.summary.textContent.includes('6,800'),'Overall balance shown for all groups');
 assert(state.total.children[0].text.includes('6,800'),'Overall reconciliation sum');
 const headers=state.table.children[0].children.map(x=>x.text);
 assert.deepStrictEqual(headers.map(s=>s.split(' ')[0]),[
@@ -81,8 +81,8 @@ assert.deepStrictEqual(headers.map(s=>s.split(' ')[0]),[
 assert.deepStrictEqual(state.group.children.map(x=>x.value),['','01','02']);
 state.group.value='02';
 state.group.onchange();
-assert(state.heading.text.includes('2 人'));
-assert(state.summary.text.includes('3,000'),'Filter settlement should sum group 02 only');
+assert(state.heading.textContent.includes('2 人'));
+assert(state.summary.textContent.includes('3,000'),'Filter settlement should sum group 02 only');
 assert(state.total.children[0].text.includes('3,000'));
 assert.strictEqual(state.table.children.length,3,'Group 02 has 2 rows + header');
 state.table.children[0].children[6].onclick();
