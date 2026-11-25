@@ -1,0 +1,52 @@
+name: Publish V22 fullscreen history scrollbar fix
+on:
+  push:
+    branches: [member-tree-render]
+    paths: ['.github/workflows/v22-visible-scrollbar-formal.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v22-visible-scrollbar-formal-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Protect exact V22 formal code and all financial data
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "97bac9aaedbbe3affd4569bc8ce192ecf5a5c74d"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt >/tmp/v22-original-backend.sha256
+      - name: Apply only visible scrollbar and bounded full-screen table height
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/history_popup_visible_scrollbar_patch.py
+          sha256sum --check /tmp/v22-original-backend.sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_history_popup_visible_scrollbar.cjs
+          node member-tree-v22-visual/test_history_popup_maximized.cjs
+          node member-tree-v22-visual/test_single_red_ring_sortable_list.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install temporary validation dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Verify original historical withdrawal records and period totals
+        run: |
+          set -euo pipefail
+          python member-tree-v22-visual/test_history_api.py
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+      - name: Publish updated V22 application package only, leave live DB intact
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-history-visible-scroll.tgz member-tree
+          base64 -w0 /tmp/v22-history-visible-scroll.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: make maximized withdrawal list vertical scrollbar visible'
+            git push origin HEAD:member-tree-render
+          fi
