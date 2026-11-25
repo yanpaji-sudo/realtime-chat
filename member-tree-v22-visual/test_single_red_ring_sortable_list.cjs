@@ -17,9 +17,9 @@ function mk(tag,cls='',text=''){
 }
 let touched=false;
 const people=[
- {id:'a',account:'wlb841216',remark:'王女士',joined_on:'2026-11-13'},
- {id:'b',account:'beiying007',remark:'',joined_on:'2026-11-14'},
- {id:'c',account:'abc12',remark:'测试姓名',joined_on:'2026-11-15'}
+ {id:'a',account:'wlb841216',remark:'王女士',joined_on:'2026-11-13',balance_cents:508000},
+ {id:'b',account:'beiying007',remark:'',joined_on:'2026-11-14',balance_cents:1200000},
+ {id:'c',account:'abc12',remark:'测试姓名',joined_on:'2026-11-15',balance_cents:75000}
 ];
 const details=new Map([
  ['a',{days:1,tier:'low',amount_cents:1007000}],
@@ -45,12 +45,12 @@ const render=()=>vm.runInContext("renderList()",context);
 const items=()=>context.t.list.children.slice(1);
 const order=()=>items().map(x=>x.children[1].text);
 const header=()=>context.t.list.children[0];
-const sort=(key)=>{const i=key==='amount'?2:3;header().children[i].onclick()};
+const sort=(key)=>{const i=key==='amount'?2:key==='count'?3:4;header().children[i].onclick()};
 const checks=[
- [2,'本月提现总额'],[3,'提现次数']
+ [2,'本月提现总额'],[3,'提现次数'],[4,'当前余额']
 ];
 render();
-assert.strictEqual(header().children.length,4,'Withdrawal list has 4 columns');
+assert.strictEqual(header().children.length,5,'Withdrawal list has 5 columns');
 assert.strictEqual(header().children[0].text,'会员姓名');
 assert.strictEqual(header().children[1].text,'会员账号');
 for(const [i,label] of checks)assert(header().children[i].text.startsWith(label),header().children[i].text);
@@ -61,9 +61,11 @@ assert.deepStrictEqual(order(),['abc12','wlb841216','beiying007'],
 assert.strictEqual(items()[1].children[0].text,'王女士');
 assert.strictEqual(items()[1].children[2].text,'10,070');
 assert.strictEqual(items()[1].children[3].text,'1');
+assert.strictEqual(items()[1].children[4].text,'5,080');
 assert.strictEqual(items()[2].children[0].text,'未填写姓名');
 assert.strictEqual(items()[2].children[2].text,'4,676');
 assert.strictEqual(items()[2].children[3].text,'3');
+assert.strictEqual(items()[2].children[4].text,'12,000');
 items()[0].onclick();assert(touched,'Row click should still focus a member');
 touched=false;
 sort('count');assert.deepStrictEqual(order(),['beiying007','abc12','wlb841216']);
@@ -74,11 +76,16 @@ assert(header().children[3].text.includes('↑'),'Count low-to-high arrow');
 sort('amount');assert.deepStrictEqual(order(),['abc12','wlb841216','beiying007']);
 sort('amount');assert.deepStrictEqual(order(),['beiying007','wlb841216','abc12']);
 assert(header().children[2].text.includes('↑'));
+sort('balance');assert.deepStrictEqual(order(),['beiying007','wlb841216','abc12']);
+assert(header().children[4].text.includes('↓'));
+sort('balance');assert.deepStrictEqual(order(),['abc12','wlb841216','beiying007']);
+assert(header().children[4].text.includes('↑'));
+sort('amount');
 assert.deepStrictEqual(people.map(x=>x.account),['wlb841216','beiying007','abc12'],
  'List sorting must not change member tree order or stored amounts');
 context.v22HistMode='week';render();
 assert(header().children[2].text.includes('本周提现总额'));
-assert.strictEqual(header().children.length,4);
+assert.strictEqual(header().children.length,5);
 context.v22HistMode='withdraw';context.amounts=new Map([['a',-2500],['b',120000],['c',40000]]);
 render();assert.strictEqual(header().children[2].text.startsWith('当日提现金额'),true);
 assert.strictEqual(items().find(x=>x.children[1].text==='wlb841216').children[3].text,'0',
@@ -101,4 +108,4 @@ assert(html.includes('.v22-hist-one-withdraw-ring{'));
 assert(html.includes('stroke:#e95668'));
 assert(html.includes('rx:compactMode?94:156')===false,'SVG geometry belongs in JS only');
 assert(js.includes("class:'withdraw-red-outer'"),'Original current-day red ring must remain');
-console.log('PASS: V22 one SVG ellipse per historical withdrawal, 4 columns name/account/total/count, clickable ascending/descending amount & count, daily negative excluded, new joins intact');
+console.log('PASS: V22 single historical ring, 5 columns including current balance, three independently sortable numeric columns and original daily/newcomer modes');
