@@ -102,7 +102,8 @@ once("const val=v22HistMode==='withdraw'?' · '+money(amounts.get(x.id)||0,true)
    : v22HistMode==='withdraw'?' · '+money(amounts.get(x.id)||0,true):'';""")
 # Never overlay today's live rings in historical weekly/monthly modes.
 old="withdrawGlowOn&&v22HistMode!=='withdraw'&&Number(m.daily_withdraw_cents||0)!==0"
-once(old,"withdrawGlowOn&&v22HistMode==='new'&&Number(m.daily_withdraw_cents||0)!==0")
+assert j.count(old)==2,('Daily SVG marker count changed',j.count(old))
+j=j.replace(old,"withdrawGlowOn&&v22HistMode==='new'&&Number(m.daily_withdraw_cents||0)!==0")
 once("if(v22HistMode!=='withdraw'){","if(v22HistMode==='new'){")
 once("const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&v22HistMode!=='withdraw'&&ownWithdraw!==0;",
      "const ownWithdraw=Number(x.daily_withdraw_cents||0),glow=withdrawGlowOn&&v22HistMode==='new'&&ownWithdraw!==0;")
