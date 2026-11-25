@@ -149,7 +149,7 @@ assert.strictEqual(body.children.length,0,'Overlay removed from body');
 assert(!classes.has('v22-dormant-body-open'),'Original page scroll restored');
 assert(js.includes("const dormant=mk('button','v22-hist-button v22-dormant-trigger','📋 躺平名单')"));
 assert(js.includes("dormant.type=\'button\';dormant.onclick=v22DormantOpen;"));
-assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,prev,pick"));
+assert(js.includes("b.append(label,newer,withdraw,week,month,dormant,loan,prev,pick"));
 assert(html.includes('id="v22-dormant-roster-style"'));
 assert(html.includes('min-height:0;flex:1 1 0;overflow:auto;'));
 assert(html.includes('.v22-dormant-total'));
