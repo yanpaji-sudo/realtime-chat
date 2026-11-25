@@ -73,8 +73,7 @@ evalJs("v22HistUpdateToolbar=()=>{}");
  assert.strictEqual(sandbox.collapsed.has('root'),false);
  for(const part of ['v22HistoryCalendar','✨ 历史新增','🔴 历史提现',
   '前一天','后一天','昨天','今天'])assert(js.includes(part),part);
- for(const part of ['v22-hist-ring-gold','v22-hist-ring-yellow','v22-hist-ring-cyan',
-  'v22-hist-ring-crimson','v22-hist-ring-red','v22-hist-ring-pink',
+ for(const part of ['v22-hist-one-new-ring','v22-hist-one-withdraw-ring',
   "'vector-effect':'non-scaling-stroke'"])assert(js.includes(part),part);
  assert(js.includes("v22HistMode==='new'&&Number(m.daily_withdraw_cents||0)!==0"),
   'Do not contaminate yesterday history with live today red rings');
@@ -84,5 +83,5 @@ evalJs("v22HistUpdateToolbar=()=>{}");
  assert(html.includes('outline:5px solid #ffea00'));
  assert(html.includes('outline:5px solid #ff1645'));
  assert(html.includes('prefers-reduced-motion'));
- console.log('PASS: calendar previous/next, group scope, neon ring visibility, previous-day ledger, empty day, date conflict, original red overlays, selected-day density');
+ console.log('PASS: historical calendar previous/next, one ring per node, previous-day ledger, missing-date protection and original live red overlays');
 })().catch(err=>{console.error(err);process.exit(1)});
