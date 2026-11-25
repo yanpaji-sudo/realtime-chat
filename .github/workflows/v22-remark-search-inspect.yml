@@ -1,4 +1,4 @@
-name: Inspect V22 search filtering and input events
+name: Inspect V22 account and remark filtering sources
 on:
   push:
     branches: [member-tree-render]
@@ -10,24 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect search handlers, query filters and render inputs
-        run: |
+      - run: |
           set -euo pipefail
           base64 -d member-tree-deploy/payload.b64 | tar xz
           python - <<'PY'
           import re
           s=open('member-tree/static/app.js',encoding='utf-8').read()
-          queries=[
-            r"el\('search'\)\.oninput",r"el\('search'\)\.onkeydown",
-            r"el\('search'\)\.addEventListener",r'query\s*=',r'query\s*\?',
-            r'\.includes\(query\)',r'function configure\(',r'function renderTree\(',
-            r'function renderList\(',r'function renderTable\(',r'function locateBranchAccount\(',
-            r"el\('search'\)\.placeholder="
-          ]
-          for p in queries:
-           allhits=list(re.finditer(p,s,re.I))
-           print('===',p,'count',len(allhits))
-           for m in allhits[:9]:
-            a=max(0,m.start()-650);b=min(len(s),m.end()+1300)
-            print('OFFSET',m.start(),s[a:b].replace('\x00',''))
+          for pat in [r'function getShown\(',r'function tableData\(',r'function renderTableView\(',r'function renderTable\(',r'function renderRanking\(',r'\.includes\(query\.toLowerCase\(\)\)',r'query\.toLowerCase\(\)',r'\bquery\b.+includes',r'query\.length']:
+           hits=list(re.finditer(pat,s))
+           print('=====',pat,'HITS',len(hits))
+           for m in hits[:8]:
+            a=max(0,m.start()-170);b=min(len(s),m.end()+1200)
+            print('OFFSET',m.start(),s[a:b])
           PY
