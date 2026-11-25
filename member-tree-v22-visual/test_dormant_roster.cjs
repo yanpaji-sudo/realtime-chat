@@ -49,7 +49,7 @@ const classes=new Set(),body={
  classList:{add(x){classes.add(x)},remove(x){classes.delete(x)}}
 };
 const env={
- members:people,mk,document:{body},selectedTreeGroup:'',TREE_GROUPS:['01','02','03','04'],
+ members:people,special,mk,document:{body},selectedTreeGroup:'',TREE_GROUPS:['01','02','03','04'],
  v22HistToday:()=> '2026-11-25',money:n=>(n/100).toLocaleString('zh-CN'),
  v22HistMaximized:false,v22HistSetMaximized:()=>{},
 };
