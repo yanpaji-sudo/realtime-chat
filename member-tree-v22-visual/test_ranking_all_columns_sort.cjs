@@ -76,6 +76,7 @@ const people=[
  {id:'d',account:'d4',team_name:'丁队',group_account:'g3',
    parent_id:'root',level:2,joined_on:'2026-11-25',stake_cents:1000,balance_cents:10000},
 ];
+vm.runInContext("v22RankingSortField='score'",ctx);
 ctx.members=people;
 ctx.businessDay='2026-11-25';ctx.dateNow=()=> '2026-11-25';
 ctx.rankPeriod='daily';ctx.rankSort='desc';
