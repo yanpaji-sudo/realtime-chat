@@ -1,0 +1,58 @@
+name: Publish V22 compact historical withdrawal list and softer rings
+on:
+  push:
+    branches: [member-tree-render]
+    paths:
+      - '.github/workflows/v22-compact-withdraw-formal.yml'
+permissions:
+  contents: write
+concurrency:
+  group: v22-compact-history-ui-formal
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact V22 base and guard untouched financial/academy code
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:member-tree-deploy/payload.b64)" = "5935c647a94de46d089c2b86b8f60203620ac8cf"
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt > /tmp/v22-old-backend.sha256
+      - name: Apply name-account-total list and soft visual rings ONLY
+        run: |
+          set -euo pipefail
+          python3 member-tree-v22-visual/compact_withdraw_list_soft_rings_patch.py
+          sha256sum --check /tmp/v22-old-backend.sha256
+          node --check member-tree/static/app.js
+          node member-tree-v22-visual/test_compact_withdraw_list_soft_rings.cjs
+          node member-tree-v22-visual/test_weekly_monthly_ui.cjs
+          node member-tree-v22-visual/test_history_ui.cjs
+      - name: Install isolated regressions
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Re-check recorded finance history against temporary SQLite
+        run: |
+          python member-tree-v22-visual/test_weekly_monthly_api.py
+          python member-tree-v22-visual/test_history_api.py
+      - name: Keep all existing compact, full-screen and withdrawal visuals
+        run: |
+          set -euo pipefail
+          cd member-tree
+          for t in tests/test_v32_fullscreen_hover.cjs tests/test_v27_red_withdrawal_ui.cjs tests/test_v28_compact.cjs; do
+            if [ -f "$t" ]; then node "$t"; fi
+          done
+      - name: Publish code package only without touching persistent PostgreSQL
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/v22-compact-withdrawal-ui.tgz member-tree
+          base64 -w0 /tmp/v22-compact-withdrawal-ui.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'V22: show name-account-period withdrawal total, soften history circles'
+            git push origin HEAD:member-tree-render
+          fi
