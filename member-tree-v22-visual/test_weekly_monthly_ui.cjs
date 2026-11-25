@@ -85,7 +85,7 @@ run("v22HistUpdateToolbar=()=>{}");
  assert.strictEqual(run('v22HistFrequency().size'),0);
  assert.strictEqual(run('v22HistMatches().length'),2);
  for(const txt of ['🟠 本周提现总览','🟣 本月提现总览',
-   'v22-hist-frequency-mid','v22-hist-frequency-high',
+   "'v22-hist-frequency-'+detail.tier",
    'v22-hist-count-badge','v22HistStep',
    'v22HistIsWithdrawMode()'])assert(js.includes(txt),txt);
  for(const txt of ['v22-withdraw-frequency-css','#ff9b15','#a54aff',
