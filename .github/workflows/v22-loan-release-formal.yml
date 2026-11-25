@@ -21,7 +21,7 @@ jobs:
           test "$(git rev-parse b926e3d04a376637deebccb48c1db3dedf2d6ab2:member-tree-deploy/payload.b64)" = "a677b8a19aa6c1b6a3590948daaae9837521e450"
           git show b926e3d04a376637deebccb48c1db3dedf2d6ab2:member-tree-deploy/payload.b64 | base64 -d | tar xz
           sha256sum member-tree/app.py member-tree/academy.py member-tree/requirements.txt > /tmp/v22-loan-protected.sha256
-      - name: Restore tested dormant list and add read-only disbursement eligibility panel
+      - name: Restore existing dormant roster then validate new standalone release eligibility panel
         run: |
           set -euo pipefail
           python member-tree-v22-visual/dormant_roster_patch.py
