@@ -283,6 +283,8 @@ exec(compile(Path('member-tree-deploy/berlin_manual_recharge_reconcile_patch.py'
 exec(compile(Path('member-tree-deploy/berlin_balance_blank_column_patch.py').read_text(encoding='utf-8'),'berlin_balance_blank_column_patch.py','exec'))
 # Allow account/amount or amount/account, resolving numeric account IDs against roster.
 exec(compile(Path('member-tree-deploy/berlin_bidirectional_finance_patch.py').read_text(encoding='utf-8'),'berlin_bidirectional_finance_patch.py','exec'))
+# View-only historical joined-on day picker and cyan newcomer rings in tree and branch diagram.
+exec(compile(Path('member-tree-deploy/berlin_history_join_calendar_patch.py').read_text(encoding='utf-8'),'berlin_history_join_calendar_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
