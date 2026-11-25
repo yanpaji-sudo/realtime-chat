@@ -29,6 +29,20 @@ let v22DormantPanel=null;
 let v22DormantGroup='',v22DormantPage=0;
 let v22DormantSort='days',v22DormantDesc=true,v22DormantRows=[];
 const V22_DORMANT_PAGE_SIZE=100;
+const V22_DORMANT_EXCLUDED_ACCOUNTS=new Set(['SAN001','SAN002','SAN005','SAN006','SAN008']);
+// For only these five structural groups, their children restart at tier A.
+function v22DormantDisplayLevel(member,byId){
+ let current=member,seen=new Set([member.id]),distance=0;
+ while(current.parent_id&&byId.has(current.parent_id)){
+  const parent=byId.get(current.parent_id);
+  if(seen.has(parent.id))break;
+  seen.add(parent.id);distance++;
+  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(String(parent.account||'').trim().toUpperCase()))
+   return v22DormantLevel(distance+1);
+  current=parent;
+ }
+ return v22DormantLevel(Number(member.level||0));
+}
 function v22DormantDate(day){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(day||'')))return null;
  const d=new Date(day+'T00:00:00Z');
@@ -104,6 +118,7 @@ function v22DormantAnalyze(rows,day){
  for(const member of rows){
   const joined=String(member.joined_on||'').slice(0,10);
   if(!v22DormantDate(joined)||joined>cutoff||member.deleted)continue;
+  if(V22_DORMANT_EXCLUDED_ACCOUNTS.has(String(member.account||'').trim().toUpperCase()))continue;
   // Placeholder ancestors are not actual eligible members.
   if(String(member.remark||'')==='上级占位（待补资料）')continue;
   const latest=newest.get(member.id)||'';
@@ -115,8 +130,9 @@ function v22DormantAnalyze(rows,day){
   result.push({
    id:member.id,account:String(member.account||''),
    remark:String(member.remark||'').trim()||'未填写备注',
-   group:inheritedGroup(member),level:v22DormantLevel(level),
+   group:inheritedGroup(member),level:v22DormantDisplayLevel(member,byId),
    joined,days,balance_cents:Number(member.balance_cents||0),
+   net_win_cents:Number(member.stake_cents||0)-Number(member.total_withdraw_cents||0),
    descendant_count:sizes.get(member.id)||0,
    latest_descendant_join:latest||'从未新增',
   });
@@ -165,7 +181,7 @@ function v22DormantRender(){
  const names=[['group','所属分组'],['remark','会员备注'],['account','会员账号'],
    ['level','层级'],['joined','加入日期'],['days','躺平时间'],
    ['balance_cents','当前余额'],['descendant_count','历史下级数'],
-   ['latest_descendant_join','最近下级新增']];
+   ['net_win_cents','输赢']];
  const head=mk('div','v22-dormant-record v22-dormant-record-head');
  for(const [key,label] of names){
   const selected=v22DormantSort===key;
@@ -174,7 +190,7 @@ function v22DormantRender(){
   btn.type='button';btn.title='点击排序'+label;
   btn.onclick=()=>{
    if(v22DormantSort===key)v22DormantDesc=!v22DormantDesc;
-   else{v22DormantSort=key;v22DormantDesc=['days','balance_cents','descendant_count'].includes(key)}
+   else{v22DormantSort=key;v22DormantDesc=['days','balance_cents','descendant_count','net_win_cents'].includes(key)}
    v22DormantPage=0;v22DormantRender();
   };
   head.append(btn);
@@ -184,9 +200,10 @@ function v22DormantRender(){
   const tr=mk('div','v22-dormant-record');
   const values=[entry.group,entry.remark,entry.account,entry.level,entry.joined,
     entry.days+' 天',money(entry.balance_cents,true),String(entry.descendant_count),
-    entry.latest_descendant_join];
+    (entry.net_win_cents>0?'+':'')+money(entry.net_win_cents,true)];
   for(let i=0;i<values.length;i++){
-   const cell=mk('span',i===6?'v22-dormant-money':'',values[i]);
+   const netClass=i===8?(entry.net_win_cents>0?'v22-dormant-profit-positive':entry.net_win_cents<0?'v22-dormant-profit-negative':'v22-dormant-profit-zero'):'';
+   const cell=mk('span',i===6?'v22-dormant-money':netClass,values[i]);
    cell.title=String(values[i]);
    tr.append(cell);
   }
@@ -204,7 +221,7 @@ function v22DormantRender(){
  for(const [name,row] of groupsSummary){
   total.append(mk('span','',name+'：'+row.count+'人 / '+money(row.balance,true)));
  }
- oldest.textContent='口径：加入满三个自然月、最近三个自然月本人全部下级（含间接下级）无新增；躺平时间＝本人加入日至今天；余额为当前余额，不是历史余额。';
+ oldest.textContent='口径：加入满三个自然月、最近三个自然月全部下级（含间接下级）无新增；五个 SAN 总节点不参与名单，其下级从 A 层起算。躺平时间＝本人加入日至今天；输赢＝本人建仓－累计提现；余额为当前余额。';
  footer.replaceChildren();
  const prev=mk('button','','◀ 上一页');prev.type='button';
  prev.disabled=v22DormantPage<=0;
@@ -332,6 +349,9 @@ body.v22-dormant-body-open{overflow:hidden!important}
 .v22-dormant-sort:hover{text-decoration:underline}
 .v22-dormant-money{font-variant-numeric:tabular-nums;
  color:#1a8060;font-weight:900}
+.v22-dormant-profit-positive{color:#168053;font-weight:900;font-variant-numeric:tabular-nums}
+.v22-dormant-profit-negative{color:#c93535;font-weight:900;font-variant-numeric:tabular-nums}
+.v22-dormant-profit-zero{color:#4e6270;font-weight:700;font-variant-numeric:tabular-nums}
 .v22-dormant-footer{display:flex;justify-content:center;align-items:center;
  gap:14px;padding:9px 12px;border-top:1px solid #e0e6ec;flex-shrink:0}
 .v22-dormant-footer button{border:1px solid #97b7cb;border-radius:7px;
@@ -359,4 +379,4 @@ assert s.count("function v22DormantAnalyze(")==1
 assert s.count("v22-dormant-trigger")==1
 js.write_text(s,encoding="utf-8")
 html.write_text(h,encoding="utf-8")
-print("PASS: V22 3-month dormant roster with groups, A/B/C levels, own join duration and current-balance totals")
+print("PASS: V22 3-month dormant roster, 5 SAN root exclusions, descendant A-tier rebasing, personal win/loss")
