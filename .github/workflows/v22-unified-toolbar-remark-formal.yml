@@ -1,4 +1,4 @@
-name: Publish V22 floating toolbar and linked notes search
+name: Publish V22 hidden panel toolbar and remark-assisted lookup
 on:
   push:
     branches: [member-tree-render]
