@@ -1,0 +1,36 @@
+name: Inspect current V22 ring geometry and withdrawal popup
+on:
+  push:
+    branches: [v22-single-red-ring-sortable-withdraw-dev-20261125]
+    paths: ['.github/workflows/v22-red-ring-sort-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          from pathlib import Path
+          j=Path('member-tree/static/app.js').read_text()
+          h=Path('member-tree/static/index.html').read_text()
+          for token,pre,post in [
+            ("const historyMatchIds=new Set",700,2900),
+            ("const outer=svgEl('ellipse'",500,2450),
+            ("group.append(outer,mid,inner)",450,1000),
+            ("class:'withdraw-red-outer'",430,850),
+            ("t.list.replaceChildren()",600,2400),
+            ("const matches=v22HistMatches(),amounts=",220,1700),
+            ("card.classList.toggle('v22-hist-withdraw'",260,650),
+            ("function v22HistUpdateToolbar()",70,1000)]:
+            p=j.find(token)
+            print('===FOUND===',token,p,flush=True)
+            if p>=0:print(j[max(0,p-pre):p+post],flush=True)
+          for token in ['.v22-hist-ring-crimson{stroke:', '.v22-hist-accounts{', '.member.v22-hist-withdraw{']:
+            p=h.rfind(token)
+            print('===CSS===',token,p,flush=True)
+            if p>=0:print(h[p:p+1000],flush=True)
+          PY
