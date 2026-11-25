@@ -285,6 +285,8 @@ exec(compile(Path('member-tree-deploy/berlin_balance_blank_column_patch.py').rea
 exec(compile(Path('member-tree-deploy/berlin_bidirectional_finance_patch.py').read_text(encoding='utf-8'),'berlin_bidirectional_finance_patch.py','exec'))
 # Historical join-date calendar with cyan node rings in ordinary tree and branch diagram.
 exec(compile(Path('member-tree-deploy/berlin_history_join_calendar_patch.py').read_text(encoding='utf-8'),'berlin_history_join_calendar_patch.py','exec'))
+# Emphasize historical join-day rings with neon colors that remain thick at minimum zoom.
+exec(compile(Path('member-tree-deploy/berlin_history_neon_visibility_patch.py').read_text(encoding='utf-8'),'berlin_history_neon_visibility_patch.py','exec'))
 import py_compile
 py_compile.compile(str(ap),doraise=True)
 (root/'BERLIN_TEST_README.txt').write_text('柏林树状图系统，来自正式版，六列导入和10管理员。\\n')
