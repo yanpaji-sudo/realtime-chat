@@ -34,7 +34,7 @@ const classes=new Set(),body={
  classList:{add(x){classes.add(x)},remove(x){classes.delete(x)}}
 };
 const env={
- members:people,mk,document:{body},selectedTreeGroup:'',
+ members:people,mk,document:{body},selectedTreeGroup:'',TREE_GROUPS:['01','02','03','04'],
  v22HistToday:()=> '2026-11-25',money:n=>(n/100).toLocaleString('zh-CN'),
  v22HistMaximized:false,v22HistSetMaximized:()=>{},
 };
@@ -78,7 +78,11 @@ assert.deepStrictEqual(headers.map(s=>s.split(' ')[0]),[
  '所属分组','会员备注','会员账号','层级','加入日期','躺平时间',
  '当前余额','历史下级数','最近下级新增'
 ]);
-assert.deepStrictEqual(state.group.children.map(x=>x.value),['','01','02']);
+assert.deepStrictEqual(state.group.children.map(x=>x.value),['','01','02','03','04']);
+state.group.value='04';state.group.onchange();
+assert(state.heading.textContent.includes('0 人'));
+assert(state.summary.textContent.includes('0'));
+assert(state.table.children.length===1,'Empty group shows header, no false members');
 state.group.value='02';
 state.group.onchange();
 assert(state.heading.textContent.includes('2 人'));
