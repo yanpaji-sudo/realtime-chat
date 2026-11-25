@@ -1,0 +1,34 @@
+name: Verify neon newcomer rings on Berlin dev (NO DEPLOY)
+on:
+  push:
+    branches: [berlin-neon-history-ring-dev-20261125]
+    paths:
+      - '.github/workflows/berlin-neon-history-dev.yml'
+      - 'member-tree-deploy/berlin_patch.py'
+      - 'member-tree-deploy/berlin_history_neon_visibility_patch.py'
+      - 'member-tree-deploy/test_berlin_history_neon_visibility.py'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Berlin source in isolated CI runner
+        run: |
+          set -euo pipefail
+          git fetch origin 2aaeeac32ce8d579bee4a8ec5370952dd246c11d
+          git show 2aaeeac32ce8d579bee4a8ec5370952dd246c11d:member-tree-deploy/payload.b64 >/tmp/berlin_formal.b64
+          python member-tree-deploy/berlin_patch.py
+          python -m py_compile member-tree/app.py
+          node --check member-tree/static/app.js
+      - name: Check high-visibility rings and historical calendar
+        run: |
+          python member-tree-deploy/test_berlin_history_neon_visibility.py
+          python member-tree-deploy/test_berlin_history_calendar.py
+      - name: Install isolated regression dependencies
+        run: python -m pip install -r member-tree/requirements.txt httpx2
+      - name: Confirm member and financial logic is unchanged
+        run: |
+          python member-tree-deploy/test_berlin_single_member_upsert.py
+          python member-tree-deploy/test_berlin_manual_recharge_reconcile.py
