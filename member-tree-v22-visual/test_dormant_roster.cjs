@@ -4,7 +4,7 @@ const js=fs.readFileSync('member-tree/static/app.js','utf8');
 const html=fs.readFileSync('member-tree/static/index.html','utf8');
 const start=js.indexOf('let v22DormantPanel=null;');
 const end=js.indexOf('\nfunction v22HistUpdateToolbar(){',start);
-assert(start>0&&end>start&&end-start<18000,'Exact historical toolbar helper must be present');
+assert(start>0&&end>start&&end-start<50000,'Dormant helper and newly appended release helper must be present');
 const people=[
  {id:'root',account:'mainroot',parent_id:null,level:1,joined_on:'2025-01-01',group_account:'01',balance_cents:900},
  {id:'a',account:'a',parent_id:'root',level:2,joined_on:'2026-02-01',group_account:'01',balance_cents:250000,remark:'张一'},
