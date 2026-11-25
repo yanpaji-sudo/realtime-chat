@@ -6,6 +6,7 @@ on:
       - '.github/workflows/v22-history-popup-max-dev.yml'
       - 'member-tree-v22-visual/history_popup_maximized_patch.py'
       - 'member-tree-v22-visual/test_history_popup_maximized.cjs'
+      - 'member-tree-v22-visual/test_single_red_ring_sortable_list.cjs'
 permissions:
   contents: read
 jobs:
