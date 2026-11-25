@@ -181,6 +181,6 @@ css=r'''
 assert h.count('</body>')==1
 h=h.replace('</body>',css+'</body>',1)
 assert j.count('function v22HistIsOverview(')==1
-jp.write_text(j,encoding='utf-8')
-hp.write_text(h,encoding='utf-8')
+jpath.write_text(j,encoding='utf-8')
+hpath.write_text(h,encoding='utf-8')
 print('PASS: V22 week/month overview controls, 1/2-3/4+ frequency colors, counts and coverage UI')
