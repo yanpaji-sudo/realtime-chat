@@ -4,6 +4,7 @@ const js=fs.readFileSync('member-tree/static/app.js','utf8');
 const style=fs.readFileSync('member-tree/static/style.css','utf8');
 const start=js.indexOf('let v22UnifiedUI=null,v22UnifiedFullscreenBefore=false;');
 const end=js.indexOf('function locateBranchAccount(){',start);
+console.log('SOURCE CHECK',JSON.stringify({setupPos:js.indexOf('function v22UnifiedToolbarSetup(){'),accountLookupPos:js.indexOf('function v22RemarkByAccount(account)'),start,end,snippet:js.slice(js.indexOf('function v22RemarkByAccount(account)')-120,js.indexOf('function v22RemarkByAccount(account)')+120)}));
 assert(start>0&&end>start,'Search helper index invalid: start='+start+', end='+end+', firstLocate='+js.indexOf('function locateBranchAccount(){')+', total='+js.length);
 const members=[
  {id:1,account:'000123',remark:'李强 北京'},
