@@ -1,0 +1,53 @@
+name: Build isolated V22 tree sandbox with 100 synthetic members
+on:
+  push:
+    branches: [v22-sandbox-100-20261126]
+    paths:
+      - 'v22-sandbox-100/**'
+      - '.github/workflows/v22-sandbox-build.yml'
+permissions:
+  contents: write
+concurrency:
+  group: v22-sandbox-100-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Extract exact V22 published app without copying any member database
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          if find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) | grep -q .; then
+            echo 'ERROR: database found inside source archive; abort to prevent real-data replication'
+            exit 1
+          fi
+          echo 'V22 code archive contains no database files'
+      - name: Patch only sandbox seed, guard and test-site label
+        run: |
+          set -euo pipefail
+          python v22-sandbox-100/build_patch.py
+          python -m py_compile member-tree/app.py member-tree/sandbox_seed.py
+          node --check member-tree/static/app.js
+      - name: Verify synthetic data and idempotent startup with local throwaway database
+        run: |
+          set -euo pipefail
+          python -m pip install -r member-tree/requirements.txt httpx
+          python v22-sandbox-100/test_sandbox.py
+      - name: Package isolated V22 sandbox without any SQLite/database contents
+        run: |
+          set -euo pipefail
+          find member-tree -type d -name '__pycache__' -prune -exec rm -rf {} +
+          find member-tree -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -delete
+          tar -czf /tmp/v22-sandbox-100.tgz member-tree
+          base64 -w0 /tmp/v22-sandbox-100.tgz > member-tree-deploy/payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add member-tree-deploy/payload.b64
+          if ! git diff --cached --quiet; then
+            git commit -m 'Test only: package full V22 with 100 guarded virtual members'
+            git push origin HEAD:v22-sandbox-100-20261126
+          fi
