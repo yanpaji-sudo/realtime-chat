@@ -43,3 +43,15 @@ jobs:
           for key in ["api/login","admin/login","auth/login","/api/members","/api/admin","localStorage","Authorization"]:
               print(key,"count",j.count(key),flush=True)
           PY
+      - name: Inspect table schema seed endpoint and account authentication only
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          from pathlib import Path
+          lines=(Path('member-tree/app.py').read_text()).splitlines()
+          blocks=[(149,275),(293,402),(757,782),(1600,1651)]
+          for lo,hi in blocks:
+              print(f"===== APP SNIPPET {lo}-{hi} =====",flush=True)
+              for n in range(lo,hi+1): print(f"{n}: {lines[n-1]}",flush=True)
+          PY
