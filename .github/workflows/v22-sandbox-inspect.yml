@@ -1,0 +1,45 @@
+name: Inspect isolated V22 sandbox code and DB setup
+on:
+  push:
+    branches: [v22-sandbox-100-20261126]
+    paths: ['.github/workflows/v22-sandbox-inspect.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect published application structure without loading production data
+        run: |
+          set -euo pipefail
+          base64 -d member-tree-deploy/payload.b64 | tar xz
+          python - <<'PY'
+          import re, ast, pathlib, os
+          root=pathlib.Path("member-tree")
+          print("===== ARCHIVE FILES =====",flush=True)
+          for p in sorted(root.rglob("*")):
+              if p.is_file() and len(p.parts)<=4:
+                  print(str(p),p.stat().st_size)
+          p=root/"app.py"
+          s=p.read_text()
+          lines=s.splitlines()
+          print("===== APP LINES",len(lines),"=====",flush=True)
+          print("===== BEGIN APP (first 130 lines, redact literal passwords) =====",flush=True)
+          for i,l in enumerate(lines[:130],1):
+              if re.search(r"(password|secret|token)\s*[:=]\s*['\"]",l,re.I):l="[redacted]"
+              print(f"{i:4d} {l}",flush=True)
+          print("===== DEFS / ROUTES =====",flush=True)
+          for i,l in enumerate(lines,1):
+              if re.match(r'^\s*(?:async )?def |^@app\.|^class ',l):
+                  if re.search(r"admin|login|auth|db|database|member|create|import|upsert|bootstrap|seed|init|register|startup|health|sample|restore|sync|json",l,re.I):
+                      print(f"{i:4d} {l[:155]}",flush=True)
+          print("===== DB / SQL SIGNATURES =====",flush=True)
+          for i,l in enumerate(lines,1):
+              if re.search(r"CREATE TABLE|CREATE INDEX|DATABASE_URL|DB_PATH|sqlite3\.connect|connect\(|CREATE EXTENSION|CREATE UNIQUE|INSERT INTO|ALTER TABLE|ADMIN_|USER_|SESSION_|app\.state|members\.append",l,re.I):
+                  print(f"{i:4d} "+(l[:150] if not re.search(r"(password|secret|token)\s*[:=]\s*['\"]",l,re.I) else "[redacted]"),flush=True)
+          print("===== JS API / LOGIN TIPS =====",flush=True)
+          j=(root/"static/app.js").read_text()
+          for key in ["api/login","admin/login","auth/login","/api/members","/api/admin","localStorage","Authorization"]:
+              print(key,"count",j.count(key),flush=True)
+          PY
